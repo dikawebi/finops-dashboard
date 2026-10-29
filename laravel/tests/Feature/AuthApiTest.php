@@ -15,4 +15,10 @@ class AuthApiTest extends TestCase
     {
         $this->postJson('/api/accruals', ['period'=>'2026-10','account_code'=>'5000051','qty'=>1,'rate_usd'=>1])->assertUnauthorized();
     }
+
+    public function test_gl_mutations_require_authentication(): void
+    {
+        $this->postJson('/api/upload-gl', ['rows' => [['period'=>'2026-10']]])->assertUnauthorized();
+        $this->deleteJson('/api/gl-data')->assertUnauthorized();
+    }
 }

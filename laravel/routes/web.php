@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AccrualController;
+use App\Http\Controllers\OperationsController;
 use App\Http\Middleware\EnsurePeriodOpen;
 
 Route::get('/', function () {
@@ -14,6 +15,11 @@ Route::prefix('api')->group(function () {
     Route::post('/login', [AuthController::class, 'login'])->middleware('guest');
     Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth');
     Route::post('/accruals', [AccrualController::class, 'store'])->middleware(['auth', EnsurePeriodOpen::class]);
+    Route::get('/accounts', [OperationsController::class, 'accounts']);
+    Route::get('/accruals', [OperationsController::class, 'accruals']);
+    Route::get('/config', [OperationsController::class, 'config']);
+    Route::post('/upload-gl', [OperationsController::class, 'uploadGl'])->middleware(['auth', EnsurePeriodOpen::class]);
+    Route::delete('/gl-data', [OperationsController::class, 'deleteGl'])->middleware(['auth', EnsurePeriodOpen::class]);
     Route::get('/cost-matrix', [DashboardController::class, 'costMatrix']);
     Route::get('/financial-statements', [DashboardController::class, 'financialStatements']);
     Route::get('/inventory-valuation', [DashboardController::class, 'inventory']);
