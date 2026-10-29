@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\CostAccount;
 use App\Models\DbCostSummary;
 use App\Models\GlEntry;
-use Illuminate\Support\Collection;
 
 /** Implements the Report Cost allocation rules from FORMULA_DASHBOARD.md §2. */
 class CostMatrixService
@@ -77,7 +76,6 @@ class CostMatrixService
             else $row['costMining'] = bcadd($row['costMining'], $amount, 6);
             $rows[$code] = $row;
         }
-        // DEBUG
         // logger()->debug('cost-matrix allocation', ['entries' => $entries->count(), 'sample' => $rows['5000056'] ?? null]);
         foreach ($rows as &$row) $this->finish($row);
         unset($row);
