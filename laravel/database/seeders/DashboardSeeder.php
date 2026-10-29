@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Accrual;
+use App\Models\DbCostSummary;
 use App\Models\FinancialBaseline;
 use App\Models\InventoryOpening;
 use App\Models\MonthlyMetric;
@@ -21,6 +22,7 @@ class DashboardSeeder extends Seeder
         $this->seedInventory($path . '/inventory_model.json');
         $this->seedConfig($path . '/config.json');
         $this->seedAccruals($path . '/accruals.json');
+        $this->seedDbCostSummary($path . '/automatic_accrual_history.json');
     }
 
     private function read(string $file): array { return json_decode(file_get_contents($file), true, 512, JSON_THROW_ON_ERROR); }
@@ -62,6 +64,19 @@ class DashboardSeeder extends Seeder
     {
         foreach (($this->read($file)['entries'] ?? []) as $item) {
             Accrual::create($item);
+        }
+    }
+
+    private function seedDbCostSummary(string $file): void
+    {
+        foreach ($this->read($file)['periods'] ?? [] as $period => $entries) {
+            foreach ($entries as $item) {
+                $item['period'] = $period;
+            DbCostSummary::updateOrCreate(
+                ['period' => $item['period'], 'entity' => $item['code'], 'activity' => $item['category']],
+                ['amount' => $item['amount'] ?? 0, 'currency' => 'USD']
+            );
+            }
         }
     }
 }
