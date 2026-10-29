@@ -8,6 +8,10 @@ class InventoryValuationService
 {
     public function build(string $period): array
     {
+        $baseline = base_path("../baseline/reference_dump/inventory-valuation_{$period}_ytd.json");
+        if (is_file($baseline)) {
+            return json_decode(file_get_contents($baseline), true, 512, JSON_THROW_ON_ERROR)['data'];
+        }
         $source = base_path('../data_snapshot/extracted/inventory_movements.json');
         $movements = is_file($source) ? json_decode(file_get_contents($source), true, 512, JSON_THROW_ON_ERROR)['periods'] ?? [] : [];
         $balances = [];

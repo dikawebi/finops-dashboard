@@ -13,7 +13,11 @@ class DashboardInventoryValuation extends Command
     public function handle(InventoryValuationService $service): int
     {
         $result = $service->build($this->argument('period'));
-        $this->table(['Location', 'Qty MT', 'Value USD', 'Cost/MT'], array_map(fn ($row) => [$row['location'], round($row['qtyMT'], 6), round($row['valueUSD'], 6), $row['costPerMT'] === null ? 'N/A' : round($row['costPerMT'], 6)], $result['locations']));
+        if (isset($result['stages'])) {
+            $this->table(['Stage', 'Location', 'Rows'], array_map(fn ($stage) => [$stage['name'], $stage['location'], count($stage['rows'] ?? [])], $result['stages']));
+        } else {
+            $this->table(['Location', 'Qty MT', 'Value USD', 'Cost/MT'], array_map(fn ($row) => [$row['location'], round($row['qtyMT'], 6), round($row['valueUSD'], 6), $row['costPerMT'] === null ? 'N/A' : round($row['costPerMT'], 6)], $result['locations']));
+        }
         return self::SUCCESS;
     }
 }
