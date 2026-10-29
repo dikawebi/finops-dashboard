@@ -50,7 +50,10 @@ class DashboardController extends Controller
         $previous = date('Y-m', strtotime($period . '-01 -1 month'));
         $current = $service->build($period, $mode);
         $prior = $service->build($previous, 'mtd');
-        return response()->json(['success' => true, 'data' => ['period' => $period, 'previousPeriod' => $previous, 'current' => $current, 'previous' => $prior]]);
+        $variance = [];
+        $priorRows = collect($prior['rows'])->keyBy('code');
+        foreach ($current['rows'] as $row) { $old = $priorRows->get($row['code']); $base = (float) ($old['allCost'] ?? 0); $delta = (float) $row['allCost'] - $base; $variance[] = ['code' => $row['code'], 'name' => $row['name'], 'current' => (float) $row['allCost'], 'previous' => $base, 'change' => $delta, 'changePct' => $base == 0.0 ? null : $delta / abs($base) * 100, 'isParent' => $row['isParent']]; }
+        return response()->json(['success' => true, 'data' => ['period' => $period, 'previousPeriod' => $previous, 'current' => $current, 'previous' => $prior, 'rows' => $variance]]);
     }
 
     private function periodMode(Request $request): array
