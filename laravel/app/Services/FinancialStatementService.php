@@ -3,10 +3,11 @@
 namespace App\Services;
 
 use App\Models\FinancialBaseline;
+use App\Services\CostMatrixService;
 
 class FinancialStatementService
 {
-    public function build(string $period, string $mode = 'mtd'): array
+    public function build(string $period, string $mode = 'mtd', ?CostMatrixService $costs = null): array
     {
         $baseline = FinancialBaseline::first();
         if (!$baseline) return ['period' => $period, 'mode' => $mode, 'sections' => []];
@@ -21,6 +22,10 @@ class FinancialStatementService
                 return $line;
             }, $lines);
         }
-        return ['currency' => $baseline->currency, 'period' => $period, 'mode' => $mode, 'dataSource' => 'financial-baseline', 'sections' => $sections, 'cashFlowEnabled' => (bool) $baseline->cash_flow_enabled];
+        $matrix = $costs?->build($period, $mode);
+        $totalOpex = (float) ($matrix['grandTotal']['allCost'] ?? 0);
+        $selling = (float) ($matrix['grandTotal']['sellingExpense'] ?? 0);
+        $income = ['period' => $period, 'currency' => $baseline->currency, 'salesVolumeMT' => null, 'revenue' => ['totalRevenue' => 0], 'cogs' => ['totalCOGS' => 0], 'grossProfit' => 0, 'grossProfitMarginPct' => 0, 'operatingExpenses' => ['generalAdministrative' => $totalOpex - $selling, 'sellingExpense' => $selling, 'royaltyCoalSales' => 0, 'totalOpex' => $totalOpex], 'operatingProfitEBITDA' => -$totalOpex, 'ebitdaMarginPct' => 0, 'otherItems' => ['financeIncome' => 0, 'financeCost' => 0, 'forexGainLoss' => 0, 'includedInGA' => false], 'netProfitBeforeTax' => -$totalOpex, 'netProfitAfterTax' => -$totalOpex, 'netProfitMarginPct' => 0];
+        return ['currency' => $baseline->currency, 'period' => $period, 'mode' => $mode, 'dataSource' => 'financial-baseline', 'sections' => $sections, 'cashFlowEnabled' => (bool) $baseline->cash_flow_enabled, 'incomeStatement' => $income, 'report' => $sections];
     }
 }
