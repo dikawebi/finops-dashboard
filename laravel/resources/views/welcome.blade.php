@@ -1,7 +1,35 @@
-<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>FinOps Dashboard — PT Borneo Prima</title>@vite(['resources/css/app.css','resources/js/app.js'])</head><body>
-<header class="app-header"><img class="logo" src="/images/logo-bp.svg" alt="BP"><div class="brand"><b>PT BORNEO PRIMA</b><span>ACCOUNTING &amp; MINING COST DASHBOARD • LOCAL HOSTING (INTRANET)</span></div><button class="import">📥 Import GL<br><small>Data</small></button><div class="source-pill"><i></i>D365 GL:<br><span>Online</span></div><div class="source-pill"><i></i>Google Sheets:<br><span>Manual Sync</span></div><div class="period-label">Period:<b id="periodText">2026-10</b></div></header>
-<div class="filterbar"><label>Month <input id="period" type="month" value="2026-10"></label><label>View <select id="mode"><option value="mtd">MTD</option><option value="ytd">YTD</option></select></label><span id="viewText">MTD — 2026-10</span></div>
-<nav class="tabs"><a href="#" class="active" data-view="overview">📊 Executive Overview</a><a href="#" data-view="cost">📑 Report Cost (COGP)</a><a href="#" data-view="variance">📈 Cost Variance Analysis</a><a href="#" data-view="metric">⚖️ Cost per Metric Ton</a><a href="#" data-view="inventory">📦 Inventory Valuation (Moving Avg)</a><a href="#" data-view="financial">📑 Financial Statements (FS)</a><a href="#" data-view="integration">🔄 Integration &amp; Data Sources</a></nav>
-<main class="content"><div class="heading"><h1>Operations &amp; Financial Overview</h1><p>Microsoft Dynamics 365 General Ledger and Google Sheets weighbridge data</p></div><section class="kpis"><article class="blue"><span>TOTAL ALL COST (GL)</span><strong id="allCost">—</strong><small>Costing to allocation, including Direct Expense (USD)</small><em>📁 gl_data.json · cost_report_history.json · accruals.json</em></article><article class="cyan"><span>TOTAL PRODUCTION VOLUME</span><strong id="production">—</strong><small>Coal mined / weighbridge volume</small><em>📁 production_daily_sheets.json · production_data.json</em></article><article class="orange"><span>AVERAGE COST / MT</span><strong id="costPerMt">—</strong><small>Total operating cost / net MT</small><em>📁 gl_data.json · production_daily_sheets.json</em></article><article class="green"><span>TOTAL INVENTORY VALUE</span><strong id="inventory">—</strong><small>Includes all stock locations</small><em>📁 inventory_model.json · inventory_movements.json</em></article><article class="blue"><span>GROSS PROFIT</span><strong id="grossProfit">—</strong><small>Coal sales less cost of sales</small><em>📁 financial_baseline.json · gl_data.json</em></article><article class="blue"><span>OPERATING PROFIT / BEFORE INTEREST</span><strong id="expense">—</strong><small>Operating profit for the period</small><em>📁 financial_baseline.json · gl_data.json</em></article></section>
-<section class="panel"><div class="panel-title"><h2>Production by Activity — Google Sheets DB</h2><span>📁 production_daily_sheets.json</span></div><div class="notice">Monthly figures use the DB sheet. Blank source cells are unavailable; YTD sums available months only.</div><div class="table-scroll"><table><thead id="tableHead"><tr><th>Activity</th><th>Volume</th><th>Unit</th><th>Availability</th></tr></thead><tbody id="tableBody"></tbody></table></div></section></main><footer>FinOps-Dashboard — PT Borneo Prima · Data freeze 2026-10-30</footer>
-</body></html>
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FinOps Dashboard — PT Borneo Prima</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
+<body>
+    <header class="app-header">
+        <img class="logo" src="/images/logo-bp.svg" alt="BP">
+        <div class="brand"><b>PT BORNEO PRIMA</b><span>ACCOUNTING &amp; MINING COST DASHBOARD • LOCAL HOSTING (INTRANET)</span></div>
+        <button class="import" type="button">📥 Import GL<br><small>Data</small></button>
+        <div class="source-pill"><i></i>D365 GL:<br><span>Online</span></div>
+        <div class="source-pill"><i></i>Google Sheets:<br><span>Manual Sync</span></div>
+        <div class="period-label">Period:<b id="periodText">2026-10</b></div>
+    </header>
+    <div class="filterbar">
+        <label>Month <input id="period" type="month" value="2026-10"></label>
+        <label>View <select id="mode"><option value="mtd">MTD</option><option value="ytd">YTD</option></select></label>
+        <span id="viewText">MTD — 2026-10</span>
+    </div>
+    <nav class="tabs" aria-label="Dashboard navigation">
+        <a href="#" class="active" data-view="overview">📊 Executive Overview</a>
+        <a href="#" data-view="cost">📑 Report Cost (COGP)</a>
+        <a href="#" data-view="variance">📈 Cost Variance Analysis</a>
+        <a href="#" data-view="metric">⚖️ Cost per Metric Ton</a>
+        <a href="#" data-view="inventory">📦 Inventory Valuation (Moving Avg)</a>
+        <a href="#" data-view="financial">📑 Financial Statements (FS)</a>
+        <a href="#" data-view="integration">🔄 Integration &amp; Data Sources</a>
+    </nav>
+    <main id="pageContent" class="content" aria-live="polite"></main>
+    <footer>FinOps-Dashboard — PT Borneo Prima · Data freeze 2026-10-30</footer>
+</body>
+</html>
