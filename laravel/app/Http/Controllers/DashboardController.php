@@ -38,6 +38,11 @@ class DashboardController extends Controller
         return response()->json(['success' => true, 'data' => MonthlyMetric::period($period)->get()]);
     }
 
+    public function integration(): JsonResponse
+    {
+        return response()->json(['success' => true, 'data' => ['d365' => ['status' => 'online', 'mode' => 'local snapshot'], 'googleSheets' => ['status' => 'manual-sync', 'mode' => 'local snapshot'], 'dataFreeze' => '2026-10-30', 'database' => ['glEntries' => \App\Models\GlEntry::count(), 'monthlyMetrics' => \App\Models\MonthlyMetric::count()]]]);
+    }
+
     public function costPerMt(Request $request, CostPerMtService $service): JsonResponse
     {
         [$period, $mode] = $this->periodMode($request);
