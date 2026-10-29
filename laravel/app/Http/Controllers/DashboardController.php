@@ -6,6 +6,7 @@ use App\Models\MonthlyMetric;
 use App\Services\CostMatrixService;
 use App\Services\FinancialStatementService;
 use App\Services\InventoryValuationService;
+use App\Services\CostPerMtService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -35,6 +36,21 @@ class DashboardController extends Controller
         $period = (string) $request->query('period', '2026-10');
         abort_unless((bool) preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $period), 422, 'Invalid period.');
         return response()->json(['success' => true, 'data' => MonthlyMetric::period($period)->get()]);
+    }
+
+    public function costPerMt(Request $request, CostPerMtService $service): JsonResponse
+    {
+        [$period, $mode] = $this->periodMode($request);
+        return response()->json(['success' => true, 'data' => $service->build($period, $mode)]);
+    }
+
+    public function variance(Request $request, CostMatrixService $service): JsonResponse
+    {
+        [$period, $mode] = $this->periodMode($request);
+        $previous = date('Y-m', strtotime($period . '-01 -1 month'));
+        $current = $service->build($period, $mode);
+        $prior = $service->build($previous, 'mtd');
+        return response()->json(['success' => true, 'data' => ['period' => $period, 'previousPeriod' => $previous, 'current' => $current, 'previous' => $prior]]);
     }
 
     private function periodMode(Request $request): array
