@@ -1,0 +1,142 @@
+{
+  "success": true,
+  "data": {
+    "missingMonths": [],
+    "dbMetrics": {
+      "coalGetting": {
+        "label": "Coal Getting",
+        "unit": "MT",
+        "value": 24603.357886749633,
+        "missingPeriods": []
+      },
+      "haulingBuaWp": {
+        "label": "Hauling BUA to WP",
+        "unit": "MT",
+        "value": 13551,
+        "missingPeriods": []
+      },
+      "haulingBuaPort": {
+        "label": "Hauling BUA to Port",
+        "unit": "MT",
+        "value": 10356,
+        "missingPeriods": []
+      },
+      "haulingWpPort": {
+        "label": "Hauling WP to Port",
+        "unit": "MT",
+        "value": 5964,
+        "missingPeriods": []
+      },
+      "washFeed": {
+        "label": "Washing Plant Feed",
+        "unit": "MT",
+        "value": 14328,
+        "missingPeriods": []
+      },
+      "washReject": {
+        "label": "Washing Plant Reject",
+        "unit": "MT",
+        "value": 2698,
+        "missingPeriods": []
+      },
+      "washCoal": {
+        "label": "Washed Coal",
+        "unit": "MT",
+        "value": 11630,
+        "missingPeriods": []
+      },
+      "loadingBuaWp": {
+        "label": "Loading BUA to WP",
+        "unit": "MT",
+        "value": 13551,
+        "missingPeriods": []
+      },
+      "loadingBuaPort": {
+        "label": "Loading BUA to Port",
+        "unit": "MT",
+        "value": 9841.06,
+        "missingPeriods": []
+      },
+      "loadingWpPort": {
+        "label": "Loading WP to Port",
+        "unit": "MT",
+        "value": 6344.56,
+        "missingPeriods": []
+      },
+      "portLoading": {
+        "label": "Port Loading (BLC)",
+        "unit": "MT",
+        "value": 19015.28,
+        "missingPeriods": []
+      },
+      "miningOperationCost": {
+        "label": "Mining Operation Cost",
+        "unit": "USD",
+        "value": 772505.7307815454,
+        "missingPeriods": []
+      },
+      "portToIsp": {
+        "label": "Port to ISP",
+        "unit": "MT",
+        "value": 14258.957,
+        "missingPeriods": []
+      },
+      "ispToTaboneo": {
+        "label": "ISP to Taboneo",
+        "unit": "MT",
+        "value": 0,
+        "missingPeriods": []
+      },
+      "portToTaboneo": {
+        "label": "Port to Taboneo",
+        "unit": "MT",
+        "value": 4756.323,
+        "missingPeriods": []
+      },
+      "wasteRemoval": {
+        "label": "Waste Removal",
+        "unit": "Bcm",
+        "value": 249787.41336483572,
+        "missingPeriods": []
+      },
+      "topsoil": {
+        "label": "Topsoil",
+        "unit": "Bcm",
+        "value": 4120.2962,
+        "missingPeriods": []
+      },
+      "mud": {
+        "label": "Mud",
+        "unit": "Bcm",
+        "value": null,
+        "missingPeriods": [
+          "2026-06"
+        ]
+      },
+      "blasting": {
+        "label": "Blasting",
+        "unit": "Bcm",
+        "value": 77429.6708420637,
+        "missingPeriods": []
+      },
+      "freedig": {
+        "label": "Freedig",
+        "unit": "Bcm",
+        "value": 168237.446322772,
+        "missingPeriods": []
+      }
+    },
+    "dbSyncedAt": "2026-10-29T10:33:23.130Z",
+    "sheetMonths": [],
+    "sheetLastSyncedAt": "2026-10-29T10:33:23.130Z",
+    "totalTickets": 0,
+    "totalBrutoKg": 0,
+    "totalTaraKg": 0,
+    "totalNettoKg": 0,
+    "totalNettoMT": 24603.357886749633,
+    "byProduct": {},
+    "byWeighbridge": {},
+    "dailyTrends": [],
+    "recentTickets": []
+  }
+}

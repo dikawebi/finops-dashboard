@@ -1,0 +1,1030 @@
+{
+  "source": "User-provided capitalization by account; positive amounts deducted from Mining COGP. Values follow the supplied display precision.",
+  "sourceSha256": "85806e7d3a29a6b7bfa010f57d4ecd72fdbbff0cbc5f227c395da0736bb47afd",
+  "periods": {
+    "2026-01": [
+      {
+        "MainAccount": "5000051",
+        "AccountName": "Salaries",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -91578.06,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 91578,
+        "roundingAdjustmentUSD": -0.059999999997671694
+      },
+      {
+        "MainAccount": "5000052",
+        "AccountName": "Overtime",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -2449.54,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 2450,
+        "roundingAdjustmentUSD": 0.4600000000000364
+      },
+      {
+        "MainAccount": "5000054",
+        "AccountName": "Allowance & Compensation",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -9658.63,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 9659,
+        "roundingAdjustmentUSD": 0.37000000000080036
+      },
+      {
+        "MainAccount": "5000056",
+        "AccountName": "Medical",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -2046.1899999999996,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 2046,
+        "roundingAdjustmentUSD": -0.18999999999959982
+      },
+      {
+        "MainAccount": "5000102",
+        "AccountName": "Vehicle Rent",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -18890.11,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 18890,
+        "roundingAdjustmentUSD": -0.11000000000058208
+      },
+      {
+        "MainAccount": "5000201",
+        "AccountName": "Building Rent Expense",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -4173.53,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 4174,
+        "roundingAdjustmentUSD": 0.47000000000025466
+      },
+      {
+        "MainAccount": "5000303",
+        "AccountName": "Freight & Handling Sparepart",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -444.58,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 445,
+        "roundingAdjustmentUSD": 0.4200000000000159
+      },
+      {
+        "MainAccount": "5000304",
+        "AccountName": "Freight & Handling Others Material",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -2680.63,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 2681,
+        "roundingAdjustmentUSD": 0.36999999999989086
+      },
+      {
+        "MainAccount": "5000501",
+        "AccountName": "Consultant Fee",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -24408.170000000006,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 24408,
+        "roundingAdjustmentUSD": -0.17000000000552973
+      },
+      {
+        "MainAccount": "5000601",
+        "AccountName": "Fuel",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": 26103.110995760293,
+        "Costing to": "Mining",
+        "sourceAmountUSD": -26103,
+        "roundingAdjustmentUSD": 0.11099576029123881
+      },
+      {
+        "MainAccount": "5000604",
+        "AccountName": "Stores",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -12222.189999999993,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 12222,
+        "roundingAdjustmentUSD": -0.18999999999323336
+      },
+      {
+        "MainAccount": "5000605",
+        "AccountName": "Tools",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -1097.21,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 1097,
+        "roundingAdjustmentUSD": -0.21000000000003638
+      },
+      {
+        "MainAccount": "5000606",
+        "AccountName": "Office Supplies",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -1764.04,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 1764,
+        "roundingAdjustmentUSD": -0.03999999999996362
+      },
+      {
+        "MainAccount": "5000607",
+        "AccountName": "IT Consumables",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -131.98,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 132,
+        "roundingAdjustmentUSD": 0.020000000000010232
+      },
+      {
+        "MainAccount": "5000804",
+        "AccountName": "Repair & Maintenance-Tyre & Accessories",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": 66.52,
+        "Costing to": "Mining",
+        "sourceAmountUSD": -67,
+        "roundingAdjustmentUSD": -0.480000000000004
+      },
+      {
+        "MainAccount": "5000902",
+        "AccountName": "Depreciation of Building Non Permanent",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -37028,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 37028
+      },
+      {
+        "MainAccount": "5000903",
+        "AccountName": "Depreciation of Machine-Own",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -9214,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 9214
+      },
+      {
+        "MainAccount": "5000904",
+        "AccountName": "Depreciation Wheel &Track Equipment Own",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -18035,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 18035
+      },
+      {
+        "MainAccount": "5000906",
+        "AccountName": "Depreciation Wheel &Track Equipment Leasing",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -1648,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 1648
+      },
+      {
+        "MainAccount": "5000907",
+        "AccountName": "Depreciation of Office Equipment",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -6683,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 6683
+      },
+      {
+        "MainAccount": "5000908",
+        "AccountName": "Depreciation of Furniture & Fixture",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -766,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 766
+      },
+      {
+        "MainAccount": "5000911",
+        "AccountName": "Depreciation of Project Equipment",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -428,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 428
+      },
+      {
+        "MainAccount": "5000912",
+        "AccountName": "Depreciation of Infrastructure",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -25,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 25
+      },
+      {
+        "MainAccount": "5001101",
+        "AccountName": "Coal Sampling Analysis",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -2961.53,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 2962,
+        "roundingAdjustmentUSD": 0.4699999999997999
+      },
+      {
+        "MainAccount": "5001201",
+        "AccountName": "Electricity",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -212.69,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 213,
+        "roundingAdjustmentUSD": 0.3100000000000023
+      },
+      {
+        "MainAccount": "5001203",
+        "AccountName": "Water",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -21.54,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 22,
+        "roundingAdjustmentUSD": 0.46000000000000085
+      },
+      {
+        "MainAccount": "5001302",
+        "AccountName": "Network",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -7625.41,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 7625,
+        "roundingAdjustmentUSD": -0.4099999999998545
+      },
+      {
+        "MainAccount": "5001401",
+        "AccountName": "Printing & Stationery",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -93.6,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 94,
+        "roundingAdjustmentUSD": 0.4000000000000057
+      },
+      {
+        "MainAccount": "5001402",
+        "AccountName": "Mess Expense",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -964.1700000000001,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 964,
+        "roundingAdjustmentUSD": -0.17000000000007276
+      },
+      {
+        "MainAccount": "5001501",
+        "AccountName": "Ticket",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -9829.09,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 9829,
+        "roundingAdjustmentUSD": -0.09000000000014552
+      },
+      {
+        "MainAccount": "5001502",
+        "AccountName": "Meals",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -564.79,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 565,
+        "roundingAdjustmentUSD": 0.21000000000003638
+      },
+      {
+        "MainAccount": "5001503",
+        "AccountName": "Hotel",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -543.84,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 544,
+        "roundingAdjustmentUSD": 0.15999999999996817
+      },
+      {
+        "MainAccount": "5001701",
+        "AccountName": "Catering",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -48696.509999999995,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 48697,
+        "roundingAdjustmentUSD": 0.4900000000052387
+      },
+      {
+        "MainAccount": "5001702",
+        "AccountName": "Local Tax",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -2379.6700000000014,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 2380,
+        "roundingAdjustmentUSD": 0.329999999998563
+      },
+      {
+        "MainAccount": "5001709",
+        "AccountName": "Training Expense",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -385.3,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 385,
+        "roundingAdjustmentUSD": -0.30000000000001137
+      },
+      {
+        "MainAccount": "5000402",
+        "AccountName": "Labour Outsourcing Expense",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -23088.56,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 23089,
+        "roundingAdjustmentUSD": 0.4399999999986903
+      },
+      {
+        "MainAccount": "5000403",
+        "AccountName": "Security Expenses",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -21843.87,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 21844,
+        "roundingAdjustmentUSD": 0.13000000000101863
+      },
+      {
+        "MainAccount": "5001712",
+        "AccountName": "Safety & Environmental",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -7521.770000000001,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 7522,
+        "roundingAdjustmentUSD": 0.22999999999865395
+      },
+      {
+        "MainAccount": "5001801",
+        "AccountName": "Entertainment",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -16783.800000000003,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 16784,
+        "roundingAdjustmentUSD": 0.19999999999708962
+      },
+      {
+        "MainAccount": "5001802",
+        "AccountName": "Donation & Gift",
+        "Date": "2026-01-01",
+        "Amount in reporting currency": -89.53,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 90,
+        "roundingAdjustmentUSD": 0.46999999999999886
+      }
+    ],
+    "2026-02": [
+      {
+        "MainAccount": "5000051",
+        "AccountName": "Salaries",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -99823.40999999997,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 99823,
+        "roundingAdjustmentUSD": -0.40999999997438863
+      },
+      {
+        "MainAccount": "5000052",
+        "AccountName": "Overtime",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -2696.1800000000003,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 2696,
+        "roundingAdjustmentUSD": -0.18000000000029104
+      },
+      {
+        "MainAccount": "5000054",
+        "AccountName": "Allowance & Compensation",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -17111.15,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 17111,
+        "roundingAdjustmentUSD": -0.1500000000014552
+      },
+      {
+        "MainAccount": "5000056",
+        "AccountName": "Medical",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -2289.7099999999996,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 2290,
+        "roundingAdjustmentUSD": 0.29000000000041837
+      },
+      {
+        "MainAccount": "5000102",
+        "AccountName": "Vehicle Rent",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -11815.640000000005,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 11816,
+        "roundingAdjustmentUSD": 0.3599999999951251
+      },
+      {
+        "MainAccount": "5000501",
+        "AccountName": "Consultant Fee",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -1823.16,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 1823,
+        "roundingAdjustmentUSD": -0.16000000000008185
+      },
+      {
+        "MainAccount": "5000601",
+        "AccountName": "Fuel",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -11825.890000000041,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 11825,
+        "roundingAdjustmentUSD": -0.8900000000411694
+      },
+      {
+        "MainAccount": "5000604",
+        "AccountName": "Stores",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -9224.089999999995,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 9224,
+        "roundingAdjustmentUSD": -0.08999999999468855
+      },
+      {
+        "MainAccount": "5000605",
+        "AccountName": "Tools",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -632.67,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 633,
+        "roundingAdjustmentUSD": 0.3300000000000409
+      },
+      {
+        "MainAccount": "5000606",
+        "AccountName": "Office Supplies",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -1174.3400000000001,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 1174,
+        "roundingAdjustmentUSD": -0.3400000000001455
+      },
+      {
+        "MainAccount": "5000607",
+        "AccountName": "IT Consumables",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -890.8599999999999,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 891,
+        "roundingAdjustmentUSD": 0.14000000000010004
+      },
+      {
+        "MainAccount": "5000902",
+        "AccountName": "Depreciation of Building Non Permanent",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -35879,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 35879
+      },
+      {
+        "MainAccount": "5000903",
+        "AccountName": "Depreciation of Machine-Own",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -9214,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 9214
+      },
+      {
+        "MainAccount": "5000904",
+        "AccountName": "Depreciation Wheel &Track Equipment Own",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -18035,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 18035
+      },
+      {
+        "MainAccount": "5000906",
+        "AccountName": "Depreciation Wheel &Track Equipment Leasing",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -1648,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 1648
+      },
+      {
+        "MainAccount": "5000907",
+        "AccountName": "Depreciation of Office Equipment",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -6631,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 6631
+      },
+      {
+        "MainAccount": "5000908",
+        "AccountName": "Depreciation of Furniture & Fixture",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -766,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 766
+      },
+      {
+        "MainAccount": "5000911",
+        "AccountName": "Depreciation of Project Equipment",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -428,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 428
+      },
+      {
+        "MainAccount": "5000912",
+        "AccountName": "Depreciation of Infrastructure",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -25,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 25
+      },
+      {
+        "MainAccount": "5001101",
+        "AccountName": "Coal Sampling Analysis",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -209.49,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 209,
+        "roundingAdjustmentUSD": -0.4900000000000091
+      },
+      {
+        "MainAccount": "5001302",
+        "AccountName": "Network",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -3936.84,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 3937,
+        "roundingAdjustmentUSD": 0.15999999999985448
+      },
+      {
+        "MainAccount": "5001401",
+        "AccountName": "Printing & Stationery",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -325.29,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 325,
+        "roundingAdjustmentUSD": -0.29000000000002046
+      },
+      {
+        "MainAccount": "5001402",
+        "AccountName": "Mess Expense",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -339.53,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 340,
+        "roundingAdjustmentUSD": 0.4700000000000273
+      },
+      {
+        "MainAccount": "5001404",
+        "AccountName": "Office Expense",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -19.67,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 20,
+        "roundingAdjustmentUSD": 0.3299999999999983
+      },
+      {
+        "MainAccount": "5001501",
+        "AccountName": "Ticket",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -9653.529999999999,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 9654,
+        "roundingAdjustmentUSD": 0.47000000000116415
+      },
+      {
+        "MainAccount": "5001502",
+        "AccountName": "Meals",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -1111.5300000000002,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 1112,
+        "roundingAdjustmentUSD": 0.4699999999997999
+      },
+      {
+        "MainAccount": "5001503",
+        "AccountName": "Hotel",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -749.8299999999998,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 750,
+        "roundingAdjustmentUSD": 0.17000000000018645
+      },
+      {
+        "MainAccount": "5001701",
+        "AccountName": "Catering",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -37147.909999999974,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 37148,
+        "roundingAdjustmentUSD": 0.09000000002561137
+      },
+      {
+        "MainAccount": "5001702",
+        "AccountName": "Local Tax",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -4500.1799999999985,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 4500,
+        "roundingAdjustmentUSD": -0.17999999999847205
+      },
+      {
+        "MainAccount": "5000402",
+        "AccountName": "Labour Outsourcing Expense",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -21079.850000000002,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 21080,
+        "roundingAdjustmentUSD": 0.1499999999978172
+      },
+      {
+        "MainAccount": "5000403",
+        "AccountName": "Security Expenses",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -20946.82999999999,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 20947,
+        "roundingAdjustmentUSD": 0.1700000000091677
+      },
+      {
+        "MainAccount": "5001712",
+        "AccountName": "Safety & Environmental",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -8596.25,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 8596,
+        "roundingAdjustmentUSD": -0.25
+      },
+      {
+        "MainAccount": "5001801",
+        "AccountName": "Entertainment",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -1310.29,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 1310,
+        "roundingAdjustmentUSD": -0.2899999999999636
+      },
+      {
+        "MainAccount": "5001802",
+        "AccountName": "Donation & Gift",
+        "Date": "2026-02-01",
+        "Amount in reporting currency": -59.61,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 60,
+        "roundingAdjustmentUSD": 0.39000000000000057
+      }
+    ],
+    "2026-03": [
+      {
+        "MainAccount": "5000051",
+        "AccountName": "Salaries",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -102451.54999999999,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 102452,
+        "roundingAdjustmentUSD": 0.45000000001164153
+      },
+      {
+        "MainAccount": "5000052",
+        "AccountName": "Overtime",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -1909.3700000000001,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 1909,
+        "roundingAdjustmentUSD": -0.37000000000011823
+      },
+      {
+        "MainAccount": "5000053",
+        "AccountName": "Insentif / Bonus/ THR",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -5995.740000000002,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 5996,
+        "roundingAdjustmentUSD": 0.2599999999983993
+      },
+      {
+        "MainAccount": "5000054",
+        "AccountName": "Allowance & Compensation",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -15948.779999999999,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 15949,
+        "roundingAdjustmentUSD": 0.22000000000116415
+      },
+      {
+        "MainAccount": "5000056",
+        "AccountName": "Medical",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -3466.8300000000004,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 3467,
+        "roundingAdjustmentUSD": 0.169999999999618
+      },
+      {
+        "MainAccount": "5000102",
+        "AccountName": "Vehicle Rent",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -14202.830000000002,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 14203,
+        "roundingAdjustmentUSD": 0.16999999999825377
+      },
+      {
+        "MainAccount": "5000303",
+        "AccountName": "Freight & Handling Sparepart",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -1484.43,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 1484,
+        "roundingAdjustmentUSD": -0.43000000000006366
+      },
+      {
+        "MainAccount": "5000304",
+        "AccountName": "Freight & Handling Others Material",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -9760.71,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 9761,
+        "roundingAdjustmentUSD": 0.2900000000008731
+      },
+      {
+        "MainAccount": "5000501",
+        "AccountName": "Consultant Fee",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -543.3300000000004,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 543,
+        "roundingAdjustmentUSD": -0.330000000000382
+      },
+      {
+        "MainAccount": "5000601",
+        "AccountName": "Fuel",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -51325.4900000001,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 51325,
+        "roundingAdjustmentUSD": -0.49000000010323896
+      },
+      {
+        "MainAccount": "5000604",
+        "AccountName": "Stores",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -18531,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 18531
+      },
+      {
+        "MainAccount": "5000605",
+        "AccountName": "Tools",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -5616.459999999999,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 5616,
+        "roundingAdjustmentUSD": -0.4599999999991269
+      },
+      {
+        "MainAccount": "5000606",
+        "AccountName": "Office Supplies",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -1512.59,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 1513,
+        "roundingAdjustmentUSD": 0.41000000000008185
+      },
+      {
+        "MainAccount": "5000607",
+        "AccountName": "IT Consumables",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": 2.0900000000000003,
+        "Costing to": "Mining",
+        "sourceAmountUSD": -2,
+        "roundingAdjustmentUSD": 0.0900000000000003
+      },
+      {
+        "MainAccount": "5000801",
+        "AccountName": "Repair & Maintenance-Service",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -1855.31,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 1855,
+        "roundingAdjustmentUSD": -0.30999999999994543
+      },
+      {
+        "MainAccount": "5000804",
+        "AccountName": "Repair & Maintenance-Tyre & Accessories",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -2,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 2
+      },
+      {
+        "MainAccount": "5000902",
+        "AccountName": "Depreciation of Building Non Permanent",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -35877,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 35877
+      },
+      {
+        "MainAccount": "5000903",
+        "AccountName": "Depreciation of Machine-Own",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -9214,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 9214
+      },
+      {
+        "MainAccount": "5000904",
+        "AccountName": "Depreciation Wheel &Track Equipment Own",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -18035,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 18035
+      },
+      {
+        "MainAccount": "5000906",
+        "AccountName": "Depreciation Wheel &Track Equipment Leasing",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -1648,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 1648
+      },
+      {
+        "MainAccount": "5000907",
+        "AccountName": "Depreciation of Office Equipment",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -6631,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 6631
+      },
+      {
+        "MainAccount": "5000908",
+        "AccountName": "Depreciation of Furniture & Fixture",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -766,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 766
+      },
+      {
+        "MainAccount": "5000911",
+        "AccountName": "Depreciation of Project Equipment",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -428,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 428
+      },
+      {
+        "MainAccount": "5000912",
+        "AccountName": "Depreciation of Infrastructure",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -25,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 25
+      },
+      {
+        "MainAccount": "5001101",
+        "AccountName": "Coal Sampling Analysis",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -335.71,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 336,
+        "roundingAdjustmentUSD": 0.29000000000002046
+      },
+      {
+        "MainAccount": "5001203",
+        "AccountName": "Water",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -8.87,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 9,
+        "roundingAdjustmentUSD": 0.13000000000000078
+      },
+      {
+        "MainAccount": "5001302",
+        "AccountName": "Network",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -2694.34,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 2694,
+        "roundingAdjustmentUSD": -0.3400000000001455
+      },
+      {
+        "MainAccount": "5001402",
+        "AccountName": "Mess Expense",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -1577.5499999999997,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 1578,
+        "roundingAdjustmentUSD": 0.45000000000027285
+      },
+      {
+        "MainAccount": "5001404",
+        "AccountName": "Office Expense",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -425.38,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 425,
+        "roundingAdjustmentUSD": -0.37999999999999545
+      },
+      {
+        "MainAccount": "5001501",
+        "AccountName": "Ticket",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -11082.06,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 11082,
+        "roundingAdjustmentUSD": -0.05999999999949068
+      },
+      {
+        "MainAccount": "5001502",
+        "AccountName": "Meals",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -2082.56,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 2083,
+        "roundingAdjustmentUSD": 0.44000000000005457
+      },
+      {
+        "MainAccount": "5001503",
+        "AccountName": "Hotel",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -503.98999999999995,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 504,
+        "roundingAdjustmentUSD": 0.010000000000047748
+      },
+      {
+        "MainAccount": "5001701",
+        "AccountName": "Catering",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -30661.639999999996,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 30662,
+        "roundingAdjustmentUSD": 0.36000000000422006
+      },
+      {
+        "MainAccount": "5001702",
+        "AccountName": "Local Tax",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -3852.3099999999995,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 3852,
+        "roundingAdjustmentUSD": -0.3099999999994907
+      },
+      {
+        "MainAccount": "5000402",
+        "AccountName": "Labour Outsourcing Expense",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -36603.11,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 36603,
+        "roundingAdjustmentUSD": -0.11000000000058208
+      },
+      {
+        "MainAccount": "5000403",
+        "AccountName": "Security Expenses",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -18824.569999999996,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 18825,
+        "roundingAdjustmentUSD": 0.430000000003929
+      },
+      {
+        "MainAccount": "5001712",
+        "AccountName": "Safety & Environmental",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -7287.1,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 7287,
+        "roundingAdjustmentUSD": -0.1000000000003638
+      },
+      {
+        "MainAccount": "5001801",
+        "AccountName": "Entertainment",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -6889.099999999999,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 6889,
+        "roundingAdjustmentUSD": -0.0999999999994543
+      },
+      {
+        "MainAccount": "5001802",
+        "AccountName": "Donation & Gift",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -59.22,
+        "Costing to": "Mining",
+        "sourceAmountUSD": 59,
+        "roundingAdjustmentUSD": -0.21999999999999886
+      }
+    ]
+  },
+  "roundingReconciliation": {
+    "description": "Rounding reconciliation allocated within existing Mining accounts. Where the supplied whole-dollar capitalization equals the rounded source cost, match to source precision; the remaining monthly rounding difference is allocated to Fuel.",
+    "source": "Inventory Valuation.xlsx, Mining BUA adjustment coal produce (row 14)",
+    "periods": {
+      "2026-01": {
+        "roundedAccountTotalUSD": 362812,
+        "workbookTotalUSD": 362807.8990042397,
+        "adjustmentUSD": 4.100995760294609,
+        "allocatedToMatchingAccountsUSD": 3.99000000000337,
+        "allocatedToFuelUSD": 0.11099576029123881
+      },
+      "2026-02": {
+        "roundedAccountTotalUSD": 341920,
+        "workbookTotalUSD": 341919.73,
+        "adjustmentUSD": 0.27000000001862645,
+        "allocatedToMatchingAccountsUSD": 1.1600000000597959,
+        "allocatedToFuelUSD": -0.8900000000411694
+      },
+      "2026-03": {
+        "roundedAccountTotalUSD": 430116,
+        "workbookTotalUSD": 430115.8400000001,
+        "adjustmentUSD": 0.15999999991618097,
+        "allocatedToMatchingAccountsUSD": 0.6500000000194199,
+        "allocatedToFuelUSD": -0.49000000010323896
+      }
+    }
+  }
+}

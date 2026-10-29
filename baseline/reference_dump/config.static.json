@@ -1,0 +1,65 @@
+{
+  "success": true,
+  "data": {
+    "system": {
+      "companyName": "PT Coal Mining & Resources",
+      "currency": "USD",
+      "currencyUnit": "USD (full amount)",
+      "periodYear": 2026,
+      "periodMonth": 10,
+      "lastSyncD365": "2026-10-29T10:16:33.474Z",
+      "lastSyncSheets": "2026-10-29T10:33:23.130Z",
+      "lastGLDelete": "2026-10-27T09:43:49.990Z",
+      "amountScale": 1
+    },
+    "d365Config": {
+      "enabled": true,
+      "environmentUrl": "https://company-prod.operations.dynamics.com",
+      "tenantId": "72f988bf-86f1-41af-91ab-2d7cd011db47",
+      "clientId": "4a7f0521-8289-4bc2-8924-a2928509e51c",
+      "clientSecret": "MASUKKAN_CLIENT_SECRET_DARI_AZURE_DI_SINI",
+      "entityName": "GeneralJournalAccountEntries",
+      "syncIntervalMinutes": 15,
+      "autoSync": true
+    },
+    "sheetsConfig": {
+      "enabled": true,
+      "spreadsheetId": "10AD_Ms3IQU6a3cOQaF7lAa9mhbeDkTBhMZ7FdgR-QL8",
+      "sheetName": "Produksi",
+      "range": "A1:K",
+      "serviceAccountEmail": "dashboard-weighbridge@mining-prod.iam.gserviceaccount.com",
+      "syncIntervalMinutes": 5,
+      "autoSync": false,
+      "gid": "298998208"
+    },
+    "inventorySetup": {
+      "valuationMethod": "Moving Average",
+      "stages": {
+        "mining": {
+          "name": "ROM Coal (Stockpile Pit)",
+          "beginningQtyMT": 25400,
+          "beginningRateIDR": 380000,
+          "beginningValueIDR": 9652000000
+        },
+        "hauling": {
+          "name": "Intermediate Coal (Stockpile BUA)",
+          "beginningQtyMT": 18200,
+          "beginningRateIDR": 490000,
+          "beginningValueIDR": 8918000000
+        },
+        "washing": {
+          "name": "Washed Coal (Stockpile WP)",
+          "beginningQtyMT": 12500,
+          "beginningRateIDR": 580000,
+          "beginningValueIDR": 7250000000
+        },
+        "port": {
+          "name": "Port Stockpile (BP PORT)",
+          "beginningQtyMT": 35000,
+          "beginningRateIDR": 670000,
+          "beginningValueIDR": 23450000000
+        }
+      }
+    }
+  }
+}

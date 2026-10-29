@@ -1,0 +1,814 @@
+[
+  {
+    "code": "5000000",
+    "name": "Employee Salary & Welfare",
+    "isParent": true
+  },
+  {
+    "code": "5000051",
+    "name": "Salaries",
+    "parent": "5000000"
+  },
+  {
+    "code": "5000052",
+    "name": "Overtime",
+    "parent": "5000000"
+  },
+  {
+    "code": "5000053",
+    "name": "Insentif / Bonus/ THR",
+    "parent": "5000000"
+  },
+  {
+    "code": "5000054",
+    "name": "Allowance & Compensation",
+    "parent": "5000000"
+  },
+  {
+    "code": "5000055",
+    "name": "Severence Pay",
+    "parent": "5000000"
+  },
+  {
+    "code": "5000056",
+    "name": "Medical",
+    "parent": "5000000"
+  },
+  {
+    "code": "5000057",
+    "name": "Employee Insurance (BPJS TK)",
+    "parent": "5000000"
+  },
+  {
+    "code": "5000058",
+    "name": "Employee Insurance (BPJS Health)",
+    "parent": "5000000"
+  },
+  {
+    "code": "5000059",
+    "name": "Employee Insurance (Pension)",
+    "parent": "5000000"
+  },
+  {
+    "code": "5000060",
+    "name": "Employee Wellfare (Natura)",
+    "parent": "5000000"
+  },
+  {
+    "code": "5000061",
+    "name": "Provision Employee Retirement Benefit",
+    "parent": "5000000"
+  },
+  {
+    "code": "5000100",
+    "name": "Equipment Rent",
+    "isParent": true
+  },
+  {
+    "code": "5000101",
+    "name": "Equipment Rent",
+    "parent": "5000100"
+  },
+  {
+    "code": "5000102",
+    "name": "Vehicle Rent",
+    "parent": "5000100"
+  },
+  {
+    "code": "5000103",
+    "name": "Tug and Barge Hire",
+    "parent": "5000100"
+  },
+  {
+    "code": "5000104",
+    "name": "Barge Loading Conveyor Rent",
+    "parent": "5000100"
+  },
+  {
+    "code": "5000105",
+    "name": "Wash Plant Rent",
+    "parent": "5000100"
+  },
+  {
+    "code": "5000108",
+    "name": "ISP Rent",
+    "parent": "5000100"
+  },
+  {
+    "code": "5000109",
+    "name": "Land And Road Rent",
+    "parent": "5000100"
+  },
+  {
+    "code": "5000200",
+    "name": "Building Rent",
+    "isParent": true
+  },
+  {
+    "code": "5000201",
+    "name": "Building Rent Expense",
+    "parent": "5000200"
+  },
+  {
+    "code": "5000300",
+    "name": "Freight & Handling Charges",
+    "isParent": true
+  },
+  {
+    "code": "5000301",
+    "name": "Freight & Handling Heavy Equipment",
+    "parent": "5000300"
+  },
+  {
+    "code": "5000302",
+    "name": "Freight & Handling Fuel",
+    "parent": "5000300"
+  },
+  {
+    "code": "5000303",
+    "name": "Freight & Handling Sparepart",
+    "parent": "5000300"
+  },
+  {
+    "code": "5000304",
+    "name": "Freight & Handling Others Material",
+    "parent": "5000300"
+  },
+  {
+    "code": "5000400",
+    "name": "Contractor Cost",
+    "isParent": true
+  },
+  {
+    "code": "5000404",
+    "name": "OB Removal",
+    "parent": "5000400"
+  },
+  {
+    "code": "5000405",
+    "name": "Coal Getting",
+    "parent": "5000400"
+  },
+  {
+    "code": "5000406",
+    "name": "Coal Hauling pit to BUA/stockpile",
+    "parent": "5000400"
+  },
+  {
+    "code": "5000407",
+    "name": "Coal Hauling BUA to WP",
+    "parent": "5000400"
+  },
+  {
+    "code": "5000408",
+    "name": "Coal Hauling WP to Port",
+    "parent": "5000400"
+  },
+  {
+    "code": "5000409",
+    "name": "Coal hauling BUA to Port",
+    "parent": "5000400"
+  },
+  {
+    "code": "5000410",
+    "name": "Road Maintenance",
+    "parent": "5000400"
+  },
+  {
+    "code": "5000411",
+    "name": "Coal Loading",
+    "parent": "5000400"
+  },
+  {
+    "code": "5000500",
+    "name": "Consultant Fee",
+    "isParent": true
+  },
+  {
+    "code": "5000501",
+    "name": "Consultant Fee",
+    "parent": "5000500"
+  },
+  {
+    "code": "5000502",
+    "name": "Survey Expenses - Production",
+    "parent": "5000500"
+  },
+  {
+    "code": "5000600",
+    "name": "Consumable Goods",
+    "isParent": true
+  },
+  {
+    "code": "5000601",
+    "name": "Fuel",
+    "parent": "5000600"
+  },
+  {
+    "code": "5000602",
+    "name": "Explosive & Accessories",
+    "parent": "5000600"
+  },
+  {
+    "code": "5000603",
+    "name": "Wash Plant Stores",
+    "parent": "5000600"
+  },
+  {
+    "code": "5000604",
+    "name": "Stores",
+    "parent": "5000600"
+  },
+  {
+    "code": "5000605",
+    "name": "Tools",
+    "parent": "5000600"
+  },
+  {
+    "code": "5000606",
+    "name": "Office Supplies",
+    "parent": "5000600"
+  },
+  {
+    "code": "5000607",
+    "name": "IT Consumables",
+    "parent": "5000600"
+  },
+  {
+    "code": "5000700",
+    "name": "Land & Building Tax",
+    "isParent": true
+  },
+  {
+    "code": "5000701",
+    "name": "Land & Building Tax",
+    "parent": "5000700"
+  },
+  {
+    "code": "5000800",
+    "name": "Repair & Maintenance",
+    "isParent": true
+  },
+  {
+    "code": "5000801",
+    "name": "Repair & Maintenance-Service",
+    "parent": "5000800"
+  },
+  {
+    "code": "5000802",
+    "name": "Repair & Maintenance-Sparepart",
+    "parent": "5000800"
+  },
+  {
+    "code": "5000803",
+    "name": "Repair & Maintenance-Oil & Lubricants",
+    "parent": "5000800"
+  },
+  {
+    "code": "5000804",
+    "name": "Repair & Maintenance-Tyre & Accessories",
+    "parent": "5000800"
+  },
+  {
+    "code": "5000805",
+    "name": "Repair & Maintenance Building",
+    "parent": "5000800"
+  },
+  {
+    "code": "5000806",
+    "name": "Repair & Maintenance Office Equipment",
+    "parent": "5000800"
+  },
+  {
+    "code": "5000807",
+    "name": "Repair & Maintenance Vehicle",
+    "parent": "5000800"
+  },
+  {
+    "code": "5000808",
+    "name": "Repair & Maintenance Hauling Road",
+    "parent": "5000800"
+  },
+  {
+    "code": "5000900",
+    "name": "Depreciation & Amortization",
+    "isParent": true
+  },
+  {
+    "code": "5000901",
+    "name": "Depreciation of Building Permanent",
+    "parent": "5000900"
+  },
+  {
+    "code": "5000902",
+    "name": "Depreciation of Building Non Permanent",
+    "parent": "5000900"
+  },
+  {
+    "code": "5000903",
+    "name": "Depreciation of Machine-Own",
+    "parent": "5000900"
+  },
+  {
+    "code": "5000904",
+    "name": "Depreciation Wheel &Track Equipment Own",
+    "parent": "5000900"
+  },
+  {
+    "code": "5000905",
+    "name": "Depreciation of Machine-leasing",
+    "parent": "5000900"
+  },
+  {
+    "code": "5000906",
+    "name": "Depreciation Wheel &Track Equipment Leasing",
+    "parent": "5000900"
+  },
+  {
+    "code": "5000907",
+    "name": "Depreciation of Office Equipment",
+    "parent": "5000900"
+  },
+  {
+    "code": "5000908",
+    "name": "Depreciation of Furniture & Fixture",
+    "parent": "5000900"
+  },
+  {
+    "code": "5000909",
+    "name": "Depreciation of Motor Vehicle-Own",
+    "parent": "5000900"
+  },
+  {
+    "code": "5000910",
+    "name": "Depreciation of Motor Vehicle-Leasing",
+    "parent": "5000900"
+  },
+  {
+    "code": "5000911",
+    "name": "Depreciation of Project Equipment",
+    "parent": "5000900"
+  },
+  {
+    "code": "5000912",
+    "name": "Depreciation of Infrastructure",
+    "parent": "5000900"
+  },
+  {
+    "code": "5000913",
+    "name": "Amortization of Right of Use Assets-Vehicle",
+    "parent": "5000900"
+  },
+  {
+    "code": "5000914",
+    "name": "Amortization of Right of Use Assets-Building",
+    "parent": "5000900"
+  },
+  {
+    "code": "5000915",
+    "name": "Amortization Mining Properties",
+    "parent": "5000900"
+  },
+  {
+    "code": "5000916",
+    "name": "Amortization Land Compensation",
+    "parent": "5000900"
+  },
+  {
+    "code": "5000917",
+    "name": "Amortization of Asset Retirement Obligation",
+    "parent": "5000900"
+  },
+  {
+    "code": "5000918",
+    "name": "Amortization Expense",
+    "parent": "5000900"
+  },
+  {
+    "code": "5000919",
+    "name": "Reclamation and Mine Closure Expense",
+    "parent": "5000900"
+  },
+  {
+    "code": "5999999",
+    "name": "Heavy Equipment Rent - Contra",
+    "parent": "5000900"
+  },
+  {
+    "code": "5001000",
+    "name": "Licence & Permit",
+    "isParent": true
+  },
+  {
+    "code": "5001001",
+    "name": "Licence & Permit",
+    "parent": "5001000"
+  },
+  {
+    "code": "5001100",
+    "name": "Sampling & Analysis",
+    "isParent": true
+  },
+  {
+    "code": "5001101",
+    "name": "Coal Sampling Analysis",
+    "parent": "5001100"
+  },
+  {
+    "code": "5001200",
+    "name": "Electricity & Water",
+    "isParent": true
+  },
+  {
+    "code": "5001201",
+    "name": "Electricity",
+    "parent": "5001200"
+  },
+  {
+    "code": "5001203",
+    "name": "Water",
+    "parent": "5001200"
+  },
+  {
+    "code": "5001300",
+    "name": "Telephone, Communication & Network",
+    "isParent": true
+  },
+  {
+    "code": "5001301",
+    "name": "Telephone & Fax",
+    "parent": "5001300"
+  },
+  {
+    "code": "5001302",
+    "name": "Network",
+    "parent": "5001300"
+  },
+  {
+    "code": "5001400",
+    "name": "Utilities",
+    "isParent": true
+  },
+  {
+    "code": "5001401",
+    "name": "Printing & Stationery",
+    "parent": "5001400"
+  },
+  {
+    "code": "5001402",
+    "name": "Mess Expense",
+    "parent": "5001400"
+  },
+  {
+    "code": "5001403",
+    "name": "Postage & Courier",
+    "parent": "5001400"
+  },
+  {
+    "code": "5001404",
+    "name": "Office Expense",
+    "parent": "5001400"
+  },
+  {
+    "code": "5001500",
+    "name": "Traveling",
+    "isParent": true
+  },
+  {
+    "code": "5001501",
+    "name": "Ticket",
+    "parent": "5001500"
+  },
+  {
+    "code": "5001502",
+    "name": "Meals",
+    "parent": "5001500"
+  },
+  {
+    "code": "5001503",
+    "name": "Hotel",
+    "parent": "5001500"
+  },
+  {
+    "code": "5001600",
+    "name": "Insurance",
+    "isParent": true
+  },
+  {
+    "code": "5001601",
+    "name": "Insurance Building",
+    "parent": "5001600"
+  },
+  {
+    "code": "5001602",
+    "name": "Insurance Equipment",
+    "parent": "5001600"
+  },
+  {
+    "code": "5001603",
+    "name": "Insurance Coal",
+    "parent": "5001600"
+  },
+  {
+    "code": "5001604",
+    "name": "Insurance Vehicle",
+    "parent": "5001600"
+  },
+  {
+    "code": "5001605",
+    "name": "Credit Insurance",
+    "parent": "5001600"
+  },
+  {
+    "code": "5001606",
+    "name": "Insurance - Health Insurance",
+    "parent": "5001600"
+  },
+  {
+    "code": "5001700",
+    "name": "Other Direct Overhead",
+    "isParent": true
+  },
+  {
+    "code": "5001701",
+    "name": "Catering",
+    "parent": "5001700"
+  },
+  {
+    "code": "5001702",
+    "name": "Local Tax",
+    "parent": "5001700"
+  },
+  {
+    "code": "5001703",
+    "name": "PNBP Expenses",
+    "parent": "5001700"
+  },
+  {
+    "code": "5001704",
+    "name": "PSDH-DR",
+    "parent": "5001700"
+  },
+  {
+    "code": "5001705",
+    "name": "Dead Rent",
+    "parent": "5001700"
+  },
+  {
+    "code": "5001709",
+    "name": "Training Expense",
+    "parent": "5001700"
+  },
+  {
+    "code": "5000402",
+    "name": "Labour Outsourcing Expense",
+    "parent": "5001700"
+  },
+  {
+    "code": "5000403",
+    "name": "Security Expenses",
+    "parent": "5001700"
+  },
+  {
+    "code": "5001712",
+    "name": "Safety & Environmental",
+    "parent": "5001700"
+  },
+  {
+    "code": "5001714",
+    "name": "Extracomptable",
+    "parent": "5001700"
+  },
+  {
+    "code": "5001800",
+    "name": "Corporate Social Responsibility",
+    "isParent": true
+  },
+  {
+    "code": "5001801",
+    "name": "Entertainment",
+    "parent": "5001800"
+  },
+  {
+    "code": "5001802",
+    "name": "Donation & Gift",
+    "parent": "5001800"
+  },
+  {
+    "code": "5001900",
+    "name": "Barging Related Fees",
+    "isParent": true
+  },
+  {
+    "code": "5001901",
+    "name": "Channel Fee",
+    "parent": "5001900"
+  },
+  {
+    "code": "6000000",
+    "name": "Selling Expense",
+    "isParent": true
+  },
+  {
+    "code": "6000001",
+    "name": "Advertaising and Promotion",
+    "parent": "6000000"
+  },
+  {
+    "code": "6000002",
+    "name": "Demurage",
+    "parent": "6000000"
+  },
+  {
+    "code": "6000003",
+    "name": "Royalty Coal Sales Export",
+    "parent": "6000000"
+  },
+  {
+    "code": "6000004",
+    "name": "Royalty Coal Sales Domestic",
+    "parent": "6000000"
+  },
+  {
+    "code": "6000005",
+    "name": "Survey Expenses - Sales",
+    "parent": "6000000"
+  },
+  {
+    "code": "6000010",
+    "name": "DMO Penalty",
+    "parent": "6000000"
+  },
+  {
+    "code": "7000000",
+    "name": "Interest Income",
+    "isParent": true
+  },
+  {
+    "code": "7000001",
+    "name": "Interest Income Bank",
+    "parent": "7000000"
+  },
+  {
+    "code": "7000002",
+    "name": "Interest Deposit Bank",
+    "parent": "7000000"
+  },
+  {
+    "code": "7000003",
+    "name": "Tax On Bank Interest",
+    "parent": "7000000"
+  },
+  {
+    "code": "7001000",
+    "name": "Finance Cost",
+    "isParent": true
+  },
+  {
+    "code": "7001001",
+    "name": "Interest Expenses Lease Financing",
+    "parent": "7001000"
+  },
+  {
+    "code": "7001002",
+    "name": "Interest Expense Loan",
+    "parent": "7001000"
+  },
+  {
+    "code": "7001003",
+    "name": "Bank Charges",
+    "parent": "7001000"
+  },
+  {
+    "code": "7001004",
+    "name": "Interest Expense Bank",
+    "parent": "7001000"
+  },
+  {
+    "code": "7001005",
+    "name": "Amortisation on Loan Modification",
+    "parent": "7001000"
+  },
+  {
+    "code": "7001006",
+    "name": "Round Off",
+    "parent": "7001000"
+  },
+  {
+    "code": "7001007",
+    "name": "Provision of inventory (P/L)",
+    "parent": "7001000"
+  },
+  {
+    "code": "7001008",
+    "name": "Interest Expense Perpetual Loan",
+    "parent": "7001000"
+  },
+  {
+    "code": "7001009",
+    "name": "Distribtuions on Perpetual Loans",
+    "parent": "7001000"
+  },
+  {
+    "code": "7001011",
+    "name": "Interest Advance From Customer",
+    "parent": "7001000"
+  },
+  {
+    "code": "7001013",
+    "name": "Interest Expense Bank - CCC",
+    "parent": "7001000"
+  },
+  {
+    "code": "7002000",
+    "name": "Gain & Loss Forex",
+    "isParent": true
+  },
+  {
+    "code": "7002001",
+    "name": "Forex (Gain)/Losses Unrealised",
+    "parent": "7002000"
+  },
+  {
+    "code": "7002002",
+    "name": "Forex (Gain)/Losses Realised",
+    "parent": "7002000"
+  },
+  {
+    "code": "7003000",
+    "name": "(Gain) & Loss Asset",
+    "isParent": true
+  },
+  {
+    "code": "7003001",
+    "name": "(Gain) & Loss-Asset",
+    "parent": "7003000"
+  },
+  {
+    "code": "7003003",
+    "name": "Gain / (Loss) on Fair Value of Derivative",
+    "parent": "7003000"
+  },
+  {
+    "code": "7004000",
+    "name": "Provision",
+    "isParent": true
+  },
+  {
+    "code": "7004001",
+    "name": "Provision",
+    "parent": "7004000"
+  },
+  {
+    "code": "7004002",
+    "name": "Inventory Adjustment",
+    "parent": "7004000"
+  },
+  {
+    "code": "8000000",
+    "name": "Tax Expenses",
+    "isParent": true
+  },
+  {
+    "code": "8000001",
+    "name": "Current Income Tax Expense/(Benefit)",
+    "parent": "8000000"
+  },
+  {
+    "code": "8000002",
+    "name": "Deferred Income Tax Expense/(Benefit)",
+    "parent": "8000000"
+  },
+  {
+    "code": "8000003",
+    "name": "Other Tax Expense",
+    "parent": "8000000"
+  },
+  {
+    "code": "7006000",
+    "name": "Other Comprehensive Income",
+    "isParent": true
+  },
+  {
+    "code": "7006001",
+    "name": "Other Comprehensive Income",
+    "parent": "7006000"
+  },
+  {
+    "code": "7006002",
+    "name": "Forward point expense / OCI",
+    "parent": "7006000"
+  },
+  {
+    "code": "7007001",
+    "name": "Other income"
+  },
+  {
+    "code": "9999998",
+    "name": "Inventory Movement"
+  },
+  {
+    "code": "9999999",
+    "name": "Balance Account"
+  }
+]

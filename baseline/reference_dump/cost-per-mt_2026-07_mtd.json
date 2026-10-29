@@ -1,0 +1,103 @@
+{
+  "success": true,
+  "data": {
+    "currency": "USD",
+    "amountScale": 1,
+    "missingVolumePeriods": [],
+    "incompleteVolume": false,
+    "volumeSource": "Google Sheets DB",
+    "totalVolumeProducedMT": 14293.796769776734,
+    "grandTotalCost": 5053941.719999991,
+    "overallCostPerMT": 353.57587640298686,
+    "stages": [
+      {
+        "stage": "Mining",
+        "valuationCost": 431419.03999999975,
+        "operatingCost": 2015452.8300000005,
+        "totalCost": 2446871.87,
+        "metricTons": 14293.796769776734,
+        "costPerMT": 171.18417936189948,
+        "costPerTotalMT": 171.18417936189948
+      },
+      {
+        "stage": "Coal Hauling",
+        "valuationCost": 99552.16,
+        "operatingCost": 736139.8500000002,
+        "totalCost": 835692.0100000002,
+        "metricTons": 52887.3,
+        "costPerMT": 15.801374053884395,
+        "costPerTotalMT": 58.46536252474321
+      },
+      {
+        "stage": "Washing Plant",
+        "valuationCost": 27607.600000000013,
+        "operatingCost": 327775,
+        "totalCost": 355382.60000000003,
+        "metricTons": 24303,
+        "costPerMT": 14.622993046125995,
+        "costPerTotalMT": 24.86271532497457
+      },
+      {
+        "stage": "BP PORT & Jetty",
+        "valuationCost": 138168.52999999997,
+        "operatingCost": 14999.690000000002,
+        "totalCost": 153168.21999999997,
+        "metricTons": 27520.377,
+        "costPerMT": 5.565629424335283,
+        "costPerTotalMT": 10.715712729585173
+      },
+      {
+        "stage": "General Admin",
+        "valuationCost": 0,
+        "operatingCost": 206202.3199999999,
+        "totalCost": 206202.3199999999,
+        "metricTons": 14293.796769776734,
+        "costPerMT": 14.426000545635343,
+        "costPerTotalMT": 14.426000545635343
+      },
+      {
+        "stage": "Selling Expense",
+        "valuationCost": 0,
+        "operatingCost": 1056624.6999999925,
+        "totalCost": 1056624.6999999925,
+        "metricTons": 27520.377,
+        "costPerMT": 38.39426690993341,
+        "costPerTotalMT": 73.92190591614916
+      }
+    ],
+    "costByAccountGroup": [
+      {
+        "group": "Fuel & Energy",
+        "amount": 1230954.9400000004
+      },
+      {
+        "group": "Salary & Employee Benefits",
+        "amount": 250505.22999999998
+      },
+      {
+        "group": "Equipment & Vehicle Rent",
+        "amount": 707303.0899999925
+      },
+      {
+        "group": "Labour Outsourcing & Overheads",
+        "amount": 110692.48999999999
+      },
+      {
+        "group": "Repair & Maintenance",
+        "amount": 85772.46999999996
+      },
+      {
+        "group": "Freight & Handling",
+        "amount": 144789.59999999998
+      },
+      {
+        "group": "Consultant & Professional Fee",
+        "amount": 31622.41
+      },
+      {
+        "group": "Others, Travel & Utilities",
+        "amount": 2492301.4900000007
+      }
+    ]
+  }
+}

@@ -1,0 +1,389 @@
+{
+  "success": true,
+  "data": {
+    "missingMonths": [],
+    "dbMetrics": {
+      "coalGetting": {
+        "label": "Coal Getting",
+        "unit": "MT",
+        "value": 27518,
+        "missingPeriods": []
+      },
+      "haulingBuaWp": {
+        "label": "Hauling BUA to WP",
+        "unit": "MT",
+        "value": 7313,
+        "missingPeriods": []
+      },
+      "haulingBuaPort": {
+        "label": "Hauling BUA to Port",
+        "unit": "MT",
+        "value": 10498.31,
+        "missingPeriods": []
+      },
+      "haulingWpPort": {
+        "label": "Hauling WP to Port",
+        "unit": "MT",
+        "value": 10439.779999999999,
+        "missingPeriods": []
+      },
+      "washFeed": {
+        "label": "Washing Plant Feed",
+        "unit": "MT",
+        "value": 10202.142857142859,
+        "missingPeriods": []
+      },
+      "washReject": {
+        "label": "Washing Plant Reject",
+        "unit": "MT",
+        "value": 2483.178571428572,
+        "missingPeriods": []
+      },
+      "washCoal": {
+        "label": "Washed Coal",
+        "unit": "MT",
+        "value": 7718.964285714286,
+        "missingPeriods": []
+      },
+      "loadingBuaWp": {
+        "label": "Loading BUA to WP",
+        "unit": "MT",
+        "value": null,
+        "missingPeriods": [
+          "2026-10"
+        ]
+      },
+      "loadingBuaPort": {
+        "label": "Loading BUA to Port",
+        "unit": "MT",
+        "value": 12830.789999999999,
+        "missingPeriods": []
+      },
+      "loadingWpPort": {
+        "label": "Loading WP to Port",
+        "unit": "MT",
+        "value": 10439.780000000002,
+        "missingPeriods": []
+      },
+      "portLoading": {
+        "label": "Port Loading (BLC)",
+        "unit": "MT",
+        "value": 0,
+        "missingPeriods": []
+      },
+      "miningOperationCost": {
+        "label": "Mining Operation Cost",
+        "unit": "USD",
+        "value": 1540597.6395702988,
+        "missingPeriods": []
+      },
+      "portToIsp": {
+        "label": "Port to ISP",
+        "unit": "MT",
+        "value": null,
+        "missingPeriods": [
+          "2026-10"
+        ]
+      },
+      "ispToTaboneo": {
+        "label": "ISP to Taboneo",
+        "unit": "MT",
+        "value": null,
+        "missingPeriods": [
+          "2026-10"
+        ]
+      },
+      "portToTaboneo": {
+        "label": "Port to Taboneo",
+        "unit": "MT",
+        "value": null,
+        "missingPeriods": [
+          "2026-10"
+        ]
+      },
+      "wasteRemoval": {
+        "label": "Waste Removal",
+        "unit": "Bcm",
+        "value": 526412,
+        "missingPeriods": []
+      },
+      "topsoil": {
+        "label": "Topsoil",
+        "unit": "Bcm",
+        "value": 300,
+        "missingPeriods": []
+      },
+      "mud": {
+        "label": "Mud",
+        "unit": "Bcm",
+        "value": 831,
+        "missingPeriods": []
+      },
+      "blasting": {
+        "label": "Blasting",
+        "unit": "Bcm",
+        "value": 479294,
+        "missingPeriods": []
+      },
+      "freedig": {
+        "label": "Freedig",
+        "unit": "Bcm",
+        "value": 45987,
+        "missingPeriods": []
+      }
+    },
+    "dbSyncedAt": "2026-10-29T10:33:23.130Z",
+    "sheetMonths": [
+      "2026-10"
+    ],
+    "sheetLastSyncedAt": "2026-10-29T10:33:23.130Z",
+    "totalTickets": 24,
+    "totalBrutoKg": 0,
+    "totalTaraKg": 0,
+    "totalNettoKg": 27518000,
+    "totalNettoMT": 27518,
+    "byProduct": {
+      "Coal Mined": {
+        "count": 24,
+        "nettoKg": 27518000,
+        "nettoMT": 27518
+      }
+    },
+    "byWeighbridge": {
+      "WB Main": {
+        "count": 24,
+        "nettoKg": 27518000,
+        "nettoMT": 27518
+      }
+    },
+    "dailyTrends": [
+      {
+        "date": "2026-10-01",
+        "count": 1,
+        "nettoMT": 440
+      },
+      {
+        "date": "2026-10-02",
+        "count": 1,
+        "nettoMT": 440
+      },
+      {
+        "date": "2026-10-03",
+        "count": 1,
+        "nettoMT": 1200
+      },
+      {
+        "date": "2026-10-04",
+        "count": 1,
+        "nettoMT": 1180
+      },
+      {
+        "date": "2026-10-05",
+        "count": 1,
+        "nettoMT": 1620
+      },
+      {
+        "date": "2026-10-06",
+        "count": 1,
+        "nettoMT": 700
+      },
+      {
+        "date": "2026-10-07",
+        "count": 1,
+        "nettoMT": 120
+      },
+      {
+        "date": "2026-10-08",
+        "count": 1,
+        "nettoMT": 620
+      },
+      {
+        "date": "2026-10-09",
+        "count": 1,
+        "nettoMT": 1200
+      },
+      {
+        "date": "2026-10-10",
+        "count": 1,
+        "nettoMT": 1420
+      },
+      {
+        "date": "2026-10-12",
+        "count": 1,
+        "nettoMT": 500
+      },
+      {
+        "date": "2026-10-13",
+        "count": 1,
+        "nettoMT": 100
+      },
+      {
+        "date": "2026-10-14",
+        "count": 1,
+        "nettoMT": 2300
+      },
+      {
+        "date": "2026-10-15",
+        "count": 1,
+        "nettoMT": 1680
+      },
+      {
+        "date": "2026-10-16",
+        "count": 1,
+        "nettoMT": 980
+      },
+      {
+        "date": "2026-10-17",
+        "count": 1,
+        "nettoMT": 1240
+      },
+      {
+        "date": "2026-10-18",
+        "count": 1,
+        "nettoMT": 1080
+      },
+      {
+        "date": "2026-10-19",
+        "count": 1,
+        "nettoMT": 240
+      },
+      {
+        "date": "2026-10-20",
+        "count": 1,
+        "nettoMT": 1740
+      },
+      {
+        "date": "2026-10-21",
+        "count": 1,
+        "nettoMT": 2940
+      },
+      {
+        "date": "2026-10-22",
+        "count": 1,
+        "nettoMT": 1400
+      },
+      {
+        "date": "2026-10-23",
+        "count": 1,
+        "nettoMT": 2288
+      },
+      {
+        "date": "2026-10-24",
+        "count": 1,
+        "nettoMT": 924
+      },
+      {
+        "date": "2026-10-25",
+        "count": 1,
+        "nettoMT": 1166
+      }
+    ],
+    "recentTickets": [
+      {
+        "Tgl Keluar": "2026-10-25",
+        "Product": "Coal Mined",
+        "NETTO": 1166000,
+        "source": "Google Sheets",
+        "coalMinedMT": 1166
+      },
+      {
+        "Tgl Keluar": "2026-10-24",
+        "Product": "Coal Mined",
+        "NETTO": 924000,
+        "source": "Google Sheets",
+        "coalMinedMT": 924
+      },
+      {
+        "Tgl Keluar": "2026-10-23",
+        "Product": "Coal Mined",
+        "NETTO": 2288000,
+        "source": "Google Sheets",
+        "coalMinedMT": 2288
+      },
+      {
+        "Tgl Keluar": "2026-10-22",
+        "Product": "Coal Mined",
+        "NETTO": 1400000,
+        "source": "Google Sheets",
+        "coalMinedMT": 1400
+      },
+      {
+        "Tgl Keluar": "2026-10-21",
+        "Product": "Coal Mined",
+        "NETTO": 2940000,
+        "source": "Google Sheets",
+        "coalMinedMT": 2940
+      },
+      {
+        "Tgl Keluar": "2026-10-20",
+        "Product": "Coal Mined",
+        "NETTO": 1740000,
+        "source": "Google Sheets",
+        "coalMinedMT": 1740
+      },
+      {
+        "Tgl Keluar": "2026-10-19",
+        "Product": "Coal Mined",
+        "NETTO": 240000,
+        "source": "Google Sheets",
+        "coalMinedMT": 240
+      },
+      {
+        "Tgl Keluar": "2026-10-18",
+        "Product": "Coal Mined",
+        "NETTO": 1080000,
+        "source": "Google Sheets",
+        "coalMinedMT": 1080
+      },
+      {
+        "Tgl Keluar": "2026-10-17",
+        "Product": "Coal Mined",
+        "NETTO": 1240000,
+        "source": "Google Sheets",
+        "coalMinedMT": 1240
+      },
+      {
+        "Tgl Keluar": "2026-10-16",
+        "Product": "Coal Mined",
+        "NETTO": 980000,
+        "source": "Google Sheets",
+        "coalMinedMT": 980
+      },
+      {
+        "Tgl Keluar": "2026-10-15",
+        "Product": "Coal Mined",
+        "NETTO": 1680000,
+        "source": "Google Sheets",
+        "coalMinedMT": 1680
+      },
+      {
+        "Tgl Keluar": "2026-10-14",
+        "Product": "Coal Mined",
+        "NETTO": 2300000,
+        "source": "Google Sheets",
+        "coalMinedMT": 2300
+      },
+      {
+        "Tgl Keluar": "2026-10-13",
+        "Product": "Coal Mined",
+        "NETTO": 100000,
+        "source": "Google Sheets",
+        "coalMinedMT": 100
+      },
+      {
+        "Tgl Keluar": "2026-10-12",
+        "Product": "Coal Mined",
+        "NETTO": 500000,
+        "source": "Google Sheets",
+        "coalMinedMT": 500
+      },
+      {
+        "Tgl Keluar": "2026-10-10",
+        "Product": "Coal Mined",
+        "NETTO": 1420000,
+        "source": "Google Sheets",
+        "coalMinedMT": 1420
+      }
+    ]
+  }
+}

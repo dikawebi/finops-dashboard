@@ -1,0 +1,14 @@
+{
+  "description": "User-requested reduction to March 2026 Freight & Handling Fuel in GA, in USD.",
+  "periods": {
+    "2026-03": [
+      {
+        "MainAccount": "5000302",
+        "AccountName": "Freight & Handling Fuel",
+        "Date": "2026-03-01",
+        "Amount in reporting currency": -4811.67,
+        "Costing to": "GA"
+      }
+    ]
+  }
+}

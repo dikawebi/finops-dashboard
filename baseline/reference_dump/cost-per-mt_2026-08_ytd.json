@@ -1,0 +1,103 @@
+{
+  "success": true,
+  "data": {
+    "currency": "USD",
+    "amountScale": 1,
+    "missingVolumePeriods": [],
+    "incompleteVolume": false,
+    "volumeSource": "Google Sheets DB",
+    "totalVolumeProducedMT": 190854.3863395016,
+    "grandTotalCost": 25926931.454592865,
+    "overallCostPerMT": 135.84666274566362,
+    "stages": [
+      {
+        "stage": "Mining",
+        "valuationCost": 2644082.1820723703,
+        "operatingCost": 10023654.84075483,
+        "totalCost": 12667737.0228272,
+        "metricTons": 190854.3863395016,
+        "costPerMT": 66.37383224870284,
+        "costPerTotalMT": 66.37383224870284
+      },
+      {
+        "stage": "Coal Hauling",
+        "valuationCost": 838956.1282943331,
+        "operatingCost": 3464304.4793785876,
+        "totalCost": 4303260.60767292,
+        "metricTons": 215318.80999999997,
+        "costPerMT": 19.985530329063778,
+        "costPerTotalMT": 22.547349789582825
+      },
+      {
+        "stage": "Washing Plant",
+        "valuationCost": 164014.29394739892,
+        "operatingCost": 1258782.941,
+        "totalCost": 1422797.234947399,
+        "metricTons": null,
+        "costPerMT": null,
+        "costPerTotalMT": 7.454883601241703
+      },
+      {
+        "stage": "BP PORT & Jetty",
+        "valuationCost": 989579.9585875797,
+        "operatingCost": 195282.59000000003,
+        "totalCost": 1184862.5485875797,
+        "metricTons": 136719.56612,
+        "costPerMT": 8.666371480052936,
+        "costPerTotalMT": 6.208201819788859
+      },
+      {
+        "stage": "General Admin",
+        "valuationCost": 0,
+        "operatingCost": 1824116.2077117632,
+        "totalCost": 1824116.2077117632,
+        "metricTons": 190854.3863395016,
+        "costPerMT": 9.557633139575485,
+        "costPerTotalMT": 9.557633139575485
+      },
+      {
+        "stage": "Selling Expense",
+        "valuationCost": 0,
+        "operatingCost": 4524157.832846012,
+        "totalCost": 4524157.832846012,
+        "metricTons": 136719.56612,
+        "costPerMT": 33.09078547598021,
+        "costPerTotalMT": 23.704762146771976
+      }
+    ],
+    "costByAccountGroup": [
+      {
+        "group": "Fuel & Energy",
+        "amount": 5344235.834476804
+      },
+      {
+        "group": "Salary & Employee Benefits",
+        "amount": 1626394.85
+      },
+      {
+        "group": "Equipment & Vehicle Rent",
+        "amount": 3718408.690814586
+      },
+      {
+        "group": "Labour Outsourcing & Overheads",
+        "amount": 669215.22
+      },
+      {
+        "group": "Repair & Maintenance",
+        "amount": 411595.80999999517
+      },
+      {
+        "group": "Freight & Handling",
+        "amount": 401503.2809575629
+      },
+      {
+        "group": "Consultant & Professional Fee",
+        "amount": 221240.16
+      },
+      {
+        "group": "Others, Travel & Utilities",
+        "amount": 13534337.608343925
+      }
+    ]
+  }
+}

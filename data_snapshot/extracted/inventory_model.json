@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "startPeriod": "2026-01",
+  "sourceWorkbook": "C:\\Users\\BP\\Documents\\Inventory Valuation.xlsx",
+  "openingSource": "Opening Januari dari referensi Excel; bulan berikutnya dihitung ulang.",
+  "openingBalances": {
+    "bua": {
+      "qtyMT": 22044.604,
+      "valueUSD": 627189.175613469,
+      "sourceCells": "F11:G11"
+    },
+    "nonWash": {
+      "qtyMT": 518.9400000000006,
+      "valueUSD": 60398.307999004726,
+      "sourceCells": "F24:G24"
+    },
+    "washed": {
+      "qtyMT": 12754.105579999996,
+      "valueUSD": 936078.8747909514,
+      "sourceCells": "F37:G37"
+    },
+    "highAsh": {
+      "qtyMT": 0,
+      "valueUSD": 0,
+      "sourceCells": "F53:G53"
+    },
+    "refeed": {
+      "qtyMT": 0,
+      "valueUSD": 0,
+      "sourceCells": "F62:G62"
+    },
+    "port": {
+      "qtyMT": 17768.44998,
+      "valueUSD": 1582425.1330245,
+      "sourceCells": "F71:G71"
+    },
+    "transitPort": {
+      "qtyMT": 0,
+      "valueUSD": 0,
+      "sourceCells": "F87:G87"
+    },
+    "kunz": {
+      "qtyMT": 23631.994,
+      "valueUSD": 2055428.761493029,
+      "sourceCells": "F98:G98"
+    },
+    "transitKunz": {
+      "qtyMT": 0,
+      "valueUSD": 0,
+      "sourceCells": "F110:G110"
+    }
+  }
+}

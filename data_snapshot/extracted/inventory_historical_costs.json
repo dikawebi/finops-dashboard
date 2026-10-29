@@ -1,0 +1,143 @@
+{
+  "sourceWorkbook": "C:\\Users\\BP\\Documents\\Inventory Valuation.xlsx",
+  "sourceSheet": "Inventory Valuation",
+  "sourceSha256": "89ef0fae3b60a45b8f5ede367b375191437f726d91a428d4422b3b55874667bd",
+  "description": "Temporary Jan-Sep costs approved by user; monthly uploaded GL takes precedence.",
+  "periods": {
+    "2026-01": {
+      "hasData": true,
+      "source": "workbook",
+      "buaUSD": 1001531.9480030778,
+      "haulingToWPUSD": 21581.48559701628,
+      "washingUSD": 91379.98,
+      "portAddedCostUSD": 77761.8118064664,
+      "haulingRoutesAvailable": false,
+      "sourceCells": {
+        "buaUSD": "G13",
+        "haulingToWPUSD": "G26",
+        "washingUSD": "G45",
+        "portAddedCostUSD": "G75"
+      }
+    },
+    "2026-02": {
+      "hasData": true,
+      "source": "workbook",
+      "buaUSD": 1061471.2406913727,
+      "haulingToWPUSD": 14236.39805037369,
+      "washingUSD": 126059.23000000001,
+      "portAddedCostUSD": 311020.4194753791,
+      "haulingRoutesAvailable": false,
+      "sourceCells": {
+        "buaUSD": "J13",
+        "haulingToWPUSD": "J26",
+        "washingUSD": "J45",
+        "portAddedCostUSD": "J75"
+      }
+    },
+    "2026-03": {
+      "hasData": true,
+      "source": "workbook",
+      "buaUSD": 1539125.2769871408,
+      "haulingToWPUSD": 29461.373929541154,
+      "washingUSD": 201343.09999999998,
+      "portAddedCostUSD": 803731.5862911715,
+      "haulingRoutesAvailable": false,
+      "sourceCells": {
+        "buaUSD": "M13",
+        "haulingToWPUSD": "M26",
+        "washingUSD": "M45",
+        "portAddedCostUSD": "M75"
+      }
+    },
+    "2026-04": {
+      "hasData": true,
+      "source": "workbook",
+      "buaUSD": 0,
+      "haulingToWPUSD": 0,
+      "washingUSD": 67418.65000000002,
+      "portAddedCostUSD": 0,
+      "haulingRoutesAvailable": false,
+      "sourceCells": {
+        "buaUSD": "P13",
+        "haulingToWPUSD": "P26",
+        "washingUSD": "P45",
+        "portAddedCostUSD": "P75"
+      }
+    },
+    "2026-05": {
+      "hasData": true,
+      "source": "workbook",
+      "buaUSD": -11869.930578897294,
+      "haulingToWPUSD": 452.1834782898835,
+      "washingUSD": 0,
+      "portAddedCostUSD": 287891.2780993743,
+      "haulingRoutesAvailable": false,
+      "sourceCells": {
+        "buaUSD": "S13",
+        "haulingToWPUSD": "S26",
+        "washingUSD": "S45",
+        "portAddedCostUSD": "S75"
+      }
+    },
+    "2026-06": {
+      "hasData": true,
+      "source": "workbook",
+      "buaUSD": 948253.9274033685,
+      "haulingToWPUSD": 27563.138773941748,
+      "washingUSD": 193241.736,
+      "portAddedCostUSD": 530641.7633616563,
+      "haulingRoutesAvailable": false,
+      "sourceCells": {
+        "buaUSD": "V13",
+        "haulingToWPUSD": "V26",
+        "washingUSD": "V45",
+        "portAddedCostUSD": "V75"
+      }
+    },
+    "2026-07": {
+      "hasData": true,
+      "source": "workbook",
+      "buaUSD": 2015452.8300000005,
+      "haulingToWPUSD": 47244.9347035564,
+      "washingUSD": 327775,
+      "portAddedCostUSD": 703894.6052964439,
+      "haulingRoutesAvailable": false,
+      "sourceCells": {
+        "buaUSD": "Y13",
+        "haulingToWPUSD": "Y26",
+        "washingUSD": "Y45",
+        "portAddedCostUSD": "Y75"
+      }
+    },
+    "2026-08": {
+      "hasData": true,
+      "source": "workbook",
+      "buaUSD": 2347471.5245570214,
+      "haulingToWPUSD": 23461.3471887769,
+      "washingUSD": 251565.24500000002,
+      "portAddedCostUSD": 780644.7415657997,
+      "haulingRoutesAvailable": false,
+      "sourceCells": {
+        "buaUSD": "AB13",
+        "haulingToWPUSD": "AB26",
+        "washingUSD": "AB45",
+        "portAddedCostUSD": "AB75"
+      }
+    },
+    "2026-09": {
+      "hasData": true,
+      "source": "workbook",
+      "buaUSD": 1942226.0434624625,
+      "haulingToWPUSD": 18092.805864626058,
+      "washingUSD": 130136.063,
+      "portAddedCostUSD": 887220.3662786062,
+      "haulingRoutesAvailable": false,
+      "sourceCells": {
+        "buaUSD": "AE13",
+        "haulingToWPUSD": "AE26",
+        "washingUSD": "AE45",
+        "portAddedCostUSD": "AE75"
+      }
+    }
+  }
+}

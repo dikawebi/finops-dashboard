@@ -1,0 +1,555 @@
+{
+  "success": true,
+  "data": [
+    {
+      "code": "5000051",
+      "name": "Salaries"
+    },
+    {
+      "code": "5000052",
+      "name": "Overtime"
+    },
+    {
+      "code": "5000053",
+      "name": "Insentif / Bonus/ THR"
+    },
+    {
+      "code": "5000054",
+      "name": "Allowance & Compensation"
+    },
+    {
+      "code": "5000055",
+      "name": "Severence Pay"
+    },
+    {
+      "code": "5000056",
+      "name": "Medical"
+    },
+    {
+      "code": "5000057",
+      "name": "Employee Insurance (BPJS TK)"
+    },
+    {
+      "code": "5000058",
+      "name": "Employee Insurance (BPJS Health)"
+    },
+    {
+      "code": "5000059",
+      "name": "Employee Insurance (Pension)"
+    },
+    {
+      "code": "5000060",
+      "name": "Employee Wellfare (Natura)"
+    },
+    {
+      "code": "5000061",
+      "name": "Provision Employee Retirement Benefit"
+    },
+    {
+      "code": "5000101",
+      "name": "Equipment Rent"
+    },
+    {
+      "code": "5000102",
+      "name": "Vehicle Rent"
+    },
+    {
+      "code": "5000103",
+      "name": "Tug and Barge Hire"
+    },
+    {
+      "code": "5000104",
+      "name": "Barge Loading Conveyor Rent"
+    },
+    {
+      "code": "5000105",
+      "name": "Wash Plant Rent"
+    },
+    {
+      "code": "5000108",
+      "name": "ISP Rent"
+    },
+    {
+      "code": "5000109",
+      "name": "Land And Road Rent"
+    },
+    {
+      "code": "5000201",
+      "name": "Building Rent Expense"
+    },
+    {
+      "code": "5000301",
+      "name": "Freight & Handling Heavy Equipment"
+    },
+    {
+      "code": "5000302",
+      "name": "Freight & Handling Fuel"
+    },
+    {
+      "code": "5000303",
+      "name": "Freight & Handling Sparepart"
+    },
+    {
+      "code": "5000304",
+      "name": "Freight & Handling Others Material"
+    },
+    {
+      "code": "5000402",
+      "name": "Labour Outsourcing Expense"
+    },
+    {
+      "code": "5000403",
+      "name": "Security Expenses"
+    },
+    {
+      "code": "5000404",
+      "name": "OB Removal"
+    },
+    {
+      "code": "5000405",
+      "name": "Coal Getting"
+    },
+    {
+      "code": "5000406",
+      "name": "Coal Hauling pit to BUA/stockpile"
+    },
+    {
+      "code": "5000407",
+      "name": "Coal Hauling BUA to WP"
+    },
+    {
+      "code": "5000408",
+      "name": "Coal Hauling WP to Port"
+    },
+    {
+      "code": "5000409",
+      "name": "Coal hauling BUA to Port"
+    },
+    {
+      "code": "5000410",
+      "name": "Road Maintenance"
+    },
+    {
+      "code": "5000411",
+      "name": "Coal Loading"
+    },
+    {
+      "code": "5000501",
+      "name": "Consultant Fee"
+    },
+    {
+      "code": "5000502",
+      "name": "Survey Expenses - Production"
+    },
+    {
+      "code": "5000601",
+      "name": "Fuel"
+    },
+    {
+      "code": "5000602",
+      "name": "Explosive & Accessories"
+    },
+    {
+      "code": "5000603",
+      "name": "Wash Plant Stores"
+    },
+    {
+      "code": "5000604",
+      "name": "Stores"
+    },
+    {
+      "code": "5000605",
+      "name": "Tools"
+    },
+    {
+      "code": "5000606",
+      "name": "Office Supplies"
+    },
+    {
+      "code": "5000607",
+      "name": "IT Consumables"
+    },
+    {
+      "code": "5000701",
+      "name": "Land & Building Tax"
+    },
+    {
+      "code": "5000801",
+      "name": "Repair & Maintenance-Service"
+    },
+    {
+      "code": "5000802",
+      "name": "Repair & Maintenance-Sparepart"
+    },
+    {
+      "code": "5000803",
+      "name": "Repair & Maintenance-Oil & Lubricants"
+    },
+    {
+      "code": "5000804",
+      "name": "Repair & Maintenance-Tyre & Accessories"
+    },
+    {
+      "code": "5000805",
+      "name": "Repair & Maintenance Building"
+    },
+    {
+      "code": "5000806",
+      "name": "Repair & Maintenance Office Equipment"
+    },
+    {
+      "code": "5000807",
+      "name": "Repair & Maintenance Vehicle"
+    },
+    {
+      "code": "5000808",
+      "name": "Repair & Maintenance Hauling Road"
+    },
+    {
+      "code": "5000901",
+      "name": "Depreciation of Building Permanent"
+    },
+    {
+      "code": "5000902",
+      "name": "Depreciation of Building Non Permanent"
+    },
+    {
+      "code": "5000903",
+      "name": "Depreciation of Machine-Own"
+    },
+    {
+      "code": "5000904",
+      "name": "Depreciation Wheel &Track Equipment Own"
+    },
+    {
+      "code": "5000905",
+      "name": "Depreciation of Machine-leasing"
+    },
+    {
+      "code": "5000906",
+      "name": "Depreciation Wheel &Track Equipment Leasing"
+    },
+    {
+      "code": "5000907",
+      "name": "Depreciation of Office Equipment"
+    },
+    {
+      "code": "5000908",
+      "name": "Depreciation of Furniture & Fixture"
+    },
+    {
+      "code": "5000909",
+      "name": "Depreciation of Motor Vehicle-Own"
+    },
+    {
+      "code": "5000910",
+      "name": "Depreciation of Motor Vehicle-Leasing"
+    },
+    {
+      "code": "5000911",
+      "name": "Depreciation of Project Equipment"
+    },
+    {
+      "code": "5000912",
+      "name": "Depreciation of Infrastructure"
+    },
+    {
+      "code": "5000913",
+      "name": "Amortization of Right of Use Assets-Vehicle"
+    },
+    {
+      "code": "5000914",
+      "name": "Amortization of Right of Use Assets-Building"
+    },
+    {
+      "code": "5000915",
+      "name": "Amortization Mining Properties"
+    },
+    {
+      "code": "5000916",
+      "name": "Amortization Land Compensation"
+    },
+    {
+      "code": "5000917",
+      "name": "Amortization of Asset Retirement Obligation"
+    },
+    {
+      "code": "5000918",
+      "name": "Amortization Expense"
+    },
+    {
+      "code": "5000919",
+      "name": "Reclamation and Mine Closure Expense"
+    },
+    {
+      "code": "5001001",
+      "name": "Licence & Permit"
+    },
+    {
+      "code": "5001101",
+      "name": "Coal Sampling Analysis"
+    },
+    {
+      "code": "5001201",
+      "name": "Electricity"
+    },
+    {
+      "code": "5001203",
+      "name": "Water"
+    },
+    {
+      "code": "5001301",
+      "name": "Telephone & Fax"
+    },
+    {
+      "code": "5001302",
+      "name": "Network"
+    },
+    {
+      "code": "5001401",
+      "name": "Printing & Stationery"
+    },
+    {
+      "code": "5001402",
+      "name": "Mess Expense"
+    },
+    {
+      "code": "5001403",
+      "name": "Postage & Courier"
+    },
+    {
+      "code": "5001404",
+      "name": "Office Expense"
+    },
+    {
+      "code": "5001501",
+      "name": "Ticket"
+    },
+    {
+      "code": "5001502",
+      "name": "Meals"
+    },
+    {
+      "code": "5001503",
+      "name": "Hotel"
+    },
+    {
+      "code": "5001601",
+      "name": "Insurance Building"
+    },
+    {
+      "code": "5001602",
+      "name": "Insurance Equipment"
+    },
+    {
+      "code": "5001603",
+      "name": "Insurance Coal"
+    },
+    {
+      "code": "5001604",
+      "name": "Insurance Vehicle"
+    },
+    {
+      "code": "5001605",
+      "name": "Credit Insurance"
+    },
+    {
+      "code": "5001606",
+      "name": "Insurance - Health Insurance"
+    },
+    {
+      "code": "5001701",
+      "name": "Catering"
+    },
+    {
+      "code": "5001702",
+      "name": "Local Tax"
+    },
+    {
+      "code": "5001703",
+      "name": "PNBP Expenses"
+    },
+    {
+      "code": "5001704",
+      "name": "PSDH-DR"
+    },
+    {
+      "code": "5001705",
+      "name": "Dead Rent"
+    },
+    {
+      "code": "5001709",
+      "name": "Training Expense"
+    },
+    {
+      "code": "5001712",
+      "name": "Safety & Environmental"
+    },
+    {
+      "code": "5001714",
+      "name": "Extracomptable"
+    },
+    {
+      "code": "5001801",
+      "name": "Entertainment"
+    },
+    {
+      "code": "5001802",
+      "name": "Donation & Gift"
+    },
+    {
+      "code": "5001901",
+      "name": "Channel Fee"
+    },
+    {
+      "code": "5999999",
+      "name": "Heavy Equipment Rent - Contra"
+    },
+    {
+      "code": "6000001",
+      "name": "Advertaising and Promotion"
+    },
+    {
+      "code": "6000002",
+      "name": "Demurage"
+    },
+    {
+      "code": "6000003",
+      "name": "Royalty Coal Sales Export"
+    },
+    {
+      "code": "6000004",
+      "name": "Royalty Coal Sales Domestic"
+    },
+    {
+      "code": "6000005",
+      "name": "Survey Expenses - Sales"
+    },
+    {
+      "code": "6000010",
+      "name": "DMO Penalty"
+    },
+    {
+      "code": "7000001",
+      "name": "Interest Income Bank"
+    },
+    {
+      "code": "7000002",
+      "name": "Interest Deposit Bank"
+    },
+    {
+      "code": "7000003",
+      "name": "Tax On Bank Interest"
+    },
+    {
+      "code": "7001001",
+      "name": "Interest Expenses Lease Financing"
+    },
+    {
+      "code": "7001002",
+      "name": "Interest Expense Loan"
+    },
+    {
+      "code": "7001003",
+      "name": "Bank Charges"
+    },
+    {
+      "code": "7001004",
+      "name": "Interest Expense Bank"
+    },
+    {
+      "code": "7001005",
+      "name": "Amortisation on Loan Modification"
+    },
+    {
+      "code": "7001006",
+      "name": "Round Off"
+    },
+    {
+      "code": "7001007",
+      "name": "Provision of inventory (P/L)"
+    },
+    {
+      "code": "7001008",
+      "name": "Interest Expense Perpetual Loan"
+    },
+    {
+      "code": "7001009",
+      "name": "Distribtuions on Perpetual Loans"
+    },
+    {
+      "code": "7001011",
+      "name": "Interest Advance From Customer"
+    },
+    {
+      "code": "7001013",
+      "name": "Interest Expense Bank - CCC"
+    },
+    {
+      "code": "7002001",
+      "name": "Forex (Gain)/Losses Unrealised"
+    },
+    {
+      "code": "7002002",
+      "name": "Forex (Gain)/Losses Realised"
+    },
+    {
+      "code": "7003001",
+      "name": "(Gain) & Loss-Asset"
+    },
+    {
+      "code": "7003003",
+      "name": "Gain / (Loss) on Fair Value of Derivative"
+    },
+    {
+      "code": "7004001",
+      "name": "Provision"
+    },
+    {
+      "code": "7004002",
+      "name": "Inventory Adjustment"
+    },
+    {
+      "code": "7006001",
+      "name": "Other Comprehensive Income"
+    },
+    {
+      "code": "7006002",
+      "name": "Forward point expense / OCI"
+    },
+    {
+      "code": "7007001",
+      "name": "Other income"
+    },
+    {
+      "code": "8000001",
+      "name": "Current Income Tax Expense/(Benefit)"
+    },
+    {
+      "code": "8000002",
+      "name": "Deferred Income Tax Expense/(Benefit)"
+    },
+    {
+      "code": "8000003",
+      "name": "Other Tax Expense"
+    },
+    {
+      "code": "9999998",
+      "name": "Inventory Movement"
+    },
+    {
+      "code": "9999999",
+      "name": "Balance Account"
+    }
+  ],
+  "categories": [
+    "Mining",
+    "Coal Hauling BUA to WP",
+    "Coal Hauling BUA to Port",
+    "Coal Hauling WP to Port",
+    "Washing Plant",
+    "BP PORT",
+    "GA",
+    "Selling Expense"
+  ]
+}

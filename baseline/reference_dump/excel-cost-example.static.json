@@ -1,0 +1,2765 @@
+{
+  "success": true,
+  "data": {
+    "abcMonthly": [
+      {
+        "month": "Jan",
+        "activity": "OB Removal",
+        "entity": "HRS",
+        "qty": 333373.95841124,
+        "cost": 966950.8552772996
+      },
+      {
+        "month": "Jan",
+        "activity": "Topsoil",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jan",
+        "activity": "Mud",
+        "entity": "HRS",
+        "qty": null,
+        "cost": 0
+      },
+      {
+        "month": "Jan",
+        "activity": "Coal Getting",
+        "entity": "HRS",
+        "qty": 25156.83246538834,
+        "cost": 40699.06001309795
+      },
+      {
+        "month": "Jan",
+        "activity": "Coal Hauling Overdistance",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 7141.595542442847
+      },
+      {
+        "month": "Jan",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jan",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "HRS",
+        "qty": 509.22,
+        "cost": 274.7004315928349
+      },
+      {
+        "month": "Jan",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "HRS",
+        "qty": 6689.29,
+        "cost": 3608.559856348208
+      },
+      {
+        "month": "Jan",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jan",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jan",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jan",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jan",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "BP",
+        "qty": 7120.08,
+        "cost": 9699.9399357274
+      },
+      {
+        "month": "Jan",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "BP",
+        "qty": 1969.81,
+        "cost": 2683.542696822959
+      },
+      {
+        "month": "Jan",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jan",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "HRS",
+        "qty": 509.22,
+        "cost": 628.9187170162884
+      },
+      {
+        "month": "Jan",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "HRS",
+        "qty": 2051.65,
+        "cost": 48905.020447355804
+      },
+      {
+        "month": "Jan",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jan",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jan",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "SMA",
+        "qty": 4637.64,
+        "cost": 129154.15157943704
+      },
+      {
+        "month": "Jan",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jan",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "BP",
+        "qty": 7120.08,
+        "cost": 12194.100579965208
+      },
+      {
+        "month": "Jan",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "BP",
+        "qty": 1969.81,
+        "cost": 51733.2365785527
+      },
+      {
+        "month": "Jan",
+        "activity": "Road Maintenance",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jan",
+        "activity": "Washplant",
+        "entity": "BP",
+        "qty": 5088.9,
+        "cost": 121647.57621148624
+      },
+      {
+        "month": "Jan",
+        "activity": "Loading BLC",
+        "entity": "BP",
+        "qty": 4778.776,
+        "cost": 106241.28029592424
+      },
+      {
+        "month": "Jan",
+        "activity": "ISP Rent",
+        "entity": "BP",
+        "qty": 4778.776,
+        "cost": 53787.68
+      },
+      {
+        "month": "Jan",
+        "activity": "Transhipmet BP Port To Taboneo",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 54850.425
+      },
+      {
+        "month": "Jan",
+        "activity": "Transhipmet BP Port To ISP",
+        "entity": "BP",
+        "qty": 4778.776,
+        "cost": 63133.595
+      },
+      {
+        "month": "Jan",
+        "activity": "Transhipmet ISP to Taboneo",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 53787.68
+      },
+      {
+        "month": "Jan",
+        "activity": "Overhead BUA",
+        "entity": "BP",
+        "qty": 13.251825676778177,
+        "cost": 346841.49099576025
+      },
+      {
+        "month": "Jan",
+        "activity": "OVH JKT & PC",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 563383.0000000001
+      },
+      {
+        "month": "Feb",
+        "activity": "OB Removal",
+        "entity": "HRS",
+        "qty": 350828.090801774,
+        "cost": 1030574.8920299485
+      },
+      {
+        "month": "Feb",
+        "activity": "Topsoil",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Feb",
+        "activity": "Mud",
+        "entity": "HRS",
+        "qty": null,
+        "cost": 0
+      },
+      {
+        "month": "Feb",
+        "activity": "Coal Getting",
+        "entity": "HRS",
+        "qty": 19822.620000000003,
+        "cost": 32070.89882316089
+      },
+      {
+        "month": "Feb",
+        "activity": "Coal Hauling Overdistance",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 4901.223032410604
+      },
+      {
+        "month": "Feb",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "HRS",
+        "qty": 1272.56,
+        "cost": 686.5124109765713
+      },
+      {
+        "month": "Feb",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "HRS",
+        "qty": 1389.42,
+        "cost": 749.555285455356
+      },
+      {
+        "month": "Feb",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "HRS",
+        "qty": 8396,
+        "cost": 4529.419597157928
+      },
+      {
+        "month": "Feb",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Feb",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Feb",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Feb",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "BP",
+        "qty": 678.82,
+        "cost": 923.8237540417709
+      },
+      {
+        "month": "Feb",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "BP",
+        "qty": 7025.56,
+        "cost": 9588.45822464197
+      },
+      {
+        "month": "Feb",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "BP",
+        "qty": 3197,
+        "cost": 4355.387576336292
+      },
+      {
+        "month": "Feb",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "HRS",
+        "qty": 1272.56,
+        "cost": 31262.905029097048
+      },
+      {
+        "month": "Feb",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "HRS",
+        "qty": 1389.42,
+        "cost": 1487.259882390815
+      },
+      {
+        "month": "Feb",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "HRS",
+        "qty": 4422,
+        "cost": 105411.65074426998
+      },
+      {
+        "month": "Feb",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "SMA",
+        "qty": 716.42,
+        "cost": 21003.08791590961
+      },
+      {
+        "month": "Feb",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Feb",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "SMA",
+        "qty": 3974,
+        "cost": 116982.52556860316
+      },
+      {
+        "month": "Feb",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "BP",
+        "qty": 678.82,
+        "cost": 10754.02022344347
+      },
+      {
+        "month": "Feb",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "BP",
+        "qty": 7025.56,
+        "cost": 17008.1901394721
+      },
+      {
+        "month": "Feb",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "BP",
+        "qty": 3197,
+        "cost": 58401.77505715457
+      },
+      {
+        "month": "Feb",
+        "activity": "Road Maintenance",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Feb",
+        "activity": "Washplant",
+        "entity": "BP",
+        "qty": 7063,
+        "cost": 177767.27349787974
+      },
+      {
+        "month": "Feb",
+        "activity": "Loading BLC",
+        "entity": "BP",
+        "qty": 42219.674999999996,
+        "cost": 121259.35699257739
+      },
+      {
+        "month": "Feb",
+        "activity": "ISP Rent",
+        "entity": "BP",
+        "qty": 4761.547,
+        "cost": 51666.895
+      },
+      {
+        "month": "Feb",
+        "activity": "Transhipmet BP Port To Taboneo",
+        "entity": "BP",
+        "qty": 9457.405999999999,
+        "cost": 115147.5369178174
+      },
+      {
+        "month": "Feb",
+        "activity": "Transhipmet BP Port To ISP",
+        "entity": "BP",
+        "qty": 4761.547,
+        "cost": 76999.065
+      },
+      {
+        "month": "Feb",
+        "activity": "Transhipmet ISP to Taboneo",
+        "entity": "BP",
+        "qty": 28000.721999999998,
+        "cost": 361409.0040710326
+      },
+      {
+        "month": "Feb",
+        "activity": "Overhead BUA",
+        "entity": "BP",
+        "qty": null,
+        "cost": 270043.24
+      },
+      {
+        "month": "Feb",
+        "activity": "OVH JKT & PC",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 611189.8
+      },
+      {
+        "month": "Mar",
+        "activity": "OB Removal",
+        "entity": "HRS",
+        "qty": 474017.5,
+        "cost": 1461513.0841405164
+      },
+      {
+        "month": "Mar",
+        "activity": "Topsoil",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Mar",
+        "activity": "Mud",
+        "entity": "HRS",
+        "qty": null,
+        "cost": 0
+      },
+      {
+        "month": "Mar",
+        "activity": "Coal Getting",
+        "entity": "HRS",
+        "qty": 46326.04621758687,
+        "cost": 78929.34151239408
+      },
+      {
+        "month": "Mar",
+        "activity": "Coal Hauling Overdistance",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 12989.852544609243
+      },
+      {
+        "month": "Mar",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "HRS",
+        "qty": 12810.09,
+        "cost": 7185.752512268067
+      },
+      {
+        "month": "Mar",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "HRS",
+        "qty": 379.32,
+        "cost": 212.77755604789064
+      },
+      {
+        "month": "Mar",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "HRS",
+        "qty": 49.94,
+        "cost": 28.01357995632094
+      },
+      {
+        "month": "Mar",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Mar",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Mar",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Mar",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Mar",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "BP",
+        "qty": 13290.41,
+        "cost": 5571.306744613348
+      },
+      {
+        "month": "Mar",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "BP",
+        "qty": 22.33,
+        "cost": 13.765647510483925
+      },
+      {
+        "month": "Mar",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "HRS",
+        "qty": 6163.5,
+        "cost": 158732.9131337617
+      },
+      {
+        "month": "Mar",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "HRS",
+        "qty": 794.36,
+        "cost": 875.637238099526
+      },
+      {
+        "month": "Mar",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "HRS",
+        "qty": 49.94,
+        "cost": 1247.9780226174048
+      },
+      {
+        "month": "Mar",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "SMA",
+        "qty": 3831.75,
+        "cost": 118657.3134830003
+      },
+      {
+        "month": "Mar",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Mar",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Mar",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "BP",
+        "qty": 2814.84,
+        "cost": 77361.872635395
+      },
+      {
+        "month": "Mar",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "BP",
+        "qty": 12875.64,
+        "cost": 19729.55739945941
+      },
+      {
+        "month": "Mar",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "BP",
+        "qty": 22.33,
+        "cost": 983.4499461277923
+      },
+      {
+        "month": "Mar",
+        "activity": "Road Maintenance",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Mar",
+        "activity": "Washplant",
+        "entity": "BP",
+        "qty": 11327,
+        "cost": 203351.31557245078
+      },
+      {
+        "month": "Mar",
+        "activity": "Loading BLC",
+        "entity": "BP",
+        "qty": 33681.36912,
+        "cost": 120955.68916666668
+      },
+      {
+        "month": "Mar",
+        "activity": "ISP Rent",
+        "entity": "BP",
+        "qty": 9550.874119999999,
+        "cost": 51354.68
+      },
+      {
+        "month": "Mar",
+        "activity": "Transhipmet BP Port To Taboneo",
+        "entity": "BP",
+        "qty": 9514.624,
+        "cost": 138501.1610037454
+      },
+      {
+        "month": "Mar",
+        "activity": "Transhipmet BP Port To ISP",
+        "entity": "BP",
+        "qty": 9550.874119999999,
+        "cost": 25525.5890322581
+      },
+      {
+        "month": "Mar",
+        "activity": "Transhipmet ISP to Taboneo",
+        "entity": "BP",
+        "qty": 14615.871,
+        "cost": 253551.39359504575
+      },
+      {
+        "month": "Mar",
+        "activity": "Overhead BUA",
+        "entity": "BP",
+        "qty": 379.32,
+        "cost": 327690.12900423974
+      },
+      {
+        "month": "Mar",
+        "activity": "OVH JKT & PC",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 300775.24000000034
+      },
+      {
+        "month": "Apr",
+        "activity": "OB Removal",
+        "entity": "HRS",
+        "qty": 332697.1299223297,
+        "cost": 1122972.883592336
+      },
+      {
+        "month": "Apr",
+        "activity": "Topsoil",
+        "entity": "HRS",
+        "qty": 1193.0769,
+        "cost": 4491.230635088139
+      },
+      {
+        "month": "Apr",
+        "activity": "Mud",
+        "entity": "HRS",
+        "qty": null,
+        "cost": 0
+      },
+      {
+        "month": "Apr",
+        "activity": "Coal Getting",
+        "entity": "HRS",
+        "qty": 26423.08,
+        "cost": 48953.92638616987
+      },
+      {
+        "month": "Apr",
+        "activity": "Coal Hauling Overdistance",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 7933.336568906259
+      },
+      {
+        "month": "Apr",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "HRS",
+        "qty": 10042.38,
+        "cost": 6007.089831431087
+      },
+      {
+        "month": "Apr",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "HRS",
+        "qty": 6294.24,
+        "cost": 3765.050227195825
+      },
+      {
+        "month": "Apr",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Apr",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Apr",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Apr",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Apr",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "BP",
+        "qty": 48.36,
+        "cost": 28.05903885004335
+      },
+      {
+        "month": "Apr",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "BP",
+        "qty": 1938.54,
+        "cost": 1124.7636305285969
+      },
+      {
+        "month": "Apr",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "BP",
+        "qty": 2054.5,
+        "cost": 1166.8554838709679
+      },
+      {
+        "month": "Apr",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "HRS",
+        "qty": 4967.48,
+        "cost": 138152.71742915575
+      },
+      {
+        "month": "Apr",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "HRS",
+        "qty": 7437.66,
+        "cost": 8610.057059550938
+      },
+      {
+        "month": "Apr",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Apr",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "SMA",
+        "qty": 3718.11,
+        "cost": 130008.47392560035
+      },
+      {
+        "month": "Apr",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Apr",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Apr",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "BP",
+        "qty": 1863.62,
+        "cost": 47587.80619312855
+      },
+      {
+        "month": "Apr",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "BP",
+        "qty": 795.12,
+        "cost": 2695.1116232759778
+      },
+      {
+        "month": "Apr",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "BP",
+        "qty": 2016.75,
+        "cost": 49413.80943193805
+      },
+      {
+        "month": "Apr",
+        "activity": "Road Maintenance",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Apr",
+        "activity": "Washplant",
+        "entity": "BP",
+        "qty": 3449,
+        "cost": 98875.9410372535
+      },
+      {
+        "month": "Apr",
+        "activity": "Loading BLC",
+        "entity": "BP",
+        "qty": 4757.505,
+        "cost": 122222.29458567165
+      },
+      {
+        "month": "Apr",
+        "activity": "ISP Rent",
+        "entity": "BP",
+        "qty": 4757.505,
+        "cost": 102359.12
+      },
+      {
+        "month": "Apr",
+        "activity": "Transhipmet BP Port To Taboneo",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Apr",
+        "activity": "Transhipmet BP Port To ISP",
+        "entity": "BP",
+        "qty": 4757.505,
+        "cost": 88375.47
+      },
+      {
+        "month": "Apr",
+        "activity": "Transhipmet ISP to Taboneo",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Apr",
+        "activity": "Overhead BUA",
+        "entity": "BP",
+        "qty": null,
+        "cost": 320024.4369047464
+      },
+      {
+        "month": "Apr",
+        "activity": "OVH JKT & PC",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 307391.3531412574
+      },
+      {
+        "month": "May",
+        "activity": "OB Removal",
+        "entity": "HRS",
+        "qty": 1825,
+        "cost": 5422.906594541379
+      },
+      {
+        "month": "May",
+        "activity": "Topsoil",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "May",
+        "activity": "Mud",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "May",
+        "activity": "Coal Getting",
+        "entity": "HRS",
+        "qty": 265.73300000000455,
+        "cost": 475.358623673472
+      },
+      {
+        "month": "May",
+        "activity": "Coal Hauling Overdistance",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 77.46156688014634
+      },
+      {
+        "month": "May",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "HRS",
+        "qty": 4552.3,
+        "cost": 2650.4151572581404
+      },
+      {
+        "month": "May",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "HRS",
+        "qty": 312.84,
+        "cost": 182.13999028988349
+      },
+      {
+        "month": "May",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "May",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "May",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "May",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "May",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "May",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "May",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "BP",
+        "qty": 2909.14,
+        "cost": 0
+      },
+      {
+        "month": "May",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "HRS",
+        "qty": 2710.54,
+        "cost": 72993.00153593777
+      },
+      {
+        "month": "May",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "HRS",
+        "qty": 312.84,
+        "cost": 354.7351307163983
+      },
+      {
+        "month": "May",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "HRS",
+        "qty": 82.93,
+        "cost": 2166.984876012817
+      },
+      {
+        "month": "May",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "SMA",
+        "qty": 984.08,
+        "cost": 32604.616898556502
+      },
+      {
+        "month": "May",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "May",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "SMA",
+        "qty": 752.65,
+        "cost": 24196.94710259393
+      },
+      {
+        "month": "May",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "BP",
+        "qty": 23.68,
+        "cost": 0
+      },
+      {
+        "month": "May",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "May",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "BP",
+        "qty": 1934.98,
+        "cost": 0
+      },
+      {
+        "month": "May",
+        "activity": "Road Maintenance",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "May",
+        "activity": "Washplant",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 62383.630000000005
+      },
+      {
+        "month": "May",
+        "activity": "Loading BLC",
+        "entity": "BP",
+        "qty": 4746.584,
+        "cost": 119524.34570418113
+      },
+      {
+        "month": "May",
+        "activity": "ISP Rent",
+        "entity": "BP",
+        "qty": 4746.584,
+        "cost": 102605.67
+      },
+      {
+        "month": "May",
+        "activity": "Transhipmet BP Port To Taboneo",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "May",
+        "activity": "Transhipmet BP Port To ISP",
+        "entity": "BP",
+        "qty": 4746.584,
+        "cost": 0
+      },
+      {
+        "month": "May",
+        "activity": "Transhipmet ISP to Taboneo",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "May",
+        "activity": "Overhead BUA",
+        "entity": "BP",
+        "qty": null,
+        "cost": 253565.53157894395
+      },
+      {
+        "month": "May",
+        "activity": "OVH JKT & PC",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 349721.42000000004
+      },
+      {
+        "month": "Jun",
+        "activity": "OB Removal",
+        "entity": "HRS",
+        "qty": 245667.1171648357,
+        "cost": 904731.0950443271
+      },
+      {
+        "month": "Jun",
+        "activity": "Topsoil",
+        "entity": "HRS",
+        "qty": 4120.2962,
+        "cost": 14700.891694659971
+      },
+      {
+        "month": "Jun",
+        "activity": "Mud",
+        "entity": "HRS",
+        "qty": null,
+        "cost": 0
+      },
+      {
+        "month": "Jun",
+        "activity": "Coal Getting",
+        "entity": "HRS",
+        "qty": 24603.357886749633,
+        "cost": 43416.77426771048
+      },
+      {
+        "month": "Jun",
+        "activity": "Coal Hauling Overdistance",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 7079.3276519127885
+      },
+      {
+        "month": "Jun",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "HRS",
+        "qty": 9841.06,
+        "cost": 5670.0956082157945
+      },
+      {
+        "month": "Jun",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "HRS",
+        "qty": 13551,
+        "cost": 7807.641208054035
+      },
+      {
+        "month": "Jun",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jun",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jun",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jun",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jun",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jun",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jun",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "BP",
+        "qty": 6344.56,
+        "cost": 5892.06
+      },
+      {
+        "month": "Jun",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "HRS",
+        "qty": 7475,
+        "cost": 201157.60971679166
+      },
+      {
+        "month": "Jun",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "HRS",
+        "qty": 13551,
+        "cost": 15243.981566251709
+      },
+      {
+        "month": "Jun",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jun",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "SMA",
+        "qty": 2881,
+        "cost": 94419.54241321405
+      },
+      {
+        "month": "Jun",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jun",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "SMA",
+        "qty": 380,
+        "cost": 12084.287319851435
+      },
+      {
+        "month": "Jun",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jun",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jun",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "BP",
+        "qty": 5584,
+        "cost": 133401.30715180803
+      },
+      {
+        "month": "Jun",
+        "activity": "Road Maintenance",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jun",
+        "activity": "Washplant",
+        "entity": "BP",
+        "qty": 11630,
+        "cost": 131466.8
+      },
+      {
+        "month": "Jun",
+        "activity": "Loading BLC",
+        "entity": "BP",
+        "qty": 19015.28,
+        "cost": 115801.0285875796
+      },
+      {
+        "month": "Jun",
+        "activity": "ISP Rent",
+        "entity": "BP",
+        "qty": 14258.957,
+        "cost": 97751
+      },
+      {
+        "month": "Jun",
+        "activity": "Transhipmet BP Port To Taboneo",
+        "entity": "BP",
+        "qty": 4756.323,
+        "cost": 0
+      },
+      {
+        "month": "Jun",
+        "activity": "Transhipmet BP Port To ISP",
+        "entity": "BP",
+        "qty": 14258.957,
+        "cost": 159399.22003142728
+      },
+      {
+        "month": "Jun",
+        "activity": "Transhipmet ISP to Taboneo",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jun",
+        "activity": "Overhead BUA",
+        "entity": "BP",
+        "qty": 13551,
+        "cost": 288523.77265677316
+      },
+      {
+        "month": "Jun",
+        "activity": "OVH JKT & PC",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 539936.3228248407
+      },
+      {
+        "month": "Jul",
+        "activity": "OB Removal",
+        "entity": "HRS",
+        "qty": 492957,
+        "cost": 1761127.4246148076
+      },
+      {
+        "month": "Jul",
+        "activity": "Topsoil",
+        "entity": "HRS",
+        "qty": 9707,
+        "cost": 34139.57413245973
+      },
+      {
+        "month": "Jul",
+        "activity": "Mud",
+        "entity": "HRS",
+        "qty": null,
+        "cost": 0
+      },
+      {
+        "month": "Jul",
+        "activity": "Coal Getting",
+        "entity": "HRS",
+        "qty": 14293.796769776734,
+        "cost": 24897.772036606082
+      },
+      {
+        "month": "Jul",
+        "activity": "Coal Hauling Overdistance",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 3749.4655302296014
+      },
+      {
+        "month": "Jul",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "HRS",
+        "qty": 11785.44,
+        "cost": 6723.176741136736
+      },
+      {
+        "month": "Jul",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "HRS",
+        "qty": 28025.7,
+        "cost": 15987.670752562131
+      },
+      {
+        "month": "Jul",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jul",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jul",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jul",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jul",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jul",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jul",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "BP",
+        "qty": 13076.16,
+        "cost": 17076.1
+      },
+      {
+        "month": "Jul",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "HRS",
+        "qty": 8977.33,
+        "cost": 238723.2397287895
+      },
+      {
+        "month": "Jul",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "HRS",
+        "qty": 28025.7,
+        "cost": 31289.62192952088
+      },
+      {
+        "month": "Jul",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "HRS",
+        "qty": 1155.72,
+        "cost": 29470.997951929407
+      },
+      {
+        "month": "Jul",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "SMA",
+        "qty": 2808.11,
+        "cost": 89648.85602566697
+      },
+      {
+        "month": "Jul",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jul",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "SMA",
+        "qty": 3337.58,
+        "cost": 103390.61846898476
+      },
+      {
+        "month": "Jul",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jul",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jul",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "BP",
+        "qty": 8582.86,
+        "cost": 177885.32175453234
+      },
+      {
+        "month": "Jul",
+        "activity": "Road Maintenance",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jul",
+        "activity": "Washplant",
+        "entity": "BP",
+        "qty": 19458,
+        "cost": 165314.38684556138
+      },
+      {
+        "month": "Jul",
+        "activity": "Loading BLC",
+        "entity": "BP",
+        "qty": 27520.377,
+        "cost": 114411.81485949071
+      },
+      {
+        "month": "Jul",
+        "activity": "ISP Rent",
+        "entity": "BP",
+        "qty": 24861.6,
+        "cost": 123492.19
+      },
+      {
+        "month": "Jul",
+        "activity": "Transhipmet BP Port To Taboneo",
+        "entity": "BP",
+        "qty": 4756.864,
+        "cost": 166913.41999999998
+      },
+      {
+        "month": "Jul",
+        "activity": "Transhipmet BP Port To ISP",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Jul",
+        "activity": "Transhipmet ISP to Taboneo",
+        "entity": "BP",
+        "qty": 22763.513,
+        "cost": 163718.54000000004
+      },
+      {
+        "month": "Jul",
+        "activity": "Overhead BUA",
+        "entity": "BP",
+        "qty": null,
+        "cost": 284530.7137801917
+      },
+      {
+        "month": "Jul",
+        "activity": "OVH JKT & PC",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 185204.12035741247
+      },
+      {
+        "month": "Aug",
+        "activity": "OB Removal",
+        "entity": "HRS",
+        "qty": 566568.01,
+        "cost": 2202908.608366345
+      },
+      {
+        "month": "Aug",
+        "activity": "Topsoil",
+        "entity": "HRS",
+        "qty": 3478.54,
+        "cost": 12841.7867742368
+      },
+      {
+        "month": "Aug",
+        "activity": "Mud",
+        "entity": "HRS",
+        "qty": null,
+        "cost": 0
+      },
+      {
+        "month": "Aug",
+        "activity": "Coal Getting",
+        "entity": "HRS",
+        "qty": 33962.920000000006,
+        "cost": 61816.90960588433
+      },
+      {
+        "month": "Aug",
+        "activity": "Coal Hauling Overdistance",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 9034.289810553182
+      },
+      {
+        "month": "Aug",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "HRS",
+        "qty": 12219.48,
+        "cost": 7209.88853651994
+      },
+      {
+        "month": "Aug",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "HRS",
+        "qty": 14214.22,
+        "cost": 8386.849672291493
+      },
+      {
+        "month": "Aug",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Aug",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Aug",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Aug",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Aug",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Aug",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Aug",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "BP",
+        "qty": 13350.46,
+        "cost": 13941.460000000001
+      },
+      {
+        "month": "Aug",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "HRS",
+        "qty": 11252.16,
+        "cost": 311529.20829375734
+      },
+      {
+        "month": "Aug",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "HRS",
+        "qty": 14186.8,
+        "cost": 16251.458652256946
+      },
+      {
+        "month": "Aug",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "HRS",
+        "qty": 1136.25,
+        "cost": 30166.954769535674
+      },
+      {
+        "month": "Aug",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "SMA",
+        "qty": 838.22,
+        "cost": 28403.188236027527
+      },
+      {
+        "month": "Aug",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Aug",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "SMA",
+        "qty": 4183.16,
+        "cost": 137541.05842801582
+      },
+      {
+        "month": "Aug",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Aug",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "BP",
+        "qty": 27.42,
+        "cost": 0
+      },
+      {
+        "month": "Aug",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "BP",
+        "qty": 7819.52,
+        "cost": 181860.94516617182
+      },
+      {
+        "month": "Aug",
+        "activity": "Road Maintenance",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Aug",
+        "activity": "Washplant",
+        "entity": "BP",
+        "qty": 13474,
+        "cost": 109269.81000000001
+      },
+      {
+        "month": "Aug",
+        "activity": "Loading BLC",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 157737.85
+      },
+      {
+        "month": "Aug",
+        "activity": "ISP Rent",
+        "entity": "BP",
+        "qty": 25229.309999999998,
+        "cost": 126057.51999999999
+      },
+      {
+        "month": "Aug",
+        "activity": "Transhipmet BP Port To Taboneo",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Aug",
+        "activity": "Transhipmet BP Port To ISP",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Aug",
+        "activity": "Transhipmet ISP to Taboneo",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Aug",
+        "activity": "Overhead BUA",
+        "entity": "BP",
+        "qty": 14186.8,
+        "cost": 351076.059599254
+      },
+      {
+        "month": "Aug",
+        "activity": "OVH JKT & PC",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 156597.0794735161
+      },
+      {
+        "month": "Sep",
+        "activity": "OB Removal",
+        "entity": "HRS",
+        "qty": 436278.70999999996,
+        "cost": 1804491.6840876765
+      },
+      {
+        "month": "Sep",
+        "activity": "Topsoil",
+        "entity": "HRS",
+        "qty": 437.15,
+        "cost": 1660.7086879955116
+      },
+      {
+        "month": "Sep",
+        "activity": "Mud",
+        "entity": "HRS",
+        "qty": 5447.48,
+        "cost": 0
+      },
+      {
+        "month": "Sep",
+        "activity": "Coal Getting",
+        "entity": "HRS",
+        "qty": 34823.19,
+        "cost": 65055.54269102801
+      },
+      {
+        "month": "Sep",
+        "activity": "Coal Hauling Overdistance",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 11283.854701906283
+      },
+      {
+        "month": "Sep",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "HRS",
+        "qty": 10045.6,
+        "cost": 6047.871202261704
+      },
+      {
+        "month": "Sep",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "HRS",
+        "qty": 12348,
+        "cost": 7434.012264626058
+      },
+      {
+        "month": "Sep",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Sep",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Sep",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Sep",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Sep",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Sep",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Sep",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "BP",
+        "qty": 15832.62,
+        "cost": 11752.72051512468
+      },
+      {
+        "month": "Sep",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "HRS",
+        "qty": 10370.14,
+        "cost": 292943.1701088092
+      },
+      {
+        "month": "Sep",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "HRS",
+        "qty": 12347.919999999996,
+        "cost": 14365.278751617914
+      },
+      {
+        "month": "Sep",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Sep",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Sep",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Sep",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "SMA",
+        "qty": 7551.02,
+        "cost": 264137.92657650576
+      },
+      {
+        "month": "Sep",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Sep",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Sep",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "BP",
+        "qty": 8281.599999999999,
+        "cost": 252946.2876541784
+      },
+      {
+        "month": "Sep",
+        "activity": "Road Maintenance",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Sep",
+        "activity": "Washplant",
+        "entity": "BP",
+        "qty": 7476,
+        "cost": 115432.62579641567
+      },
+      {
+        "month": "Sep",
+        "activity": "Loading BLC",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 167274.7820624406
+      },
+      {
+        "month": "Sep",
+        "activity": "ISP Rent",
+        "entity": "BP",
+        "qty": 26202.76,
+        "cost": 20917.43
+      },
+      {
+        "month": "Sep",
+        "activity": "Transhipmet BP Port To Taboneo",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Sep",
+        "activity": "Transhipmet BP Port To ISP",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Sep",
+        "activity": "Transhipmet ISP to Taboneo",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Sep",
+        "activity": "Overhead BUA",
+        "entity": "BP",
+        "qty": null,
+        "cost": 406919.0849086001
+      },
+      {
+        "month": "Sep",
+        "activity": "OVH JKT & PC",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 213968.64548103226
+      },
+      {
+        "month": "Oct",
+        "activity": "OB Removal",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Topsoil",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Mud",
+        "entity": "HRS",
+        "qty": null,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Coal Getting",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Coal Hauling Overdistance",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Road Maintenance",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Washplant",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Loading BLC",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "ISP Rent",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Transhipmet BP Port To Taboneo",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Transhipmet BP Port To ISP",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Transhipmet ISP to Taboneo",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "Overhead BUA",
+        "entity": "BP",
+        "qty": null,
+        "cost": 0
+      },
+      {
+        "month": "Oct",
+        "activity": "OVH JKT & PC",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "OB Removal",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Topsoil",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Mud",
+        "entity": "HRS",
+        "qty": null,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Coal Getting",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Coal Hauling Overdistance",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Road Maintenance",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Washplant",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Loading BLC",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "ISP Rent",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Transhipmet BP Port To Taboneo",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Transhipmet BP Port To ISP",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Transhipmet ISP to Taboneo",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "Overhead BUA",
+        "entity": "BP",
+        "qty": null,
+        "cost": 0
+      },
+      {
+        "month": "Nov",
+        "activity": "OVH JKT & PC",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "OB Removal",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Topsoil",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Mud",
+        "entity": "HRS",
+        "qty": null,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Coal Getting",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Coal Hauling Overdistance",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Coal Loading at ROM to Port",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Coal Loading at ROM to WP",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Coal Loading at WP to Port",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "HRS",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "SMA",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Coal Hauling ROM BUA to Port",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Coal Hauling ROM BUA to WP",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Coal Hauling WP to Port",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Road Maintenance",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Washplant",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Loading BLC",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "ISP Rent",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Transhipmet BP Port To Taboneo",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Transhipmet BP Port To ISP",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Transhipmet ISP to Taboneo",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "Overhead BUA",
+        "entity": "BP",
+        "qty": null,
+        "cost": 0
+      },
+      {
+        "month": "Dec",
+        "activity": "OVH JKT & PC",
+        "entity": "BP",
+        "qty": 0,
+        "cost": 0
+      }
+    ],
+    "cogpMonthly": [
+      {
+        "label": "COGP BUA ($/MT)",
+        "months": [
+          54.12577293671544,
+          67.47797485324946,
+          40.6061505522486,
+          56.934158095394125,
+          976.6993875959497,
+          51.149597835713905,
+          147.50769050756747,
+          77.66345338257939,
+          66.36001464458204,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "label": "COGP WP ($/MT)",
+        "months": [
+          82.51014595952745,
+          96.72910568007093,
+          60.88871385327014,
+          90.2977195850447,
+          0,
+          64.4357906795923,
+          158.4333601307376,
+          87.60171361150535,
+          84.716343806254,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "label": "COGP Port ($/MT)",
+        "months": [
+          122.04379165647526,
+          124.60512231656914,
+          78.38126077871863,
+          101.64805727650717,
+          598.841344114769,
+          90.83494004884818,
+          184.52043021982428,
+          117.25901342364556,
+          115.42856858054112,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "label": "COGP ISP ($/MT)",
+        "months": [
+          135.25503968316661,
+          140.77614089519494,
+          81.05385270188158,
+          120.22406928280039,
+          598.841344114769,
+          102.01382361175024,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    ]
+  }
+}

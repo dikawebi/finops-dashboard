@@ -1,0 +1,2421 @@
+{
+  "success": true,
+  "data": {
+    "periodKey": "2026-04",
+    "stages": [
+      {
+        "id": "bua",
+        "name": "BUA / Mine Site",
+        "location": "BUA / Mine Site",
+        "includedInTotal": true,
+        "includedInQuantityTotal": true,
+        "includedInValueTotal": true,
+        "rows": [
+          {
+            "label": "2026-01 — Opening balance",
+            "qtyMT": 22044.604,
+            "valueUSD": 627189.175613469,
+            "rateUSD": 28.45091595265077,
+            "type": "opening"
+          },
+          {
+            "label": "2026-01 — Audit Adj",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "adjustment",
+            "source": "audit"
+          },
+          {
+            "label": "2026-01 — Coal mined — COGP BUA",
+            "qtyMT": 25156.83246538834,
+            "valueUSD": 1001531.9480030778,
+            "rateUSD": 39.81152831466445,
+            "type": "receipt",
+            "source": "COGP BUA"
+          },
+          {
+            "label": "2026-01 — Adjustment coal produce",
+            "qtyMT": 12045.173726053816,
+            "valueUSD": 362807.8990042397,
+            "rateUSD": 30.120603260331816,
+            "type": "adjustment",
+            "source": "coalProduced"
+          },
+          {
+            "label": "2026-01 — Adjustment end stock",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "adjustment",
+            "source": "endStock"
+          },
+          {
+            "label": "2026-01 — Capitalize",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "adjustment",
+            "source": "capitalization"
+          },
+          {
+            "label": "2026-01 — Available",
+            "qtyMT": 59246.61019144215,
+            "valueUSD": 1991529.0226207864,
+            "rateUSD": 33.614227315041425,
+            "type": "available"
+          },
+          {
+            "label": "2026-01 — Hauled to Wash Plant",
+            "qtyMT": -7629,
+            "valueUSD": -256442.94018645104,
+            "rateUSD": 33.614227315041425,
+            "type": "outflow",
+            "source": "nonWash"
+          },
+          {
+            "label": "2026-01 — Hauled to BP PORT",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 33.614227315041425,
+            "type": "outflow",
+            "source": "port"
+          },
+          {
+            "label": "2026-01 — End stock adjustment — closing",
+            "qtyMT": -852.746565388341,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": "closingSurvey"
+          },
+          {
+            "label": "2026-01 — Closing balance",
+            "qtyMT": 50764.86362605381,
+            "valueUSD": 1735086.0824343355,
+            "rateUSD": 34.17887803689175,
+            "type": "closing"
+          },
+          {
+            "label": "2026-02 — Opening balance",
+            "qtyMT": 50764.86362605381,
+            "valueUSD": 1735086.0824343355,
+            "rateUSD": 34.17887803689175,
+            "type": "opening"
+          },
+          {
+            "label": "2026-02 — Audit Adj",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "adjustment",
+            "source": "audit"
+          },
+          {
+            "label": "2026-02 — Coal mined — COGP BUA",
+            "qtyMT": 19822.620000000003,
+            "valueUSD": 1061471.2406913727,
+            "rateUSD": 53.5484835350409,
+            "type": "receipt",
+            "source": "COGP BUA"
+          },
+          {
+            "label": "2026-02 — Adjustment coal produce",
+            "qtyMT": 11138.331025732426,
+            "valueUSD": 341919.73,
+            "rateUSD": 30.6975730214946,
+            "type": "adjustment",
+            "source": "coalProduced"
+          },
+          {
+            "label": "2026-02 — Adjustment end stock",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "adjustment",
+            "source": "endStock"
+          },
+          {
+            "label": "2026-02 — Capitalize",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "adjustment",
+            "source": "capitalization"
+          },
+          {
+            "label": "2026-02 — Available",
+            "qtyMT": 81725.81465178623,
+            "valueUSD": 3138477.053125708,
+            "rateUSD": 38.40251781518475,
+            "type": "available"
+          },
+          {
+            "label": "2026-02 — Hauled to Wash Plant",
+            "qtyMT": -8415.279999999992,
+            "valueUSD": -323167.9401197676,
+            "rateUSD": 38.40251781518475,
+            "type": "outflow",
+            "source": "nonWash"
+          },
+          {
+            "label": "2026-02 — Hauled to BP PORT",
+            "qtyMT": -2667.8,
+            "valueUSD": -102450.23702734988,
+            "rateUSD": 38.40251781518475,
+            "type": "outflow",
+            "source": "port"
+          },
+          {
+            "label": "2026-02 — End stock adjustment — closing",
+            "qtyMT": -1584.334400000007,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": "closingSurvey"
+          },
+          {
+            "label": "2026-02 — Closing balance",
+            "qtyMT": 69058.40025178622,
+            "valueUSD": 2712858.8759785905,
+            "rateUSD": 39.283546477872854,
+            "type": "closing"
+          },
+          {
+            "label": "2026-03 — Opening balance",
+            "qtyMT": 69058.40025178622,
+            "valueUSD": 2712858.8759785905,
+            "rateUSD": 39.283546477872854,
+            "type": "opening"
+          },
+          {
+            "label": "2026-03 — Audit Adj",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "adjustment",
+            "source": "audit"
+          },
+          {
+            "label": "2026-03 — Coal mined — COGP BUA",
+            "qtyMT": 46326.05,
+            "valueUSD": 1539125.2769871408,
+            "rateUSD": 33.223753740868055,
+            "type": "receipt",
+            "source": "COGP BUA"
+          },
+          {
+            "label": "2026-03 — Adjustment coal produce",
+            "qtyMT": 14244.9144042162,
+            "valueUSD": 430115.8400000001,
+            "rateUSD": 30.194343594840742,
+            "type": "adjustment",
+            "source": "coalProduced"
+          },
+          {
+            "label": "2026-03 — Adjustment end stock",
+            "qtyMT": 26423.07837860927,
+            "valueUSD": 1122218.023691747,
+            "rateUSD": 42.47113101705196,
+            "type": "adjustment",
+            "source": "endStock"
+          },
+          {
+            "label": "2026-03 — Capitalize",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "adjustment",
+            "source": "capitalization"
+          },
+          {
+            "label": "2026-03 — Available",
+            "qtyMT": 156052.4430346117,
+            "valueUSD": 5804318.016657478,
+            "rateUSD": 37.19466292091376,
+            "type": "available"
+          },
+          {
+            "label": "2026-03 — Hauled to Wash Plant",
+            "qtyMT": -21960.53,
+            "valueUSD": -816814.5109146142,
+            "rateUSD": 37.19466292091376,
+            "type": "outflow",
+            "source": "nonWash"
+          },
+          {
+            "label": "2026-03 — Hauled to BP PORT",
+            "qtyMT": -23359.21,
+            "valueUSD": -868837.9420488378,
+            "rateUSD": 37.19466292091376,
+            "type": "outflow",
+            "source": "port"
+          },
+          {
+            "label": "2026-03 — End stock adjustment — closing",
+            "qtyMT": -984.172245000008,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": "closingSurvey"
+          },
+          {
+            "label": "2026-03 — Closing balance",
+            "qtyMT": 109748.5307896117,
+            "valueUSD": 4118665.563694026,
+            "rateUSD": 37.528206838499926,
+            "type": "closing"
+          },
+          {
+            "label": "2026-04 — Opening balance",
+            "qtyMT": 109748.5307896117,
+            "valueUSD": 4118665.563694026,
+            "rateUSD": 37.528206838499926,
+            "type": "opening"
+          },
+          {
+            "label": "2026-04 — Audit Adj",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "adjustment",
+            "source": "audit"
+          },
+          {
+            "label": "2026-04 — Coal mined — COGP BUA",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "receipt",
+            "source": "COGP BUA"
+          },
+          {
+            "label": "2026-04 — Adjustment coal produce",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "adjustment",
+            "source": "coalProduced"
+          },
+          {
+            "label": "2026-04 — Adjustment end stock",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "adjustment",
+            "source": "endStock"
+          },
+          {
+            "label": "2026-04 — Capitalize",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "adjustment",
+            "source": "capitalization"
+          },
+          {
+            "label": "2026-04 — Available",
+            "qtyMT": 109748.5307896117,
+            "valueUSD": 4118665.563694026,
+            "rateUSD": 37.528206838499926,
+            "type": "available"
+          },
+          {
+            "label": "2026-04 — Hauled to Wash Plant",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 37.528206838499926,
+            "type": "outflow",
+            "source": "nonWash"
+          },
+          {
+            "label": "2026-04 — Hauled to BP PORT",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 37.528206838499926,
+            "type": "outflow",
+            "source": "port"
+          },
+          {
+            "label": "2026-04 — End stock adjustment — closing",
+            "qtyMT": -183.374179999992,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": "closingSurvey"
+          },
+          {
+            "label": "2026-04 — Closing balance",
+            "qtyMT": 109565.1566096117,
+            "valueUSD": 4118665.563694026,
+            "rateUSD": 37.5910160779409,
+            "type": "closing"
+          }
+        ],
+        "beginningQtyMT": 22044.604,
+        "beginningValueUSD": 627189.175613469,
+        "availableQtyMT": 109748.5307896117,
+        "availableValueUSD": 4118665.563694026,
+        "movingAverageRateUSD": 36.97713996411504,
+        "beginningRateUSD": 37.528206838499926,
+        "inflowQtyMT": 91305.50246538834,
+        "receiptValueUSD": 3602128.465681591,
+        "addedCostUSD": 0,
+        "inflowCostValuationUSD": 0,
+        "inflowTotalValueUSD": 0,
+        "outflowQtyMT": 64031.81999999999,
+        "outflowValueUSD": 2367713.5702970205,
+        "adjustmentQtyMT": 60246.870144223365,
+        "adjustmentValueUSD": 2257061.4926959868,
+        "endingQtyMT": 109565.1566096117,
+        "endingValueUSD": 4118665.563694026,
+        "endingRateUSD": 37.5910160779409
+      },
+      {
+        "id": "nonWash",
+        "name": "Wash Plant — Non Wash",
+        "location": "Wash Plant — Non Wash",
+        "includedInTotal": true,
+        "includedInQuantityTotal": true,
+        "includedInValueTotal": true,
+        "rows": [
+          {
+            "label": "2026-01 — Opening balance",
+            "qtyMT": 518.9400000000006,
+            "valueUSD": 60398.307999004726,
+            "rateUSD": 116.38784445023443,
+            "type": "opening"
+          },
+          {
+            "label": "2026-01 — Received from BUA / Mine Site",
+            "qtyMT": 7629,
+            "valueUSD": 256442.94018645104,
+            "rateUSD": 33.614227315041425,
+            "type": "receipt",
+            "source": "bua"
+          },
+          {
+            "label": "2026-01 — Add Cost TM — Coal Hauling BUA to WP",
+            "qtyMT": 0,
+            "valueUSD": 21581.48559701628,
+            "rateUSD": null,
+            "type": "cost",
+            "source": "COGP Coal Hauling BUA to WP"
+          },
+          {
+            "label": "2026-01 — Available",
+            "qtyMT": 8147.9400000000005,
+            "valueUSD": 338422.7337824721,
+            "rateUSD": 41.53476017035865,
+            "type": "available"
+          },
+          {
+            "label": "2026-01 — Coal Wash",
+            "qtyMT": -6840,
+            "valueUSD": -284097.75956525316,
+            "rateUSD": 41.53476017035865,
+            "type": "outflow",
+            "source": "washed"
+          },
+          {
+            "label": "2026-01 — Stock / value adjustment",
+            "qtyMT": 589.065,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": ""
+          },
+          {
+            "label": "2026-01 — Closing balance",
+            "qtyMT": 1897.0050000000006,
+            "valueUSD": 54324.97421721893,
+            "rateUSD": 28.63723301584282,
+            "type": "closing"
+          },
+          {
+            "label": "2026-02 — Opening balance",
+            "qtyMT": 1897.0050000000006,
+            "valueUSD": 54324.97421721893,
+            "rateUSD": 28.63723301584282,
+            "type": "opening"
+          },
+          {
+            "label": "2026-02 — Received from BUA / Mine Site",
+            "qtyMT": 8415.279999999992,
+            "valueUSD": 323167.9401197676,
+            "rateUSD": 38.40251781518475,
+            "type": "receipt",
+            "source": "bua"
+          },
+          {
+            "label": "2026-02 — Add Cost TM — Coal Hauling BUA to WP",
+            "qtyMT": 0,
+            "valueUSD": 14236.39805037369,
+            "rateUSD": null,
+            "type": "cost",
+            "source": "COGP Coal Hauling BUA to WP"
+          },
+          {
+            "label": "2026-02 — Available",
+            "qtyMT": 10312.284999999993,
+            "valueUSD": 391729.31238736026,
+            "rateUSD": 37.98666468075315,
+            "type": "available"
+          },
+          {
+            "label": "2026-02 — Coal Wash",
+            "qtyMT": -9388,
+            "valueUSD": -356618.80802291055,
+            "rateUSD": 37.98666468075315,
+            "type": "outflow",
+            "source": "washed"
+          },
+          {
+            "label": "2026-02 — Stock / value adjustment",
+            "qtyMT": 652.3440000000073,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": ""
+          },
+          {
+            "label": "2026-02 — Closing balance",
+            "qtyMT": 1576.629,
+            "valueUSD": 35110.504364449705,
+            "rateUSD": 22.269350852007484,
+            "type": "closing"
+          },
+          {
+            "label": "2026-03 — Opening balance",
+            "qtyMT": 1576.629,
+            "valueUSD": 35110.504364449705,
+            "rateUSD": 22.269350852007484,
+            "type": "opening"
+          },
+          {
+            "label": "2026-03 — Received from BUA / Mine Site",
+            "qtyMT": 21960.53,
+            "valueUSD": 816814.5109146142,
+            "rateUSD": 37.19466292091376,
+            "type": "receipt",
+            "source": "bua"
+          },
+          {
+            "label": "2026-03 — Add Cost TM — Coal Hauling BUA to WP",
+            "qtyMT": 0,
+            "valueUSD": 29461.373929541154,
+            "rateUSD": null,
+            "type": "cost",
+            "source": "COGP Coal Hauling BUA to WP"
+          },
+          {
+            "label": "2026-03 — Available",
+            "qtyMT": 23537.159,
+            "valueUSD": 881386.3892086052,
+            "rateUSD": 37.44659197011012,
+            "type": "available"
+          },
+          {
+            "label": "2026-03 — Coal Wash",
+            "qtyMT": -14935,
+            "valueUSD": -559264.8510735946,
+            "rateUSD": 37.44659197011012,
+            "type": "outflow",
+            "source": "washed"
+          },
+          {
+            "label": "2026-03 — Stock / value adjustment",
+            "qtyMT": -315.524500000001,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": ""
+          },
+          {
+            "label": "2026-03 — Closing balance",
+            "qtyMT": 8286.634499999998,
+            "valueUSD": 322121.5381350105,
+            "rateUSD": 38.87242017673286,
+            "type": "closing"
+          },
+          {
+            "label": "2026-04 — Opening balance",
+            "qtyMT": 8286.634499999998,
+            "valueUSD": 322121.5381350105,
+            "rateUSD": 38.87242017673286,
+            "type": "opening"
+          },
+          {
+            "label": "2026-04 — Add Cost TM — Coal Hauling BUA to WP",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "cost",
+            "source": "COGP Coal Hauling BUA to WP"
+          },
+          {
+            "label": "2026-04 — Available",
+            "qtyMT": 8286.634499999998,
+            "valueUSD": 322121.5381350105,
+            "rateUSD": 38.87242017673286,
+            "type": "available"
+          },
+          {
+            "label": "2026-04 — Coal Wash",
+            "qtyMT": -5080,
+            "valueUSD": -197471.89449780292,
+            "rateUSD": 38.87242017673286,
+            "type": "outflow",
+            "source": "washed"
+          },
+          {
+            "label": "2026-04 — Stock / value adjustment",
+            "qtyMT": 91.61499999999887,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": ""
+          },
+          {
+            "label": "2026-04 — Closing balance",
+            "qtyMT": 3298.249499999997,
+            "valueUSD": 124649.6436372076,
+            "rateUSD": 37.7926665757723,
+            "type": "closing"
+          }
+        ],
+        "beginningQtyMT": 518.9400000000006,
+        "beginningValueUSD": 60398.307999004726,
+        "availableQtyMT": 8286.634499999998,
+        "availableValueUSD": 322121.5381350105,
+        "movingAverageRateUSD": 38.55788188504156,
+        "beginningRateUSD": 38.87242017673286,
+        "inflowQtyMT": 38004.80999999999,
+        "receiptValueUSD": 1396425.3912208327,
+        "addedCostUSD": 65279.25757693112,
+        "inflowCostValuationUSD": 0,
+        "inflowTotalValueUSD": 0,
+        "outflowQtyMT": 36243,
+        "outflowValueUSD": 1397453.3131595613,
+        "adjustmentQtyMT": 1017.4995000000052,
+        "adjustmentValueUSD": 0,
+        "endingQtyMT": 3298.249499999997,
+        "endingValueUSD": 124649.6436372076,
+        "endingRateUSD": 37.7926665757723
+      },
+      {
+        "id": "washed",
+        "name": "Wash Plant — Wash",
+        "location": "Wash Plant — Wash",
+        "includedInTotal": true,
+        "includedInQuantityTotal": true,
+        "includedInValueTotal": true,
+        "rows": [
+          {
+            "label": "2026-01 — Opening balance",
+            "qtyMT": 12754.105579999996,
+            "valueUSD": 936078.8747909514,
+            "rateUSD": 73.39431753323714,
+            "type": "opening"
+          },
+          {
+            "label": "2026-01 — Received from Wash Plant — Non Wash",
+            "qtyMT": 6840,
+            "valueUSD": 284097.75956525316,
+            "rateUSD": 41.53476017035865,
+            "type": "receipt",
+            "source": "nonWash"
+          },
+          {
+            "label": "2026-01 — Stock Reject (qty only)",
+            "qtyMT": -1751,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": ""
+          },
+          {
+            "label": "2026-01 — Add Cost TM — COGP Washing Plant",
+            "qtyMT": 0,
+            "valueUSD": 91379.98,
+            "rateUSD": null,
+            "type": "cost",
+            "source": "COGP Washing Plant"
+          },
+          {
+            "label": "2026-01 — Available",
+            "qtyMT": 17843.105579999996,
+            "valueUSD": 1311556.6143562044,
+            "rateUSD": 73.50495172915996,
+            "type": "available"
+          },
+          {
+            "label": "2026-01 — Hauling to BP PORT",
+            "qtyMT": -9100.8,
+            "valueUSD": -668953.8646967389,
+            "rateUSD": 73.50495172915996,
+            "type": "outflow",
+            "source": "port"
+          },
+          {
+            "label": "2026-01 — Stock / value adjustment",
+            "qtyMT": -2216.6360099999965,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": ""
+          },
+          {
+            "label": "2026-01 — Closing balance",
+            "qtyMT": 6525.66957,
+            "valueUSD": 642602.7496594655,
+            "rateUSD": 98.47307510230947,
+            "type": "closing"
+          },
+          {
+            "label": "2026-02 — Opening balance",
+            "qtyMT": 6525.66957,
+            "valueUSD": 642602.7496594655,
+            "rateUSD": 98.47307510230947,
+            "type": "opening"
+          },
+          {
+            "label": "2026-02 — Received from Wash Plant — Non Wash",
+            "qtyMT": 9388,
+            "valueUSD": 356618.80802291055,
+            "rateUSD": 37.98666468075315,
+            "type": "receipt",
+            "source": "nonWash"
+          },
+          {
+            "label": "2026-02 — Stock Reject (qty only)",
+            "qtyMT": -2325,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": ""
+          },
+          {
+            "label": "2026-02 — Add Cost TM — COGP Washing Plant",
+            "qtyMT": 0,
+            "valueUSD": 126059.23000000001,
+            "rateUSD": null,
+            "type": "cost",
+            "source": "COGP Washing Plant"
+          },
+          {
+            "label": "2026-02 — Available",
+            "qtyMT": 13588.66957,
+            "valueUSD": 1125280.787682376,
+            "rateUSD": 82.81022523107654,
+            "type": "available"
+          },
+          {
+            "label": "2026-02 — Hauling to BP PORT",
+            "qtyMT": -11322.02,
+            "valueUSD": -937579.0262707532,
+            "rateUSD": 82.81022523107654,
+            "type": "outflow",
+            "source": "port"
+          },
+          {
+            "label": "2026-02 — Stock / value adjustment",
+            "qtyMT": -50.48904999999968,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": ""
+          },
+          {
+            "label": "2026-02 — Closing balance",
+            "qtyMT": 2216.16052,
+            "valueUSD": 187701.76141162287,
+            "rateUSD": 84.69682575683773,
+            "type": "closing"
+          },
+          {
+            "label": "2026-03 — Opening balance",
+            "qtyMT": 2216.16052,
+            "valueUSD": 187701.76141162287,
+            "rateUSD": 84.69682575683773,
+            "type": "opening"
+          },
+          {
+            "label": "2026-03 — Received from Wash Plant — Non Wash",
+            "qtyMT": 14935,
+            "valueUSD": 559264.8510735946,
+            "rateUSD": 37.44659197011012,
+            "type": "receipt",
+            "source": "nonWash"
+          },
+          {
+            "label": "2026-03 — Stock Reject (qty only)",
+            "qtyMT": -3608,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": ""
+          },
+          {
+            "label": "2026-03 — Add Cost TM — COGP Washing Plant",
+            "qtyMT": 0,
+            "valueUSD": 201343.09999999998,
+            "rateUSD": null,
+            "type": "cost",
+            "source": "COGP Washing Plant"
+          },
+          {
+            "label": "2026-03 — Available",
+            "qtyMT": 13543.160520000001,
+            "valueUSD": 948309.7124852175,
+            "rateUSD": 70.02130049959841,
+            "type": "available"
+          },
+          {
+            "label": "2026-03 — Hauling to BP PORT",
+            "qtyMT": -2088.75,
+            "valueUSD": -146256.99141853617,
+            "rateUSD": 70.02130049959841,
+            "type": "outflow",
+            "source": "port"
+          },
+          {
+            "label": "2026-03 — Stock / value adjustment",
+            "qtyMT": 351.82464000000255,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": ""
+          },
+          {
+            "label": "2026-03 — Closing balance",
+            "qtyMT": 11806.235160000004,
+            "valueUSD": 802052.7210666813,
+            "rateUSD": 67.93467267059596,
+            "type": "closing"
+          },
+          {
+            "label": "2026-04 — Opening balance",
+            "qtyMT": 11806.235160000004,
+            "valueUSD": 802052.7210666813,
+            "rateUSD": 67.93467267059596,
+            "type": "opening"
+          },
+          {
+            "label": "2026-04 — Received from Wash Plant — Non Wash",
+            "qtyMT": 5080,
+            "valueUSD": 197471.89449780292,
+            "rateUSD": 38.87242017673286,
+            "type": "receipt",
+            "source": "nonWash"
+          },
+          {
+            "label": "2026-04 — Stock Reject (qty only)",
+            "qtyMT": -1631,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": ""
+          },
+          {
+            "label": "2026-04 — Add Cost TM — COGP Washing Plant",
+            "qtyMT": 0,
+            "valueUSD": 67418.65000000002,
+            "rateUSD": null,
+            "type": "cost",
+            "source": "COGP Washing Plant"
+          },
+          {
+            "label": "2026-04 — Available",
+            "qtyMT": 15255.235160000004,
+            "valueUSD": 1066943.2655644843,
+            "rateUSD": 69.93948335598677,
+            "type": "available"
+          },
+          {
+            "label": "2026-04 — Stock / value adjustment",
+            "qtyMT": -377.27247999999963,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": ""
+          },
+          {
+            "label": "2026-04 — Closing balance",
+            "qtyMT": 14877.962680000004,
+            "valueUSD": 1066943.2655644843,
+            "rateUSD": 71.71299515347917,
+            "type": "closing"
+          }
+        ],
+        "beginningQtyMT": 12754.105579999996,
+        "beginningValueUSD": 936078.8747909514,
+        "availableQtyMT": 15255.235160000004,
+        "availableValueUSD": 1066943.2655644843,
+        "movingAverageRateUSD": 77.86173431644387,
+        "beginningRateUSD": 67.93467267059596,
+        "inflowQtyMT": 36243,
+        "receiptValueUSD": 1397453.3131595613,
+        "addedCostUSD": 486200.96,
+        "inflowCostValuationUSD": 67418.65000000002,
+        "inflowTotalValueUSD": 264890.54449780297,
+        "outflowQtyMT": 22511.57,
+        "outflowValueUSD": 1752789.8823860283,
+        "adjustmentQtyMT": -11607.572899999994,
+        "adjustmentValueUSD": 0,
+        "endingQtyMT": 14877.962680000004,
+        "endingValueUSD": 1066943.2655644843,
+        "endingRateUSD": 71.71299515347917
+      },
+      {
+        "id": "highAsh",
+        "name": "High Ash",
+        "location": "High Ash",
+        "includedInTotal": true,
+        "includedInQuantityTotal": true,
+        "includedInValueTotal": true,
+        "rows": [
+          {
+            "label": "2026-01 — Opening balance",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "opening"
+          },
+          {
+            "label": "2026-01 — Stock Reject from Washing Plant — qty only",
+            "qtyMT": 1751,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "receipt",
+            "source": "washed reject"
+          },
+          {
+            "label": "2026-01 — Available",
+            "qtyMT": 1751,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "available"
+          },
+          {
+            "label": "2026-01 — To disposal",
+            "qtyMT": -1751,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "outflow",
+            "source": "sale"
+          },
+          {
+            "label": "2026-01 — Closing balance",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "closing"
+          },
+          {
+            "label": "2026-02 — Opening balance",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "opening"
+          },
+          {
+            "label": "2026-02 — Stock Reject from Washing Plant — qty only",
+            "qtyMT": 2325,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "receipt",
+            "source": "washed reject"
+          },
+          {
+            "label": "2026-02 — Available",
+            "qtyMT": 2325,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "available"
+          },
+          {
+            "label": "2026-02 — To disposal",
+            "qtyMT": -2325,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "outflow",
+            "source": "sale"
+          },
+          {
+            "label": "2026-02 — Closing balance",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "closing"
+          },
+          {
+            "label": "2026-03 — Opening balance",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "opening"
+          },
+          {
+            "label": "2026-03 — Stock Reject from Washing Plant — qty only",
+            "qtyMT": 3608,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "receipt",
+            "source": "washed reject"
+          },
+          {
+            "label": "2026-03 — Available",
+            "qtyMT": 3608,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "available"
+          },
+          {
+            "label": "2026-03 — To disposal",
+            "qtyMT": -3608,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "outflow",
+            "source": "sale"
+          },
+          {
+            "label": "2026-03 — Closing balance",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "closing"
+          },
+          {
+            "label": "2026-04 — Opening balance",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "opening"
+          },
+          {
+            "label": "2026-04 — Stock Reject from Washing Plant — qty only",
+            "qtyMT": 1631,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "receipt",
+            "source": "washed reject"
+          },
+          {
+            "label": "2026-04 — Available",
+            "qtyMT": 1631,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "available"
+          },
+          {
+            "label": "2026-04 — To disposal",
+            "qtyMT": -1631,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "outflow",
+            "source": "sale"
+          },
+          {
+            "label": "2026-04 — Closing balance",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "closing"
+          }
+        ],
+        "beginningQtyMT": 0,
+        "beginningValueUSD": 0,
+        "availableQtyMT": 1631,
+        "availableValueUSD": 0,
+        "movingAverageRateUSD": 0,
+        "beginningRateUSD": 0,
+        "inflowQtyMT": 9315,
+        "receiptValueUSD": 0,
+        "addedCostUSD": 0,
+        "inflowCostValuationUSD": 0,
+        "inflowTotalValueUSD": 0,
+        "outflowQtyMT": 9315,
+        "outflowValueUSD": 0,
+        "adjustmentQtyMT": 0,
+        "adjustmentValueUSD": 0,
+        "endingQtyMT": 0,
+        "endingValueUSD": 0,
+        "endingRateUSD": 0
+      },
+      {
+        "id": "port",
+        "name": "BP PORT",
+        "location": "BP PORT",
+        "includedInTotal": true,
+        "includedInQuantityTotal": true,
+        "includedInValueTotal": true,
+        "rows": [
+          {
+            "label": "2026-01 — Opening balance",
+            "qtyMT": 17768.44998,
+            "valueUSD": 1582425.1330245,
+            "rateUSD": 89.05814152645068,
+            "type": "opening"
+          },
+          {
+            "label": "2026-01 — Received from Wash Plant — Wash",
+            "qtyMT": 9100.8,
+            "valueUSD": 668953.8646967389,
+            "rateUSD": 73.50495172915996,
+            "type": "receipt",
+            "source": "washed"
+          },
+          {
+            "label": "2026-01 — Add Cost TM — Coal Hauling BUA to Port + WP to Port + COGP BP PORT",
+            "qtyMT": 0,
+            "valueUSD": 77761.8118064664,
+            "rateUSD": null,
+            "type": "cost",
+            "source": "Histori Add Cost Excel"
+          },
+          {
+            "label": "2026-01 — Stock / value adjustment",
+            "qtyMT": -530.1298800000004,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": ""
+          },
+          {
+            "label": "2026-01 — Available",
+            "qtyMT": 26339.1201,
+            "valueUSD": 2329140.8095277054,
+            "rateUSD": 88.42895285358091,
+            "type": "available"
+          },
+          {
+            "label": "2026-01 — Barging to ISP KUNZ",
+            "qtyMT": -4779,
+            "valueUSD": -422601.9656872632,
+            "rateUSD": 88.42895285358091,
+            "type": "outflow",
+            "source": "kunz"
+          },
+          {
+            "label": "2026-01 — Closing balance",
+            "qtyMT": 21560.1201,
+            "valueUSD": 1906538.8438404421,
+            "rateUSD": 88.42895285358091,
+            "type": "closing"
+          },
+          {
+            "label": "2026-02 — Opening balance",
+            "qtyMT": 21560.1201,
+            "valueUSD": 1906538.8438404421,
+            "rateUSD": 88.42895285358091,
+            "type": "opening"
+          },
+          {
+            "label": "2026-02 — Received from BUA / Mine Site",
+            "qtyMT": 2667.8,
+            "valueUSD": 102450.23702734988,
+            "rateUSD": 38.40251781518475,
+            "type": "receipt",
+            "source": "bua"
+          },
+          {
+            "label": "2026-02 — Received from Wash Plant — Wash",
+            "qtyMT": 11322.02,
+            "valueUSD": 937579.0262707532,
+            "rateUSD": 82.81022523107654,
+            "type": "receipt",
+            "source": "washed"
+          },
+          {
+            "label": "2026-02 — Add Cost TM — Coal Hauling BUA to Port + WP to Port + COGP BP PORT",
+            "qtyMT": 0,
+            "valueUSD": 311020.4194753791,
+            "rateUSD": null,
+            "type": "cost",
+            "source": "Histori Add Cost Excel"
+          },
+          {
+            "label": "2026-02 — Stock / value adjustment",
+            "qtyMT": 251.1598800000029,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": ""
+          },
+          {
+            "label": "2026-02 — Available",
+            "qtyMT": 35801.09998,
+            "valueUSD": 3257588.526613924,
+            "rateUSD": 90.99129715103028,
+            "type": "available"
+          },
+          {
+            "label": "2026-02 — Sales",
+            "qtyMT": -9457.436,
+            "valueUSD": -860544.3693628511,
+            "rateUSD": 90.99129715103028,
+            "type": "outflow",
+            "source": "sale"
+          },
+          {
+            "label": "2026-02 — Barging to ISP KUNZ",
+            "qtyMT": -4765.128,
+            "valueUSD": -433585.1778106946,
+            "rateUSD": 90.99129715103028,
+            "type": "outflow",
+            "source": "kunz"
+          },
+          {
+            "label": "2026-02 — Coal in transit from BP PORT",
+            "qtyMT": -4791.969,
+            "valueUSD": -436027.47521752544,
+            "rateUSD": 90.99129715103028,
+            "type": "outflow",
+            "source": "transitPort"
+          },
+          {
+            "label": "2026-02 — Stock / value adjustment",
+            "qtyMT": 456.1632800000043,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": ""
+          },
+          {
+            "label": "2026-02 — Closing balance",
+            "qtyMT": 17242.73026,
+            "valueUSD": 1527431.504222853,
+            "rateUSD": 88.58408623176206,
+            "type": "closing"
+          },
+          {
+            "label": "2026-03 — Opening balance",
+            "qtyMT": 17242.73026,
+            "valueUSD": 1527431.504222853,
+            "rateUSD": 88.58408623176206,
+            "type": "opening"
+          },
+          {
+            "label": "2026-03 — Received from BUA / Mine Site",
+            "qtyMT": 23359.21,
+            "valueUSD": 868837.9420488378,
+            "rateUSD": 37.19466292091376,
+            "type": "receipt",
+            "source": "bua"
+          },
+          {
+            "label": "2026-03 — Received from Wash Plant — Wash",
+            "qtyMT": 2088.75,
+            "valueUSD": 146256.99141853617,
+            "rateUSD": 70.02130049959841,
+            "type": "receipt",
+            "source": "washed"
+          },
+          {
+            "label": "2026-03 — Add Cost TM — Coal Hauling BUA to Port + WP to Port + COGP BP PORT",
+            "qtyMT": 0,
+            "valueUSD": 803731.5862911715,
+            "rateUSD": null,
+            "type": "cost",
+            "source": "Histori Add Cost Excel"
+          },
+          {
+            "label": "2026-03 — Available",
+            "qtyMT": 42690.69026,
+            "valueUSD": 3346258.023981399,
+            "rateUSD": 78.38378821240916,
+            "type": "available"
+          },
+          {
+            "label": "2026-03 — Sales",
+            "qtyMT": -9514.624,
+            "valueUSD": -745792.2725367052,
+            "rateUSD": 78.38378821240916,
+            "type": "outflow",
+            "source": "sale"
+          },
+          {
+            "label": "2026-03 — Barging to ISP KUNZ",
+            "qtyMT": -4755.324,
+            "valueUSD": -372740.3092973863,
+            "rateUSD": 78.38378821240916,
+            "type": "outflow",
+            "source": "kunz"
+          },
+          {
+            "label": "2026-03 — Stock / value adjustment",
+            "qtyMT": -136.07488999999987,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": ""
+          },
+          {
+            "label": "2026-03 — Closing balance",
+            "qtyMT": 28284.667370000006,
+            "valueUSD": 2227725.442147307,
+            "rateUSD": 78.76088528833587,
+            "type": "closing"
+          },
+          {
+            "label": "2026-04 — Opening balance",
+            "qtyMT": 28284.667370000006,
+            "valueUSD": 2227725.442147307,
+            "rateUSD": 78.76088528833587,
+            "type": "opening"
+          },
+          {
+            "label": "2026-04 — Add Cost TM — Coal Hauling BUA to Port + WP to Port + COGP BP PORT",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "cost",
+            "source": "Histori Add Cost Excel"
+          },
+          {
+            "label": "2026-04 — Stock / value adjustment",
+            "qtyMT": -420.724500000005,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": ""
+          },
+          {
+            "label": "2026-04 — Available",
+            "qtyMT": 27863.942870000003,
+            "valueUSD": 2227725.442147307,
+            "rateUSD": 79.95011519155139,
+            "type": "available"
+          },
+          {
+            "label": "2026-04 — Barging to ISP KUNZ",
+            "qtyMT": -4762.079,
+            "valueUSD": -380728.7646012678,
+            "rateUSD": 79.95011519155139,
+            "type": "outflow",
+            "source": "kunz"
+          },
+          {
+            "label": "2026-04 — Coal in transit from BP PORT",
+            "qtyMT": -4752.449,
+            "valueUSD": -379958.8449919732,
+            "rateUSD": 79.95011519155139,
+            "type": "outflow",
+            "source": "transitPort"
+          },
+          {
+            "label": "2026-04 — Stock / value adjustment",
+            "qtyMT": 567.3956699999981,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": ""
+          },
+          {
+            "label": "2026-04 — Closing balance",
+            "qtyMT": 18916.81054,
+            "valueUSD": 1467037.832554066,
+            "rateUSD": 77.5520709187198,
+            "type": "closing"
+          }
+        ],
+        "beginningQtyMT": 17768.44998,
+        "beginningValueUSD": 1582425.1330245,
+        "availableQtyMT": 27863.942870000003,
+        "availableValueUSD": 2227725.442147307,
+        "movingAverageRateUSD": 84.74459659515529,
+        "beginningRateUSD": 78.76088528833587,
+        "inflowQtyMT": 48538.58,
+        "receiptValueUSD": 2724078.061462216,
+        "addedCostUSD": 1192513.817573017,
+        "inflowCostValuationUSD": 0,
+        "inflowTotalValueUSD": 0,
+        "outflowQtyMT": 47578.009,
+        "outflowValueUSD": 4031979.179505667,
+        "adjustmentQtyMT": 187.78956,
+        "adjustmentValueUSD": 0,
+        "endingQtyMT": 18916.81054,
+        "endingValueUSD": 1467037.832554066,
+        "endingRateUSD": 77.5520709187198
+      },
+      {
+        "id": "transitPort",
+        "name": "Coal in Transit BP PORT",
+        "location": "Coal in Transit BP PORT",
+        "includedInTotal": true,
+        "includedInQuantityTotal": true,
+        "includedInValueTotal": true,
+        "rows": [
+          {
+            "label": "2026-01 — Opening balance",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "opening"
+          },
+          {
+            "label": "2026-01 — Available",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "available"
+          },
+          {
+            "label": "2026-01 — Closing balance",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "closing"
+          },
+          {
+            "label": "2026-02 — Opening balance",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "opening"
+          },
+          {
+            "label": "2026-02 — Received from BP PORT",
+            "qtyMT": 4791.969,
+            "valueUSD": 436027.47521752544,
+            "rateUSD": 90.99129715103028,
+            "type": "receipt",
+            "source": "port"
+          },
+          {
+            "label": "2026-02 — Available",
+            "qtyMT": 4791.969,
+            "valueUSD": 436027.47521752544,
+            "rateUSD": 90.99129715103028,
+            "type": "available"
+          },
+          {
+            "label": "2026-02 — Closing balance",
+            "qtyMT": 4791.969,
+            "valueUSD": 436027.47521752544,
+            "rateUSD": 90.99129715103028,
+            "type": "closing"
+          },
+          {
+            "label": "2026-03 — Opening balance",
+            "qtyMT": 4791.969,
+            "valueUSD": 436027.47521752544,
+            "rateUSD": 90.99129715103028,
+            "type": "opening"
+          },
+          {
+            "label": "2026-03 — Available",
+            "qtyMT": 4791.969,
+            "valueUSD": 436027.47521752544,
+            "rateUSD": 90.99129715103028,
+            "type": "available"
+          },
+          {
+            "label": "2026-03 — Transfer to KUNZ",
+            "qtyMT": -4791.969,
+            "valueUSD": -436027.47521752544,
+            "rateUSD": 90.99129715103028,
+            "type": "outflow",
+            "source": "kunz"
+          },
+          {
+            "label": "2026-03 — Closing balance",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "closing"
+          },
+          {
+            "label": "2026-04 — Opening balance",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "opening"
+          },
+          {
+            "label": "2026-04 — Received from BP PORT",
+            "qtyMT": 4752.449,
+            "valueUSD": 379958.8449919732,
+            "rateUSD": 79.95011519155139,
+            "type": "receipt",
+            "source": "port"
+          },
+          {
+            "label": "2026-04 — Available",
+            "qtyMT": 4752.449,
+            "valueUSD": 379958.8449919732,
+            "rateUSD": 79.95011519155139,
+            "type": "available"
+          },
+          {
+            "label": "2026-04 — Closing balance",
+            "qtyMT": 4752.449,
+            "valueUSD": 379958.8449919732,
+            "rateUSD": 79.95011519155139,
+            "type": "closing"
+          }
+        ],
+        "beginningQtyMT": 0,
+        "beginningValueUSD": 0,
+        "availableQtyMT": 4752.449,
+        "availableValueUSD": 379958.8449919732,
+        "movingAverageRateUSD": 90.99129715103028,
+        "beginningRateUSD": 0,
+        "inflowQtyMT": 9544.418,
+        "receiptValueUSD": 815986.3202094986,
+        "addedCostUSD": 0,
+        "inflowCostValuationUSD": 0,
+        "inflowTotalValueUSD": 379958.8449919732,
+        "outflowQtyMT": 4791.969,
+        "outflowValueUSD": 436027.47521752544,
+        "adjustmentQtyMT": 0,
+        "adjustmentValueUSD": 0,
+        "endingQtyMT": 4752.449,
+        "endingValueUSD": 379958.8449919732,
+        "endingRateUSD": 79.95011519155139
+      },
+      {
+        "id": "kunz",
+        "name": "ISP KUNZ",
+        "location": "ISP KUNZ",
+        "includedInTotal": true,
+        "includedInQuantityTotal": true,
+        "includedInValueTotal": true,
+        "rows": [
+          {
+            "label": "2026-01 — Opening balance",
+            "qtyMT": 23631.994,
+            "valueUSD": 2055428.761493029,
+            "rateUSD": 86.97652688524842,
+            "type": "opening"
+          },
+          {
+            "label": "2026-01 — Received from BP PORT",
+            "qtyMT": 4779,
+            "valueUSD": 422601.9656872632,
+            "rateUSD": 88.42895285358091,
+            "type": "receipt",
+            "source": "port"
+          },
+          {
+            "label": "2026-01 — Stock / value adjustment",
+            "qtyMT": -6.110999999999876,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": ""
+          },
+          {
+            "label": "2026-01 — Available",
+            "qtyMT": 28404.882999999998,
+            "valueUSD": 2478030.7271802924,
+            "rateUSD": 87.23960338721665,
+            "type": "available"
+          },
+          {
+            "label": "2026-01 — Closing balance",
+            "qtyMT": 28404.882999999998,
+            "valueUSD": 2478030.7271802924,
+            "rateUSD": 87.23960338721665,
+            "type": "closing"
+          },
+          {
+            "label": "2026-02 — Opening balance",
+            "qtyMT": 28404.882999999998,
+            "valueUSD": 2478030.7271802924,
+            "rateUSD": 87.23960338721665,
+            "type": "opening"
+          },
+          {
+            "label": "2026-02 — Received from BP PORT",
+            "qtyMT": 4765.128,
+            "valueUSD": 433585.1778106946,
+            "rateUSD": 90.99129715103028,
+            "type": "receipt",
+            "source": "port"
+          },
+          {
+            "label": "2026-02 — Stock / value adjustment",
+            "qtyMT": 149.7210000000032,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": ""
+          },
+          {
+            "label": "2026-02 — Available",
+            "qtyMT": 33319.732,
+            "valueUSD": 2911615.904990987,
+            "rateUSD": 87.38413337151052,
+            "type": "available"
+          },
+          {
+            "label": "2026-02 — Sales",
+            "qtyMT": -28000.494,
+            "valueUSD": -2446798.90216418,
+            "rateUSD": 87.38413337151052,
+            "type": "outflow",
+            "source": "sale"
+          },
+          {
+            "label": "2026-02 — Closing balance",
+            "qtyMT": 5319.238000000005,
+            "valueUSD": 464817.0028268071,
+            "rateUSD": 87.38413337151049,
+            "type": "closing"
+          },
+          {
+            "label": "2026-03 — Opening balance",
+            "qtyMT": 5319.238000000005,
+            "valueUSD": 464817.0028268071,
+            "rateUSD": 87.38413337151049,
+            "type": "opening"
+          },
+          {
+            "label": "2026-03 — Received from BP PORT",
+            "qtyMT": 4755.324,
+            "valueUSD": 372740.3092973863,
+            "rateUSD": 78.38378821240916,
+            "type": "receipt",
+            "source": "port"
+          },
+          {
+            "label": "2026-03 — Received from Coal in Transit BP PORT",
+            "qtyMT": 4791.969,
+            "valueUSD": 436027.47521752544,
+            "rateUSD": 90.99129715103028,
+            "type": "receipt",
+            "source": "transitPort"
+          },
+          {
+            "label": "2026-03 — Stock / value adjustment",
+            "qtyMT": -11.075999999999112,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": ""
+          },
+          {
+            "label": "2026-03 — Available",
+            "qtyMT": 14855.455000000007,
+            "valueUSD": 1273584.7873417188,
+            "rateUSD": 85.73179262040229,
+            "type": "available"
+          },
+          {
+            "label": "2026-03 — Sales",
+            "qtyMT": -14615.871,
+            "valueUSD": -1253044.8215385517,
+            "rateUSD": 85.73179262040229,
+            "type": "outflow",
+            "source": "sale"
+          },
+          {
+            "label": "2026-03 — Closing balance",
+            "qtyMT": 239.58400000000802,
+            "valueUSD": 20539.965803167084,
+            "rateUSD": 85.73179262040202,
+            "type": "closing"
+          },
+          {
+            "label": "2026-04 — Opening balance",
+            "qtyMT": 239.58400000000802,
+            "valueUSD": 20539.965803167084,
+            "rateUSD": 85.73179262040202,
+            "type": "opening"
+          },
+          {
+            "label": "2026-04 — Received from BP PORT",
+            "qtyMT": 4762.079,
+            "valueUSD": 380728.7646012678,
+            "rateUSD": 79.95011519155139,
+            "type": "receipt",
+            "source": "port"
+          },
+          {
+            "label": "2026-04 — Available",
+            "qtyMT": 5001.663000000008,
+            "valueUSD": 401268.7304044349,
+            "rateUSD": 80.22706255987944,
+            "type": "available"
+          },
+          {
+            "label": "2026-04 — Closing balance",
+            "qtyMT": 5001.663000000008,
+            "valueUSD": 401268.7304044349,
+            "rateUSD": 80.22706255987944,
+            "type": "closing"
+          }
+        ],
+        "beginningQtyMT": 23631.994,
+        "beginningValueUSD": 2055428.761493029,
+        "availableQtyMT": 5001.663000000008,
+        "availableValueUSD": 401268.7304044349,
+        "movingAverageRateUSD": 86.81744028855421,
+        "beginningRateUSD": 85.73179262040202,
+        "inflowQtyMT": 23853.5,
+        "receiptValueUSD": 2045683.6926141374,
+        "addedCostUSD": 0,
+        "inflowCostValuationUSD": 0,
+        "inflowTotalValueUSD": 380728.7646012678,
+        "outflowQtyMT": 42616.365,
+        "outflowValueUSD": 3699843.7237027315,
+        "adjustmentQtyMT": 132.5340000000042,
+        "adjustmentValueUSD": 0,
+        "endingQtyMT": 5001.663000000008,
+        "endingValueUSD": 401268.7304044349,
+        "endingRateUSD": 80.22706255987944
+      },
+      {
+        "id": "transitKunz",
+        "name": "Coal in Transit ISP KUNZ",
+        "location": "Coal in Transit ISP KUNZ",
+        "includedInTotal": true,
+        "includedInQuantityTotal": true,
+        "includedInValueTotal": true,
+        "rows": [
+          {
+            "label": "2026-01 — Opening balance",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "opening"
+          },
+          {
+            "label": "2026-01 — Available",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "available"
+          },
+          {
+            "label": "2026-01 — Closing balance",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "closing"
+          },
+          {
+            "label": "2026-02 — Opening balance",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "opening"
+          },
+          {
+            "label": "2026-02 — Available",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "available"
+          },
+          {
+            "label": "2026-02 — Closing balance",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "closing"
+          },
+          {
+            "label": "2026-03 — Opening balance",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "opening"
+          },
+          {
+            "label": "2026-03 — Available",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "available"
+          },
+          {
+            "label": "2026-03 — Closing balance",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "closing"
+          },
+          {
+            "label": "2026-04 — Opening balance",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "opening"
+          },
+          {
+            "label": "2026-04 — Available",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "available"
+          },
+          {
+            "label": "2026-04 — Closing balance",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "closing"
+          }
+        ],
+        "beginningQtyMT": 0,
+        "beginningValueUSD": 0,
+        "availableQtyMT": 0,
+        "availableValueUSD": 0,
+        "movingAverageRateUSD": null,
+        "beginningRateUSD": 0,
+        "inflowQtyMT": 0,
+        "receiptValueUSD": 0,
+        "addedCostUSD": 0,
+        "inflowCostValuationUSD": 0,
+        "inflowTotalValueUSD": 0,
+        "outflowQtyMT": 0,
+        "outflowValueUSD": 0,
+        "adjustmentQtyMT": 0,
+        "adjustmentValueUSD": 0,
+        "endingQtyMT": 0,
+        "endingValueUSD": 0,
+        "endingRateUSD": 0
+      }
+    ],
+    "issues": [],
+    "totalEndingQtyMT": 156412.2913296117,
+    "totalEndingValueUSD": 7558523.880846192,
+    "overallAvgRateUSD": 48.324360039697375,
+    "cogsShippedQtyMT": 0,
+    "cogsShippedValUSD": 0,
+    "externalTransferValueUSD": 0,
+    "closingBalances": {
+      "bua": {
+        "qtyMT": 109565.1566096117,
+        "valueUSD": 4118665.563694026
+      },
+      "nonWash": {
+        "qtyMT": 3298.249499999997,
+        "valueUSD": 124649.6436372076
+      },
+      "washed": {
+        "qtyMT": 14877.962680000004,
+        "valueUSD": 1066943.2655644843
+      },
+      "highAsh": {
+        "qtyMT": 0,
+        "valueUSD": 0
+      },
+      "port": {
+        "qtyMT": 18916.81054,
+        "valueUSD": 1467037.832554066
+      },
+      "transitPort": {
+        "qtyMT": 4752.449,
+        "valueUSD": 379958.8449919732
+      },
+      "kunz": {
+        "qtyMT": 5001.663000000008,
+        "valueUSD": 401268.7304044349
+      },
+      "transitKunz": {
+        "qtyMT": 0,
+        "valueUSD": 0
+      }
+    },
+    "quantitySource": "workbook",
+    "mode": "ytd",
+    "rangeStart": "2026-01",
+    "currency": "USD",
+    "amountScale": 1,
+    "valuationMethod": "Monthly Weighted Average",
+    "period": "2026-04",
+    "startPeriod": "2026-01",
+    "coalMinedSheetPeriods": [],
+    "historyIssues": [],
+    "historicalCostPeriods": [
+      "2026-01",
+      "2026-02",
+      "2026-03",
+      "2026-04"
+    ],
+    "dummyQuantityPeriods": [],
+    "isProvisional": true,
+    "openingBalancesPending": false,
+    "modelOpeningBalances": {
+      "bua": {
+        "qtyMT": 22044.604,
+        "valueUSD": 627189.175613469,
+        "sourceCells": "F11:G11"
+      },
+      "nonWash": {
+        "qtyMT": 518.9400000000006,
+        "valueUSD": 60398.307999004726,
+        "sourceCells": "F24:G24"
+      },
+      "washed": {
+        "qtyMT": 12754.105579999996,
+        "valueUSD": 936078.8747909514,
+        "sourceCells": "F37:G37"
+      },
+      "highAsh": {
+        "qtyMT": 0,
+        "valueUSD": 0,
+        "sourceCells": "F53:G53"
+      },
+      "refeed": {
+        "qtyMT": 0,
+        "valueUSD": 0,
+        "sourceCells": "F62:G62"
+      },
+      "port": {
+        "qtyMT": 17768.44998,
+        "valueUSD": 1582425.1330245,
+        "sourceCells": "F71:G71"
+      },
+      "transitPort": {
+        "qtyMT": 0,
+        "valueUSD": 0,
+        "sourceCells": "F87:G87"
+      },
+      "kunz": {
+        "qtyMT": 23631.994,
+        "valueUSD": 2055428.761493029,
+        "sourceCells": "F98:G98"
+      },
+      "transitKunz": {
+        "qtyMT": 0,
+        "valueUSD": 0,
+        "sourceCells": "F110:G110"
+      }
+    },
+    "missingCostPeriods": [],
+    "missingQuantityPeriods": [],
+    "unallocatedHauling": [],
+    "costMapping": {
+      "hasData": true,
+      "source": "workbook",
+      "buaUSD": 0,
+      "haulingToWPUSD": 0,
+      "washingUSD": 67418.65000000002,
+      "portAddedCostUSD": 0,
+      "haulingRoutesAvailable": false,
+      "sourceCells": {
+        "buaUSD": "P13",
+        "haulingToWPUSD": "P26",
+        "washingUSD": "P45",
+        "portAddedCostUSD": "P75"
+      }
+    },
+    "buaHistory": [
+      {
+        "period": "2026-01",
+        "id": "bua",
+        "name": "BUA / Mine Site",
+        "location": "BUA / Mine Site",
+        "includedInTotal": true,
+        "includedInQuantityTotal": true,
+        "includedInValueTotal": true,
+        "rows": [
+          {
+            "label": "Opening balance",
+            "qtyMT": 22044.604,
+            "valueUSD": 627189.175613469,
+            "rateUSD": 28.45091595265077,
+            "type": "opening"
+          },
+          {
+            "label": "Audit Adj",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "adjustment",
+            "source": "audit"
+          },
+          {
+            "label": "Coal mined — COGP BUA",
+            "qtyMT": 25156.83246538834,
+            "valueUSD": 1001531.9480030778,
+            "rateUSD": 39.81152831466445,
+            "type": "receipt",
+            "source": "COGP BUA"
+          },
+          {
+            "label": "Adjustment coal produce",
+            "qtyMT": 12045.173726053816,
+            "valueUSD": 362807.8990042397,
+            "rateUSD": 30.120603260331816,
+            "type": "adjustment",
+            "source": "coalProduced"
+          },
+          {
+            "label": "Adjustment end stock",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "adjustment",
+            "source": "endStock"
+          },
+          {
+            "label": "Capitalize",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "adjustment",
+            "source": "capitalization"
+          },
+          {
+            "label": "Available",
+            "qtyMT": 59246.61019144215,
+            "valueUSD": 1991529.0226207864,
+            "rateUSD": 33.614227315041425,
+            "type": "available"
+          },
+          {
+            "label": "Hauled to Wash Plant",
+            "qtyMT": -7629,
+            "valueUSD": -256442.94018645104,
+            "rateUSD": 33.614227315041425,
+            "type": "outflow",
+            "source": "nonWash"
+          },
+          {
+            "label": "Hauled to BP PORT",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 33.614227315041425,
+            "type": "outflow",
+            "source": "port"
+          },
+          {
+            "label": "End stock adjustment — closing",
+            "qtyMT": -852.746565388341,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": "closingSurvey"
+          },
+          {
+            "label": "Closing balance",
+            "qtyMT": 50764.86362605381,
+            "valueUSD": 1735086.0824343355,
+            "rateUSD": 34.17887803689175,
+            "type": "closing"
+          }
+        ],
+        "beginningQtyMT": 22044.604,
+        "beginningValueUSD": 627189.175613469,
+        "availableQtyMT": 59246.61019144215,
+        "availableValueUSD": 1991529.0226207864,
+        "movingAverageRateUSD": 33.614227315041425,
+        "beginningRateUSD": 28.45091595265077,
+        "inflowQtyMT": 25156.83246538834,
+        "receiptValueUSD": 1001531.9480030778,
+        "addedCostUSD": 0,
+        "inflowCostValuationUSD": 1001531.9480030778,
+        "inflowTotalValueUSD": 1001531.9480030778,
+        "outflowQtyMT": 7629,
+        "outflowValueUSD": 256442.94018645104,
+        "adjustmentQtyMT": 11192.427160665475,
+        "adjustmentValueUSD": 362807.8990042397,
+        "endingQtyMT": 50764.86362605381,
+        "endingValueUSD": 1735086.0824343355,
+        "endingRateUSD": 34.17887803689175,
+        "costSource": "workbook",
+        "quantitySource": "workbook"
+      },
+      {
+        "period": "2026-02",
+        "id": "bua",
+        "name": "BUA / Mine Site",
+        "location": "BUA / Mine Site",
+        "includedInTotal": true,
+        "includedInQuantityTotal": true,
+        "includedInValueTotal": true,
+        "rows": [
+          {
+            "label": "Opening balance",
+            "qtyMT": 50764.86362605381,
+            "valueUSD": 1735086.0824343355,
+            "rateUSD": 34.17887803689175,
+            "type": "opening"
+          },
+          {
+            "label": "Audit Adj",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "adjustment",
+            "source": "audit"
+          },
+          {
+            "label": "Coal mined — COGP BUA",
+            "qtyMT": 19822.620000000003,
+            "valueUSD": 1061471.2406913727,
+            "rateUSD": 53.5484835350409,
+            "type": "receipt",
+            "source": "COGP BUA"
+          },
+          {
+            "label": "Adjustment coal produce",
+            "qtyMT": 11138.331025732426,
+            "valueUSD": 341919.73,
+            "rateUSD": 30.6975730214946,
+            "type": "adjustment",
+            "source": "coalProduced"
+          },
+          {
+            "label": "Adjustment end stock",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "adjustment",
+            "source": "endStock"
+          },
+          {
+            "label": "Capitalize",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "adjustment",
+            "source": "capitalization"
+          },
+          {
+            "label": "Available",
+            "qtyMT": 81725.81465178623,
+            "valueUSD": 3138477.053125708,
+            "rateUSD": 38.40251781518475,
+            "type": "available"
+          },
+          {
+            "label": "Hauled to Wash Plant",
+            "qtyMT": -8415.279999999992,
+            "valueUSD": -323167.9401197676,
+            "rateUSD": 38.40251781518475,
+            "type": "outflow",
+            "source": "nonWash"
+          },
+          {
+            "label": "Hauled to BP PORT",
+            "qtyMT": -2667.8,
+            "valueUSD": -102450.23702734988,
+            "rateUSD": 38.40251781518475,
+            "type": "outflow",
+            "source": "port"
+          },
+          {
+            "label": "End stock adjustment — closing",
+            "qtyMT": -1584.334400000007,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": "closingSurvey"
+          },
+          {
+            "label": "Closing balance",
+            "qtyMT": 69058.40025178622,
+            "valueUSD": 2712858.8759785905,
+            "rateUSD": 39.283546477872854,
+            "type": "closing"
+          }
+        ],
+        "beginningQtyMT": 50764.86362605381,
+        "beginningValueUSD": 1735086.0824343355,
+        "availableQtyMT": 81725.81465178623,
+        "availableValueUSD": 3138477.053125708,
+        "movingAverageRateUSD": 38.40251781518475,
+        "beginningRateUSD": 34.17887803689175,
+        "inflowQtyMT": 19822.620000000003,
+        "receiptValueUSD": 1061471.2406913727,
+        "addedCostUSD": 0,
+        "inflowCostValuationUSD": 1061471.2406913727,
+        "inflowTotalValueUSD": 1061471.2406913727,
+        "outflowQtyMT": 11083.07999999999,
+        "outflowValueUSD": 425618.1771471175,
+        "adjustmentQtyMT": 9553.99662573242,
+        "adjustmentValueUSD": 341919.73,
+        "endingQtyMT": 69058.40025178622,
+        "endingValueUSD": 2712858.8759785905,
+        "endingRateUSD": 39.283546477872854,
+        "costSource": "workbook",
+        "quantitySource": "workbook"
+      },
+      {
+        "period": "2026-03",
+        "id": "bua",
+        "name": "BUA / Mine Site",
+        "location": "BUA / Mine Site",
+        "includedInTotal": true,
+        "includedInQuantityTotal": true,
+        "includedInValueTotal": true,
+        "rows": [
+          {
+            "label": "Opening balance",
+            "qtyMT": 69058.40025178622,
+            "valueUSD": 2712858.8759785905,
+            "rateUSD": 39.283546477872854,
+            "type": "opening"
+          },
+          {
+            "label": "Audit Adj",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "adjustment",
+            "source": "audit"
+          },
+          {
+            "label": "Coal mined — COGP BUA",
+            "qtyMT": 46326.05,
+            "valueUSD": 1539125.2769871408,
+            "rateUSD": 33.223753740868055,
+            "type": "receipt",
+            "source": "COGP BUA"
+          },
+          {
+            "label": "Adjustment coal produce",
+            "qtyMT": 14244.9144042162,
+            "valueUSD": 430115.8400000001,
+            "rateUSD": 30.194343594840742,
+            "type": "adjustment",
+            "source": "coalProduced"
+          },
+          {
+            "label": "Adjustment end stock",
+            "qtyMT": 26423.07837860927,
+            "valueUSD": 1122218.023691747,
+            "rateUSD": 42.47113101705196,
+            "type": "adjustment",
+            "source": "endStock"
+          },
+          {
+            "label": "Capitalize",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "adjustment",
+            "source": "capitalization"
+          },
+          {
+            "label": "Available",
+            "qtyMT": 156052.4430346117,
+            "valueUSD": 5804318.016657478,
+            "rateUSD": 37.19466292091376,
+            "type": "available"
+          },
+          {
+            "label": "Hauled to Wash Plant",
+            "qtyMT": -21960.53,
+            "valueUSD": -816814.5109146142,
+            "rateUSD": 37.19466292091376,
+            "type": "outflow",
+            "source": "nonWash"
+          },
+          {
+            "label": "Hauled to BP PORT",
+            "qtyMT": -23359.21,
+            "valueUSD": -868837.9420488378,
+            "rateUSD": 37.19466292091376,
+            "type": "outflow",
+            "source": "port"
+          },
+          {
+            "label": "End stock adjustment — closing",
+            "qtyMT": -984.172245000008,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": "closingSurvey"
+          },
+          {
+            "label": "Closing balance",
+            "qtyMT": 109748.5307896117,
+            "valueUSD": 4118665.563694026,
+            "rateUSD": 37.528206838499926,
+            "type": "closing"
+          }
+        ],
+        "beginningQtyMT": 69058.40025178622,
+        "beginningValueUSD": 2712858.8759785905,
+        "availableQtyMT": 156052.4430346117,
+        "availableValueUSD": 5804318.016657478,
+        "movingAverageRateUSD": 37.19466292091376,
+        "beginningRateUSD": 39.283546477872854,
+        "inflowQtyMT": 46326.05,
+        "receiptValueUSD": 1539125.2769871408,
+        "addedCostUSD": 0,
+        "inflowCostValuationUSD": 1539125.2769871408,
+        "inflowTotalValueUSD": 1539125.2769871408,
+        "outflowQtyMT": 45319.74,
+        "outflowValueUSD": 1685652.4529634519,
+        "adjustmentQtyMT": 39683.820537825464,
+        "adjustmentValueUSD": 1552333.8636917472,
+        "endingQtyMT": 109748.5307896117,
+        "endingValueUSD": 4118665.563694026,
+        "endingRateUSD": 37.528206838499926,
+        "costSource": "workbook",
+        "quantitySource": "workbook"
+      },
+      {
+        "period": "2026-04",
+        "id": "bua",
+        "name": "BUA / Mine Site",
+        "location": "BUA / Mine Site",
+        "includedInTotal": true,
+        "includedInQuantityTotal": true,
+        "includedInValueTotal": true,
+        "rows": [
+          {
+            "label": "Opening balance",
+            "qtyMT": 109748.5307896117,
+            "valueUSD": 4118665.563694026,
+            "rateUSD": 37.528206838499926,
+            "type": "opening"
+          },
+          {
+            "label": "Audit Adj",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "adjustment",
+            "source": "audit"
+          },
+          {
+            "label": "Coal mined — COGP BUA",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "receipt",
+            "source": "COGP BUA"
+          },
+          {
+            "label": "Adjustment coal produce",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "adjustment",
+            "source": "coalProduced"
+          },
+          {
+            "label": "Adjustment end stock",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "adjustment",
+            "source": "endStock"
+          },
+          {
+            "label": "Capitalize",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": null,
+            "type": "adjustment",
+            "source": "capitalization"
+          },
+          {
+            "label": "Available",
+            "qtyMT": 109748.5307896117,
+            "valueUSD": 4118665.563694026,
+            "rateUSD": 37.528206838499926,
+            "type": "available"
+          },
+          {
+            "label": "Hauled to Wash Plant",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 37.528206838499926,
+            "type": "outflow",
+            "source": "nonWash"
+          },
+          {
+            "label": "Hauled to BP PORT",
+            "qtyMT": 0,
+            "valueUSD": 0,
+            "rateUSD": 37.528206838499926,
+            "type": "outflow",
+            "source": "port"
+          },
+          {
+            "label": "End stock adjustment — closing",
+            "qtyMT": -183.374179999992,
+            "valueUSD": 0,
+            "rateUSD": 0,
+            "type": "adjustment",
+            "source": "closingSurvey"
+          },
+          {
+            "label": "Closing balance",
+            "qtyMT": 109565.1566096117,
+            "valueUSD": 4118665.563694026,
+            "rateUSD": 37.5910160779409,
+            "type": "closing"
+          }
+        ],
+        "beginningQtyMT": 109748.5307896117,
+        "beginningValueUSD": 4118665.563694026,
+        "availableQtyMT": 109748.5307896117,
+        "availableValueUSD": 4118665.563694026,
+        "movingAverageRateUSD": 37.528206838499926,
+        "beginningRateUSD": 37.528206838499926,
+        "inflowQtyMT": 0,
+        "receiptValueUSD": 0,
+        "addedCostUSD": 0,
+        "inflowCostValuationUSD": 0,
+        "inflowTotalValueUSD": 0,
+        "outflowQtyMT": 0,
+        "outflowValueUSD": 0,
+        "adjustmentQtyMT": -183.374179999992,
+        "adjustmentValueUSD": 0,
+        "endingQtyMT": 109565.1566096117,
+        "endingValueUSD": 4118665.563694026,
+        "endingRateUSD": 37.5910160779409,
+        "costSource": "workbook",
+        "quantitySource": "workbook"
+      }
+    ],
+    "history": [
+      {
+        "period": "2026-01",
+        "totalEndingQtyMT": 109152.54129605381,
+        "totalEndingValueUSD": 6816583.377331754,
+        "cogsShippedQtyMT": 0,
+        "cogsShippedValUSD": 0,
+        "hasCostData": true,
+        "costSource": "workbook",
+        "quantitySource": "workbook",
+        "issues": []
+      },
+      {
+        "period": "2026-02",
+        "totalEndingQtyMT": 100205.12703178622,
+        "totalEndingValueUSD": 5363947.124021849,
+        "cogsShippedQtyMT": 37457.93,
+        "cogsShippedValUSD": 3307343.271527031,
+        "hasCostData": true,
+        "costSource": "workbook",
+        "quantitySource": "workbook",
+        "issues": []
+      },
+      {
+        "period": "2026-03",
+        "totalEndingQtyMT": 158365.65181961172,
+        "totalEndingValueUSD": 7491105.230846192,
+        "cogsShippedQtyMT": 24130.495,
+        "cogsShippedValUSD": 1998837.094075257,
+        "hasCostData": true,
+        "costSource": "workbook",
+        "quantitySource": "workbook",
+        "issues": []
+      },
+      {
+        "period": "2026-04",
+        "totalEndingQtyMT": 156412.2913296117,
+        "totalEndingValueUSD": 7558523.880846192,
+        "cogsShippedQtyMT": 0,
+        "cogsShippedValUSD": 0,
+        "hasCostData": true,
+        "costSource": "workbook",
+        "quantitySource": "workbook",
+        "issues": []
+      }
+    ]
+  }
+}

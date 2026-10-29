@@ -1,0 +1,3478 @@
+{
+  "success": true,
+  "data": {
+    "currency": "USD",
+    "amountScale": 1,
+    "setupRequired": false,
+    "inventoryProvisional": false,
+    "report": {
+      "company": "PT Borneo Prima",
+      "basePeriod": "2026-09",
+      "glStartPeriod": "2026-10",
+      "period": "2026-03",
+      "year": 2026,
+      "comparativeYear": 2025,
+      "periods": [
+        "2026-01",
+        "2026-02",
+        "2026-03"
+      ],
+      "profitLoss": [
+        {
+          "id": "coalSales",
+          "label": "COAL SALES",
+          "kind": "detail",
+          "comparative": 12457397,
+          "ytd": 11288669,
+          "months": {
+            "2026-01": 0,
+            "2026-02": 7548442,
+            "2026-03": 3740227
+          }
+        },
+        {
+          "id": "costOfCoalSold",
+          "label": "COST OF COAL SOLD",
+          "kind": "detail",
+          "comparative": -7447254,
+          "ytd": -5306180,
+          "months": {
+            "2026-01": 0,
+            "2026-02": -3307343,
+            "2026-03": -1998837
+          }
+        },
+        {
+          "id": "grossProfit",
+          "label": "GROSS PROFIT",
+          "kind": "total",
+          "comparative": 5010143,
+          "ytd": 5982489,
+          "months": {
+            "2026-01": 0,
+            "2026-02": 4241099,
+            "2026-03": 1741390
+          }
+        },
+        {
+          "id": "sellingExpense",
+          "label": "Selling Expense",
+          "kind": "detail",
+          "comparative": -1486588,
+          "ytd": -1224442,
+          "months": {
+            "2026-01": -107575,
+            "2026-02": -710435,
+            "2026-03": -406432
+          }
+        },
+        {
+          "id": "royaltyCoalSales",
+          "label": "Royalty Coal Sales",
+          "kind": "detail",
+          "comparative": -1559770,
+          "ytd": -1423337,
+          "months": {
+            "2026-01": 0,
+            "2026-02": -1019040,
+            "2026-03": -404297
+          }
+        },
+        {
+          "id": "generalAdmin",
+          "label": "General & Admin Expense",
+          "kind": "detail",
+          "comparative": -6040574,
+          "ytd": -1802477,
+          "months": {
+            "2026-01": -882399,
+            "2026-02": -640852,
+            "2026-03": -279226
+          }
+        },
+        {
+          "id": "profitBeforeInterest",
+          "label": "PROFIT / (LOSS) BEFORE INTEREST LOAN",
+          "kind": "total",
+          "comparative": -4076790,
+          "ytd": 1532233,
+          "months": {
+            "2026-01": -989974,
+            "2026-02": 1870772,
+            "2026-03": 651435
+          }
+        },
+        {
+          "id": "financeIncome",
+          "label": "FINANCE INCOME",
+          "kind": "detail",
+          "comparative": -38671,
+          "ytd": 29932.77,
+          "months": {
+            "2026-01": 4583.77,
+            "2026-02": 4491,
+            "2026-03": 20858
+          }
+        },
+        {
+          "id": "financeCost",
+          "label": "FINANCE COST AND INTEREST ON LOANS",
+          "kind": "detail",
+          "comparative": -5479780,
+          "ytd": -733144.37,
+          "months": {
+            "2026-01": -153846.37,
+            "2026-02": -152564,
+            "2026-03": -426734
+          }
+        },
+        {
+          "id": "realisedFX",
+          "label": "REALISED FX",
+          "kind": "detail",
+          "comparative": -289373,
+          "ytd": 107948.58,
+          "months": {
+            "2026-01": 51588.58,
+            "2026-02": 20366,
+            "2026-03": 35994
+          }
+        },
+        {
+          "id": "unrealisedFX",
+          "label": "UNREALISED FX",
+          "kind": "detail",
+          "comparative": 99327,
+          "ytd": 28992.56,
+          "months": {
+            "2026-01": 6874.56,
+            "2026-02": -2390,
+            "2026-03": 24508
+          }
+        },
+        {
+          "id": "profitBeforeTax",
+          "label": "PROFIT / (LOSS) BEFORE INCOME TAX",
+          "kind": "total",
+          "comparative": -9785287,
+          "ytd": 965962,
+          "months": {
+            "2026-01": -1080774,
+            "2026-02": 1740675,
+            "2026-03": 306061
+          }
+        },
+        {
+          "id": "incomeTax",
+          "label": "INCOME TAX EXPENSES",
+          "kind": "detail",
+          "comparative": null,
+          "ytd": 0,
+          "months": {
+            "2026-01": null,
+            "2026-02": null,
+            "2026-03": null
+          }
+        },
+        {
+          "id": "profitForYear",
+          "label": "PROFIT / (LOSS ) FOR THE YEAR",
+          "kind": "total",
+          "comparative": -9785287,
+          "ytd": 965962,
+          "months": {
+            "2026-01": -1080774,
+            "2026-02": 1740675,
+            "2026-03": 306061
+          }
+        }
+      ],
+      "balanceSheet": [
+        {
+          "id": "heading-22",
+          "label": "ASSETS",
+          "kind": "heading",
+          "comparative": null,
+          "ytd": null,
+          "months": {
+            "2026-01": null,
+            "2026-02": null,
+            "2026-03": null
+          }
+        },
+        {
+          "id": "cashOnHand",
+          "label": "CASH ON HAND",
+          "kind": "detail",
+          "comparative": 3701,
+          "ytd": 7571,
+          "months": {
+            "2026-01": 8168,
+            "2026-02": 9391,
+            "2026-03": 7571
+          }
+        },
+        {
+          "id": "cashInBanks",
+          "label": "CASH IN BANKS",
+          "kind": "detail",
+          "comparative": 825179,
+          "ytd": 2562953,
+          "months": {
+            "2026-01": 298355,
+            "2026-02": 323979,
+            "2026-03": 2562953
+          }
+        },
+        {
+          "id": "timeDeposits",
+          "label": "TIME DEPOSITS",
+          "kind": "detail",
+          "comparative": 0,
+          "ytd": 0,
+          "months": {
+            "2026-01": 0,
+            "2026-02": 0,
+            "2026-03": 0
+          }
+        },
+        {
+          "id": "cashAndEquivalents",
+          "label": "CASH AND CASH EQUIVALENTS",
+          "kind": "total",
+          "comparative": 828880,
+          "ytd": 2570525,
+          "months": {
+            "2026-01": 306523,
+            "2026-02": 333370,
+            "2026-03": 2570525
+          }
+        },
+        {
+          "id": "tradeReceivables",
+          "label": "TRADE AND OTHER RECEIVABLES",
+          "kind": "detail",
+          "comparative": 9159434,
+          "ytd": 13649848,
+          "months": {
+            "2026-01": 9201006,
+            "2026-02": 17073522,
+            "2026-03": 13649848
+          }
+        },
+        {
+          "id": "advances",
+          "label": "ADVANCES",
+          "kind": "detail",
+          "comparative": 5541749,
+          "ytd": 5876184,
+          "months": {
+            "2026-01": 5607258,
+            "2026-02": 5485961,
+            "2026-03": 5876184
+          }
+        },
+        {
+          "id": "prepayments",
+          "label": "PREPAYMENTS",
+          "kind": "detail",
+          "comparative": 365720,
+          "ytd": 19025,
+          "months": {
+            "2026-01": 426578,
+            "2026-02": 23349,
+            "2026-03": 19025
+          }
+        },
+        {
+          "id": "prepaidTaxes",
+          "label": "PREPAID TAXES",
+          "kind": "detail",
+          "comparative": 3084536,
+          "ytd": 2709996,
+          "months": {
+            "2026-01": 3187594,
+            "2026-02": 3399348,
+            "2026-03": 2709996
+          }
+        },
+        {
+          "id": "prepaidTaxesAdvances",
+          "label": "PREPAID TAXES, PREPAYMENTS AND ADVANCES",
+          "kind": "total",
+          "comparative": 8992005,
+          "ytd": 8605204,
+          "months": {
+            "2026-01": 9221429,
+            "2026-02": 8908657,
+            "2026-03": 8605204
+          }
+        },
+        {
+          "id": "inventories",
+          "label": "INVENTORIES",
+          "kind": "detail",
+          "comparative": 6127786,
+          "ytd": 8264550,
+          "months": {
+            "2026-01": 7746671,
+            "2026-02": 6380139,
+            "2026-03": 8264550
+          }
+        },
+        {
+          "id": "derivativeAsset",
+          "label": "DERIVATIVE FINANCIAL ASSET",
+          "kind": "detail",
+          "comparative": 0,
+          "ytd": 0,
+          "months": {
+            "2026-01": 0,
+            "2026-02": 0,
+            "2026-03": 0
+          }
+        },
+        {
+          "id": "totalCurrentAssets",
+          "label": "TOTAL CURRENT ASSETS",
+          "kind": "total",
+          "comparative": 25108104,
+          "ytd": 33090126,
+          "months": {
+            "2026-01": 26475628,
+            "2026-02": 32695689,
+            "2026-03": 33090126
+          }
+        },
+        {
+          "id": "restrictedCash",
+          "label": "RESTRICTED CASH",
+          "kind": "detail",
+          "comparative": 485326,
+          "ytd": 2558296,
+          "months": {
+            "2026-01": 1557517,
+            "2026-02": 2605823,
+            "2026-03": 2558296
+          }
+        },
+        {
+          "id": "miningProperties",
+          "label": "MINING PROPERTIES",
+          "kind": "detail",
+          "comparative": 45039345,
+          "ytd": 49519881,
+          "months": {
+            "2026-01": 44988143,
+            "2026-02": 44944623,
+            "2026-03": 49519881
+          }
+        },
+        {
+          "id": "explorationAssets",
+          "label": "EXPLORATION AND EVALUATION ASSETS",
+          "kind": "detail",
+          "comparative": 46044867,
+          "ytd": 45821417,
+          "months": {
+            "2026-01": 45982253,
+            "2026-02": 45920279,
+            "2026-03": 45821417
+          }
+        },
+        {
+          "id": "fixedAssets",
+          "label": "FIXED ASSETS",
+          "kind": "detail",
+          "comparative": 6767171,
+          "ytd": 6739054,
+          "months": {
+            "2026-01": 6660179,
+            "2026-02": 6809233,
+            "2026-03": 6739054
+          }
+        },
+        {
+          "id": "retirementAsset",
+          "label": "ASSET RETIREMENT OBLIGATION",
+          "kind": "detail",
+          "comparative": 0,
+          "ytd": 0,
+          "months": {
+            "2026-01": 0,
+            "2026-02": 0,
+            "2026-03": 0
+          }
+        },
+        {
+          "id": "deferredTaxAsset",
+          "label": "DEFERED TAX ASSET",
+          "kind": "detail",
+          "comparative": 2686793,
+          "ytd": 2708900,
+          "months": {
+            "2026-01": 2685717,
+            "2026-02": 2684641,
+            "2026-03": 2708900
+          }
+        },
+        {
+          "id": "totalNonCurrentAssets",
+          "label": "TOTAL NON-CURRENT ASSETS",
+          "kind": "total",
+          "comparative": 101023502,
+          "ytd": 107347548,
+          "months": {
+            "2026-01": 101873809,
+            "2026-02": 102964600,
+            "2026-03": 107347548
+          }
+        },
+        {
+          "id": "totalAssets",
+          "label": "TOTAL ASSETS",
+          "kind": "total",
+          "comparative": 126131606,
+          "ytd": 140437674,
+          "months": {
+            "2026-01": 128349438,
+            "2026-02": 135660289,
+            "2026-03": 140437674
+          }
+        },
+        {
+          "id": "heading-45",
+          "label": "LIABILITES",
+          "kind": "heading",
+          "comparative": null,
+          "ytd": null,
+          "months": {
+            "2026-01": null,
+            "2026-02": null,
+            "2026-03": null
+          }
+        },
+        {
+          "id": "loansCurrent",
+          "label": "LOANS PAYABLE CURRENT",
+          "kind": "detail",
+          "comparative": 0,
+          "ytd": 3001235,
+          "months": {
+            "2026-01": 0,
+            "2026-02": 0,
+            "2026-03": 3001235
+          }
+        },
+        {
+          "id": "financeLeaseCurrent",
+          "label": "FINANCE LEASE LIABILITIES, CURRENT PORTION",
+          "kind": "detail",
+          "comparative": 70655,
+          "ytd": 72480,
+          "months": {
+            "2026-01": 70655,
+            "2026-02": 54499,
+            "2026-03": 72480
+          }
+        },
+        {
+          "id": "tradePayables",
+          "label": "ACCOUNTS PAYABLE",
+          "kind": "detail",
+          "comparative": 11095733,
+          "ytd": 9034332,
+          "months": {
+            "2026-01": 10274311,
+            "2026-02": 9062253,
+            "2026-03": 9034332
+          }
+        },
+        {
+          "id": "accruedExpenses",
+          "label": "ACCRUED EXPENSES",
+          "kind": "detail",
+          "comparative": 4708172,
+          "ytd": 8483676,
+          "months": {
+            "2026-01": 5684230,
+            "2026-02": 7305215,
+            "2026-03": 8483676
+          }
+        },
+        {
+          "id": "taxesPayable",
+          "label": "TAXES PAYABLE",
+          "kind": "detail",
+          "comparative": 1850847,
+          "ytd": 859097,
+          "months": {
+            "2026-01": 1856876,
+            "2026-02": 1900169,
+            "2026-03": 859097
+          }
+        },
+        {
+          "id": "advancesCustomer",
+          "label": "ADVANCES FROM CUSTOMER",
+          "kind": "detail",
+          "comparative": 55142497,
+          "ytd": 63525986,
+          "months": {
+            "2026-01": 58298671,
+            "2026-02": 63419226,
+            "2026-03": 63525986
+          }
+        },
+        {
+          "id": "otherCurrentLiabilities",
+          "label": "OTHER CURRENT LIABILITIES",
+          "kind": "detail",
+          "comparative": 1739,
+          "ytd": 23886,
+          "months": {
+            "2026-01": 1699,
+            "2026-02": 2390,
+            "2026-03": 23886
+          }
+        },
+        {
+          "id": "derivativeLiability",
+          "label": "DERIVATIVE FINANCIAL LIABILITIES",
+          "kind": "detail",
+          "comparative": 0,
+          "ytd": 0,
+          "months": {
+            "2026-01": 0,
+            "2026-02": 0,
+            "2026-03": 0
+          }
+        },
+        {
+          "id": "totalCurrentLiabilities",
+          "label": "TOTAL CURRENT LIABILITIES",
+          "kind": "total",
+          "comparative": 72869642,
+          "ytd": 85000693,
+          "months": {
+            "2026-01": 76186442,
+            "2026-02": 81743752,
+            "2026-03": 85000693
+          }
+        },
+        {
+          "id": "loansNonCurrent",
+          "label": "LOANS PAYABLE NON CURRENT",
+          "kind": "detail",
+          "comparative": 3038971,
+          "ytd": 0,
+          "months": {
+            "2026-01": 3012571,
+            "2026-02": 3017202,
+            "2026-03": 0
+          }
+        },
+        {
+          "id": "financeLeaseNonCurrent",
+          "label": "FINANCE LEASE LIABILITIES, NON-CURRENT PORTION",
+          "kind": "detail",
+          "comparative": 40211,
+          "ytd": 20140,
+          "months": {
+            "2026-01": 40211,
+            "2026-02": 40211,
+            "2026-03": 20140
+          }
+        },
+        {
+          "id": "employeeBenefits",
+          "label": "EMPLOYEE BENEFIT OBLIGATIONS",
+          "kind": "detail",
+          "comparative": 520862,
+          "ytd": 544322,
+          "months": {
+            "2026-01": 528663,
+            "2026-02": 536502,
+            "2026-03": 544322
+          }
+        },
+        {
+          "id": "reclamationProvision",
+          "label": "PROVISION FOR RECLAMATION AND MINE CLOSURE",
+          "kind": "detail",
+          "comparative": 168650,
+          "ytd": 4900975,
+          "months": {
+            "2026-01": 169056,
+            "2026-02": 169451,
+            "2026-03": 4900975
+          }
+        },
+        {
+          "id": "deferredTaxLiabilities",
+          "label": "DEFERRED TAX LIABILITIES",
+          "kind": "detail",
+          "comparative": 0,
+          "ytd": 0,
+          "months": {
+            "2026-01": 0,
+            "2026-02": 0,
+            "2026-03": 0
+          }
+        },
+        {
+          "id": "totalNonCurrentLiabilities",
+          "label": "TOTAL NON CURRENT LIABILITIES",
+          "kind": "total",
+          "comparative": 3768694,
+          "ytd": 5465436,
+          "months": {
+            "2026-01": 3750500,
+            "2026-02": 3763365,
+            "2026-03": 5465436
+          }
+        },
+        {
+          "id": "totalLiabilities",
+          "label": "TOTAL LIABILITIES",
+          "kind": "total",
+          "comparative": 76638336,
+          "ytd": 90466129,
+          "months": {
+            "2026-01": 79936942,
+            "2026-02": 85507118,
+            "2026-03": 90466129
+          }
+        },
+        {
+          "id": "totalEquity",
+          "label": "TOTAL EQUITY",
+          "kind": "total",
+          "comparative": 49493270,
+          "ytd": 49971546,
+          "months": {
+            "2026-01": 48412496,
+            "2026-02": 50153171,
+            "2026-03": 49971546
+          }
+        },
+        {
+          "id": "totalLiabilitiesEquity",
+          "label": "TOTAL LIABILITIES AND EQUITY",
+          "kind": "total",
+          "comparative": 126131606,
+          "ytd": 140437675,
+          "months": {
+            "2026-01": 128349438,
+            "2026-02": 135660289,
+            "2026-03": 140437675
+          }
+        }
+      ],
+      "cashFlowEnabled": false,
+      "glMonths": {}
+    },
+    "diagnostics": {
+      "missingGLPeriods": [],
+      "unmappedAccounts": [],
+      "invalidAmounts": [],
+      "baselineBalanceDifferenceUSD": -1,
+      "balanceDifferenceUSD": -1,
+      "glLedgerDifferenceUSD": 0
+    },
+    "accountBalances": [
+      {
+        "code": "2310010",
+        "name": "Petty Cash-Surabaya",
+        "mapping": "CASH ON HAND",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2310011",
+        "name": "Petty Cash-Puruk Cahu",
+        "mapping": "CASH ON HAND",
+        "baseUSD": 3851,
+        "glMovementUSD": 0,
+        "closingUSD": 7165
+      },
+      {
+        "code": "2310012",
+        "name": "Petty Cash Jakarta",
+        "mapping": "CASH ON HAND",
+        "baseUSD": 979,
+        "glMovementUSD": 0,
+        "closingUSD": 406
+      },
+      {
+        "code": "2310014",
+        "name": "Cash On Hand Jakarta",
+        "mapping": "CASH ON HAND",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2320010",
+        "name": "Bank BNI 46 (IDR)",
+        "mapping": "CASH IN BANKS",
+        "baseUSD": 3261,
+        "glMovementUSD": 0,
+        "closingUSD": 942
+      },
+      {
+        "code": "2320011",
+        "name": "Bank MANDIRI (USD)",
+        "mapping": "CASH IN BANKS",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2320012",
+        "name": "Bank BNI 46 PCH (IDR)",
+        "mapping": "CASH IN BANKS",
+        "baseUSD": 359,
+        "glMovementUSD": 0,
+        "closingUSD": 3760
+      },
+      {
+        "code": "2320013",
+        "name": "Bank BOI (USD)",
+        "mapping": "CASH IN BANKS",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2320014",
+        "name": "Bank BOI (IDR)",
+        "mapping": "CASH IN BANKS",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2320015",
+        "name": "Bank Kalteng (IDR)",
+        "mapping": "CASH IN BANKS",
+        "baseUSD": 306,
+        "glMovementUSD": 0,
+        "closingUSD": 315
+      },
+      {
+        "code": "2320016",
+        "name": "Bank BNI 46 (USD)",
+        "mapping": "CASH IN BANKS",
+        "baseUSD": 1452,
+        "glMovementUSD": 0,
+        "closingUSD": 1466
+      },
+      {
+        "code": "2320017",
+        "name": "Bank BNI 46 Reksus (USD)",
+        "mapping": "CASH IN BANKS",
+        "baseUSD": 2079860,
+        "glMovementUSD": 0,
+        "closingUSD": 1540
+      },
+      {
+        "code": "2320018",
+        "name": "Bank MANDIRI (IDR)",
+        "mapping": "CASH IN BANKS",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2320027",
+        "name": "Bank BNI 502555555-1 IDR",
+        "mapping": "CASH IN BANKS",
+        "baseUSD": 989,
+        "glMovementUSD": 0,
+        "closingUSD": 7053
+      },
+      {
+        "code": "2320028",
+        "name": "Bank BNI 502555556-2 USD",
+        "mapping": "CASH IN BANKS",
+        "baseUSD": 1773,
+        "glMovementUSD": 0,
+        "closingUSD": 1787
+      },
+      {
+        "code": "2320029",
+        "name": "Bank BNI 502555557-3 USD - DHE SDA",
+        "mapping": "CASH IN BANKS",
+        "baseUSD": 531,
+        "glMovementUSD": 0,
+        "closingUSD": 546
+      },
+      {
+        "code": "2320030",
+        "name": "Dummy Bank",
+        "mapping": "#N/A",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2320031",
+        "name": "Shinhan Bank 701000076853 (IDR)",
+        "mapping": "CASH IN BANKS",
+        "baseUSD": 983,
+        "glMovementUSD": 0,
+        "closingUSD": 15766
+      },
+      {
+        "code": "2320033",
+        "name": "Bank BNI 2550502555 - IDR",
+        "mapping": "CASH IN BANKS",
+        "baseUSD": 178565,
+        "glMovementUSD": 0,
+        "closingUSD": 709762
+      },
+      {
+        "code": "2320034",
+        "name": "Bank BNI 2660602668 - USD",
+        "mapping": "CASH IN BANKS",
+        "baseUSD": 19029,
+        "glMovementUSD": 0,
+        "closingUSD": 1814512
+      },
+      {
+        "code": "2320035",
+        "name": "Bank BNI 5025502553 - USD-DHE-SDA",
+        "mapping": "CASH IN BANKS",
+        "baseUSD": 5492,
+        "glMovementUSD": 0,
+        "closingUSD": 5504
+      },
+      {
+        "code": "2320036",
+        "name": "Bank Mega Syariah 1000358397 - USD",
+        "mapping": "CASH IN BANKS",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2320037",
+        "name": "Bank Mandiri 1220022355799 - IDR",
+        "mapping": "CASH IN BANKS",
+        "baseUSD": 35948,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2320038",
+        "name": "Bank Mandiri 1220022366689 - USD-DHE-SDA",
+        "mapping": "CASH IN BANKS",
+        "baseUSD": 5043,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2320039",
+        "name": "Bank Mandiri 1220022366671 (USD-ESCROW)",
+        "mapping": "CASH IN BANKS",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2320040",
+        "name": "Bank BRI 036101001513309 (IDR)",
+        "mapping": "CASH IN BANKS",
+        "baseUSD": 2807,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2433010",
+        "name": "Deposits (IDR)",
+        "mapping": "TIME DEPOSITS",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2433020",
+        "name": "Deposits (USD)",
+        "mapping": "ADVANCES",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2433030",
+        "name": "Restricted Cash",
+        "mapping": "RESTRICTED CASH",
+        "baseUSD": 5430140,
+        "glMovementUSD": 0,
+        "closingUSD": 2430140
+      },
+      {
+        "code": "2434060",
+        "name": "Deposit Guarantee - Vendor",
+        "mapping": "RESTRICTED CASH",
+        "baseUSD": 222727,
+        "glMovementUSD": 0,
+        "closingUSD": 128156
+      },
+      {
+        "code": "2220100",
+        "name": "Account Receivable - Inter Company",
+        "mapping": "TRADE AND OTHER RECEIVABLES",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 3740227
+      },
+      {
+        "code": "2220200",
+        "name": "Account Receivable - 3rd Parties",
+        "mapping": "TRADE AND OTHER RECEIVABLES",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2220300",
+        "name": "Employee Receivable",
+        "mapping": "TRADE AND OTHER RECEIVABLES",
+        "baseUSD": 159,
+        "glMovementUSD": 0,
+        "closingUSD": 365
+      },
+      {
+        "code": "2220400",
+        "name": "Other Receivables - Inter Company",
+        "mapping": "TRADE AND OTHER RECEIVABLES",
+        "baseUSD": 10438775,
+        "glMovementUSD": 0,
+        "closingUSD": 9724805
+      },
+      {
+        "code": "2220500",
+        "name": "Other Receivables - 3rd Parties",
+        "mapping": "TRADE AND OTHER RECEIVABLES",
+        "baseUSD": 1276647,
+        "glMovementUSD": 0,
+        "closingUSD": 184451
+      },
+      {
+        "code": "2220600",
+        "name": "Accrued Receivable",
+        "mapping": "TRADE AND OTHER RECEIVABLES",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2230010",
+        "name": "Prepaid Insurances",
+        "mapping": "PREPAYMENTS",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2230020",
+        "name": "Prepaid Expenses",
+        "mapping": "PREPAYMENTS",
+        "baseUSD": -1,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2230030",
+        "name": "Prepaid Office Rental",
+        "mapping": "PREPAYMENTS",
+        "baseUSD": 21137,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2230040",
+        "name": "Prepaid Motor Vehicle Rental",
+        "mapping": "PREPAYMENTS",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2230050",
+        "name": "Prepaid Site Office Rental",
+        "mapping": "PREPAYMENTS",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2230060",
+        "name": "Prepaid Interest for Car Leasing",
+        "mapping": "PREPAYMENTS",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2230070",
+        "name": "Prepaid Guest House Rental",
+        "mapping": "PREPAYMENTS",
+        "baseUSD": 49491,
+        "glMovementUSD": 0,
+        "closingUSD": 19024
+      },
+      {
+        "code": "2230080",
+        "name": "Prepaid Permit & Licences",
+        "mapping": "PREPAYMENTS",
+        "baseUSD": 29740,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2230090",
+        "name": "Advance Vendor",
+        "mapping": "ADVANCES",
+        "baseUSD": 6589180,
+        "glMovementUSD": 0,
+        "closingUSD": 5865997
+      },
+      {
+        "code": "2230091",
+        "name": "Advance Employee",
+        "mapping": "ADVANCES",
+        "baseUSD": 14790,
+        "glMovementUSD": 0,
+        "closingUSD": 10186
+      },
+      {
+        "code": "2230092",
+        "name": "Advance Vendor Non Current Portion",
+        "mapping": "ADVANCES",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2230100",
+        "name": "Deposits Cash Collateral",
+        "mapping": "ADVANCES",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2230200",
+        "name": "Prepaid forward points",
+        "mapping": "ADVANCES",
+        "baseUSD": -40946,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2210070",
+        "name": "Inventory Coal BUA",
+        "mapping": "INVENTORIES",
+        "baseUSD": 3330213,
+        "glMovementUSD": 0,
+        "closingUSD": 4118666
+      },
+      {
+        "code": "2210071",
+        "name": "Inventory Coal Wash Plant",
+        "mapping": "INVENTORIES",
+        "baseUSD": 2441205,
+        "glMovementUSD": 0,
+        "closingUSD": 1124174
+      },
+      {
+        "code": "2210072",
+        "name": "Inventory Coal ISP Road",
+        "mapping": "INVENTORIES",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2210073",
+        "name": "Inventory Coal BP Port",
+        "mapping": "INVENTORIES",
+        "baseUSD": 9312633,
+        "glMovementUSD": 0,
+        "closingUSD": 2227725
+      },
+      {
+        "code": "2210074",
+        "name": "Inventory Coal ISP MGM",
+        "mapping": "INVENTORIES",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2210079",
+        "name": "Inventory Coal ISP BAT/KUNZ",
+        "mapping": "INVENTORIES",
+        "baseUSD": 103560,
+        "glMovementUSD": 0,
+        "closingUSD": 20540
+      },
+      {
+        "code": "2210080",
+        "name": "Coal in Transit - COGM",
+        "mapping": "INVENTORIES",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2210082",
+        "name": "Coal in Barge Transit - Sales",
+        "mapping": "INVENTORIES",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2210083",
+        "name": "Coal in Barge Transit - Transfer",
+        "mapping": "INVENTORIES",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2210101",
+        "name": "Inventory Fuel",
+        "mapping": "INVENTORIES",
+        "baseUSD": -10614,
+        "glMovementUSD": 0,
+        "closingUSD": 182075
+      },
+      {
+        "code": "2210102",
+        "name": "Inventory Sparepart",
+        "mapping": "INVENTORIES",
+        "baseUSD": 686453,
+        "glMovementUSD": 0,
+        "closingUSD": 591370
+      },
+      {
+        "code": "2210103",
+        "name": "Inventory Explosive Material",
+        "mapping": "INVENTORIES",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2210104",
+        "name": "Inventory Quarry",
+        "mapping": "INVENTORIES",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2210105",
+        "name": "Inventory Consignment",
+        "mapping": "INVENTORIES",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2210500",
+        "name": "Provision of Inventory",
+        "mapping": "INVENTORIES",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2240010",
+        "name": "Defferred Tax Asset",
+        "mapping": "DEFERED TAX ASSET",
+        "baseUSD": 2708900,
+        "glMovementUSD": 0,
+        "closingUSD": 2708900
+      },
+      {
+        "code": "2443010",
+        "name": "PPN In",
+        "mapping": "PREPAID TAXES",
+        "baseUSD": 1880244,
+        "glMovementUSD": 0,
+        "closingUSD": 268291
+      },
+      {
+        "code": "2443020",
+        "name": "Value Added Tax In Calculated Receivable",
+        "mapping": "PREPAID TAXES",
+        "baseUSD": 2225495,
+        "glMovementUSD": 0,
+        "closingUSD": 2212023
+      },
+      {
+        "code": "2443030",
+        "name": "Prepaid Income Tax 22",
+        "mapping": "PREPAID TAXES",
+        "baseUSD": 136088,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2443040",
+        "name": "Prepaid Income Tax 23",
+        "mapping": "PREPAID TAXES",
+        "baseUSD": 7391,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2443050",
+        "name": "Prepaid Income Tax 25",
+        "mapping": "PREPAID TAXES",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2443060",
+        "name": "Prepaid Income Tax 28",
+        "mapping": "PREPAID TAXES",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2443070",
+        "name": "Claim For VAT Restitution",
+        "mapping": "PREPAID TAXES",
+        "baseUSD": 229682,
+        "glMovementUSD": 0,
+        "closingUSD": 229682
+      },
+      {
+        "code": "2443080",
+        "name": "Income Tax Refund 2021",
+        "mapping": "PREPAID TAXES",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2443090",
+        "name": "Income Tax Refund 2022",
+        "mapping": "PREPAID TAXES",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2450010",
+        "name": "Derivative Financial Asset - CCC",
+        "mapping": "Derivative Financial Asset",
+        "baseUSD": 9873,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2110010",
+        "name": "Land",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2110020",
+        "name": "Buildings-Permanent",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2110030",
+        "name": "Buildings-Non Permanent",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": 3985518,
+        "glMovementUSD": 0,
+        "closingUSD": 3975878
+      },
+      {
+        "code": "2110040",
+        "name": "Machine-Own",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": 1360249,
+        "glMovementUSD": 0,
+        "closingUSD": 1297882
+      },
+      {
+        "code": "2110050",
+        "name": "Wheel &Track Equipment Own",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": 4647956,
+        "glMovementUSD": 0,
+        "closingUSD": 4647956
+      },
+      {
+        "code": "2110060",
+        "name": "Machine - Leasing",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2110070",
+        "name": "Wheel &Track Equipment Leasing",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": 2662569,
+        "glMovementUSD": 0,
+        "closingUSD": 2662569
+      },
+      {
+        "code": "2110080",
+        "name": "Office Equipment",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": 490703,
+        "glMovementUSD": 0,
+        "closingUSD": 487904
+      },
+      {
+        "code": "2110090",
+        "name": "Furniture and Fixture",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": 36762,
+        "glMovementUSD": 0,
+        "closingUSD": 36762
+      },
+      {
+        "code": "2110100",
+        "name": "Vehicles-Own",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": 7045,
+        "glMovementUSD": 0,
+        "closingUSD": 7045
+      },
+      {
+        "code": "2110110",
+        "name": "Vehicles-Leasing",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2110120",
+        "name": "Project Equipment",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": 205340,
+        "glMovementUSD": 0,
+        "closingUSD": 205340
+      },
+      {
+        "code": "2110130",
+        "name": "Infrastructure",
+        "mapping": "EXPLORATION AND EVALUATION ASSETS",
+        "baseUSD": 48314900,
+        "glMovementUSD": 0,
+        "closingUSD": 48186649
+      },
+      {
+        "code": "2120010",
+        "name": "Acc Dep-Building-Permanent",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2120020",
+        "name": "Acc Dep-Building-Non Permanent",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": -1243592,
+        "glMovementUSD": 0,
+        "closingUSD": -1022875
+      },
+      {
+        "code": "2120030",
+        "name": "Acc Dep-Machine-Own",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": -709286,
+        "glMovementUSD": 0,
+        "closingUSD": -629707
+      },
+      {
+        "code": "2120040",
+        "name": "Acc Dep-Wheel &Track Equipment Own",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": -4192265,
+        "glMovementUSD": 0,
+        "closingUSD": -3899448
+      },
+      {
+        "code": "2120050",
+        "name": "Acc Dep-Wheel &Track Equipment Leasing",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": -1922110,
+        "glMovementUSD": 0,
+        "closingUSD": -1755699
+      },
+      {
+        "code": "2120060",
+        "name": "Acc Dep-Machine-Leasing",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2120070",
+        "name": "Acc.Dep Office Equipment",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": -230853,
+        "glMovementUSD": 0,
+        "closingUSD": -189558
+      },
+      {
+        "code": "2120080",
+        "name": "Acc.Dep Furniture and Fixture",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": -24006,
+        "glMovementUSD": 0,
+        "closingUSD": -19411
+      },
+      {
+        "code": "2120090",
+        "name": "Acc.Dep. Vehicle-Own",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": -6521,
+        "glMovementUSD": 0,
+        "closingUSD": -6128
+      },
+      {
+        "code": "2120100",
+        "name": "Acc.Dep. Vehicle-Leasing",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2120110",
+        "name": "Acc Dep Project Equipment",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": -174677,
+        "glMovementUSD": 0,
+        "closingUSD": -170170
+      },
+      {
+        "code": "2120120",
+        "name": "Acc Dep-Infrastructure",
+        "mapping": "EXPLORATION AND EVALUATION ASSETS",
+        "baseUSD": -2751794,
+        "glMovementUSD": 0,
+        "closingUSD": -2365232
+      },
+      {
+        "code": "2130010",
+        "name": "Right of Use Assets of Motor Vehicle",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2130020",
+        "name": "Right of Use Assets of Building",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": 268547,
+        "glMovementUSD": 0,
+        "closingUSD": 268547
+      },
+      {
+        "code": "2140010",
+        "name": "Mining Properties",
+        "mapping": "MINING PROPERTIES",
+        "baseUSD": 52533478,
+        "glMovementUSD": 0,
+        "closingUSD": 50248777
+      },
+      {
+        "code": "2140020",
+        "name": "Land Compensation",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": 765918,
+        "glMovementUSD": 0,
+        "closingUSD": 765918
+      },
+      {
+        "code": "2140030",
+        "name": "Asset Retirement Obligation",
+        "mapping": "ASSET RETIREMENT OBLIGATION",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2140040",
+        "name": "Intangible assets",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2140060",
+        "name": "Annual Contribution",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": 92512,
+        "glMovementUSD": 0,
+        "closingUSD": 277539
+      },
+      {
+        "code": "2150010",
+        "name": "Accumulated Amortization Mining Properties",
+        "mapping": "MINING PROPERTIES",
+        "baseUSD": -897589,
+        "glMovementUSD": 0,
+        "closingUSD": -728896
+      },
+      {
+        "code": "2150020",
+        "name": "Accumulated Amortization Land Compensation",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": -22407,
+        "glMovementUSD": 0,
+        "closingUSD": -19938
+      },
+      {
+        "code": "2150030",
+        "name": "Acc Dep-Asset Retirement Obligation",
+        "mapping": "ASSET RETIREMENT OBLIGATION",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2150040",
+        "name": "Amortization -Intangible Assets",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2150060",
+        "name": "Acc Right of Use Assets of Motor Vehicle",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "2150070",
+        "name": "Acc Right of Use Assets of Building",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": -215308,
+        "glMovementUSD": 0,
+        "closingUSD": -181348
+      },
+      {
+        "code": "2190000",
+        "name": "Asset Under Construction",
+        "mapping": "FIXED ASSETS",
+        "baseUSD": 75293,
+        "glMovementUSD": 0,
+        "closingUSD": -6
+      },
+      {
+        "code": "1601001",
+        "name": "Loan Bank Shinhan Current",
+        "mapping": "LOANS PAYABLE CURRENT",
+        "baseUSD": -2841419,
+        "glMovementUSD": 0,
+        "closingUSD": -3001235
+      },
+      {
+        "code": "1602010",
+        "name": "Loan Related Party-IMR Holding AG",
+        "mapping": "LOANS PAYABLE CURRENT",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1602020",
+        "name": "Loan Related Party-IMR Asia Holding Pte Ltd",
+        "mapping": "LOANS PAYABLE CURRENT",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1602030",
+        "name": "Loan Related Party-PT. Pacific Samudra Perkasa",
+        "mapping": "LOANS PAYABLE CURRENT",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1602040",
+        "name": "Loan Related Party-PT IMR Anugrah Maju",
+        "mapping": "LOANS PAYABLE CURRENT",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1602050",
+        "name": "Loan Related Party-PT IMR Anugrah Greens",
+        "mapping": "LOANS PAYABLE CURRENT",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1602060",
+        "name": "Loan Related Party-PT IMR Arc Steel",
+        "mapping": "LOANS PAYABLE CURRENT",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1700010",
+        "name": "Leasing Liablity-Current Sun Finance",
+        "mapping": "FINANCE LEASE LIABILITIES, CURRENT PORTION",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1700020",
+        "name": "Leasing Liablity-Current ROU",
+        "mapping": "FINANCE LEASE LIABILITIES, CURRENT PORTION",
+        "baseUSD": -39569,
+        "glMovementUSD": 0,
+        "closingUSD": -72480
+      },
+      {
+        "code": "1511000",
+        "name": "Accounts Payable Trade",
+        "mapping": "ACCOUNTS PAYABLE",
+        "baseUSD": -4723659,
+        "glMovementUSD": 0,
+        "closingUSD": -1984756
+      },
+      {
+        "code": "1512001",
+        "name": "Accounts Payable-IMR Holding AG",
+        "mapping": "ACCOUNTS PAYABLE",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1512002",
+        "name": "Accounts Payable-IMR Asia Holding Pte Ltd",
+        "mapping": "ACCOUNTS PAYABLE",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1512003",
+        "name": "Accounts Payable-PT. Pacific Samudra Perkasa",
+        "mapping": "ACCOUNTS PAYABLE",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1512004",
+        "name": "Accounts Payable-PT IMR Anugrah Maju",
+        "mapping": "ACCOUNTS PAYABLE",
+        "baseUSD": -3361193,
+        "glMovementUSD": 0,
+        "closingUSD": -4794119
+      },
+      {
+        "code": "1512005",
+        "name": "Accounts Payable-PT IMR Anugrah Greens",
+        "mapping": "ACCOUNTS PAYABLE",
+        "baseUSD": -468115,
+        "glMovementUSD": 0,
+        "closingUSD": -177917
+      },
+      {
+        "code": "1512008",
+        "name": "Contra - Accounts Payable-PT IMR Anugrah Maju",
+        "mapping": "ACCOUNTS PAYABLE",
+        "baseUSD": 97,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1512006",
+        "name": "Accounts Payable-PT IMR Arc Steel",
+        "mapping": "ACCOUNTS PAYABLE",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1512007",
+        "name": "Accounts Payable-PT IMR Mining Service",
+        "mapping": "ACCOUNTS PAYABLE",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1513000",
+        "name": "Account Payable Non Trade",
+        "mapping": "ACCOUNTS PAYABLE",
+        "baseUSD": -4180691,
+        "glMovementUSD": 0,
+        "closingUSD": -2077540
+      },
+      {
+        "code": "1515000",
+        "name": "Advance From Customer-3rd Party",
+        "mapping": "ADVANCES FROM CUSTOMER",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1513020",
+        "name": "Payable Employee",
+        "mapping": "OTHER CURRENT LIABILITIES",
+        "baseUSD": -306,
+        "glMovementUSD": 0,
+        "closingUSD": -23886
+      },
+      {
+        "code": "1516001",
+        "name": "Advance From -IMR Holding AG",
+        "mapping": "ADVANCES FROM CUSTOMER",
+        "baseUSD": -65867935,
+        "glMovementUSD": 0,
+        "closingUSD": -59623126
+      },
+      {
+        "code": "1516002",
+        "name": "Advance From -IMR Asia Holding Pte Ltd",
+        "mapping": "ADVANCES FROM CUSTOMER",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1516003",
+        "name": "Advance From -PT. Pacific Samudra Perkasa",
+        "mapping": "ADVANCES FROM CUSTOMER",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1516004",
+        "name": "Advance From -PT IMR Anugrah Maju",
+        "mapping": "ADVANCES FROM CUSTOMER",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1516005",
+        "name": "Advance From -PT IMR Anugrah Greens",
+        "mapping": "ADVANCES FROM CUSTOMER",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1516006",
+        "name": "Advance From -PT IMR Arc Steel",
+        "mapping": "ADVANCES FROM CUSTOMER",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1517001",
+        "name": "Customer Deposit-3rd Party",
+        "mapping": "ADVANCES FROM CUSTOMER",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1518001",
+        "name": "Customer Deposit-IMR Holding AG",
+        "mapping": "ADVANCES FROM CUSTOMER",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1518002",
+        "name": "Customer Deposit-IMR Asia Holding Pte Ltd",
+        "mapping": "ADVANCES FROM CUSTOMER",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1518003",
+        "name": "Customer Deposit-PT. Pacific Samudra Perkasa",
+        "mapping": "ADVANCES FROM CUSTOMER",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1518004",
+        "name": "Customer Deposit-PT IMR Anugrah Maju",
+        "mapping": "ADVANCES FROM CUSTOMER",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1518005",
+        "name": "Customer Deposit-PT IMR Anugrah Greens",
+        "mapping": "ADVANCES FROM CUSTOMER",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1518006",
+        "name": "Customer Deposit-PT IMR Arc Steel",
+        "mapping": "ADVANCES FROM CUSTOMER",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1520001",
+        "name": "PPN Out",
+        "mapping": "TAXES PAYABLE",
+        "baseUSD": -54017,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1520002",
+        "name": "Value Added Tax Payable",
+        "mapping": "TAXES PAYABLE",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1520003",
+        "name": "Tax Payable PPH 21",
+        "mapping": "TAXES PAYABLE",
+        "baseUSD": -33480,
+        "glMovementUSD": 0,
+        "closingUSD": -67170
+      },
+      {
+        "code": "1520004",
+        "name": "Tax Payable PPH 22",
+        "mapping": "TAXES PAYABLE",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1520005",
+        "name": "Tax Payable PPH 23",
+        "mapping": "TAXES PAYABLE",
+        "baseUSD": -11622,
+        "glMovementUSD": 0,
+        "closingUSD": -36400
+      },
+      {
+        "code": "1520006",
+        "name": "Tax Payable PPH 4 (2)",
+        "mapping": "TAXES PAYABLE",
+        "baseUSD": -3673,
+        "glMovementUSD": 0,
+        "closingUSD": -2830
+      },
+      {
+        "code": "1520007",
+        "name": "Tax Payable PPH 15",
+        "mapping": "TAXES PAYABLE",
+        "baseUSD": -2268,
+        "glMovementUSD": 0,
+        "closingUSD": -1286
+      },
+      {
+        "code": "1520008",
+        "name": "Tax Payable PPH 26",
+        "mapping": "TAXES PAYABLE",
+        "baseUSD": -610232,
+        "glMovementUSD": 0,
+        "closingUSD": -730781
+      },
+      {
+        "code": "1520009",
+        "name": "Tax Payable PPH 25",
+        "mapping": "TAXES PAYABLE",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1520010",
+        "name": "Tax Payable PPH 29",
+        "mapping": "TAXES PAYABLE",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1520011",
+        "name": "Land & Building Tax Payable",
+        "mapping": "TAXES PAYABLE",
+        "baseUSD": -20631,
+        "glMovementUSD": 0,
+        "closingUSD": -20631
+      },
+      {
+        "code": "1520012",
+        "name": "Royalty Payable",
+        "mapping": "0",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1530001",
+        "name": "Provision Employee Benefit",
+        "mapping": "EMPLOYEE BENEFIT OBLIGATIONS",
+        "baseUSD": -688418,
+        "glMovementUSD": 0,
+        "closingUSD": -544322
+      },
+      {
+        "code": "1530002",
+        "name": "Provision for Reclamation and Mine Closure",
+        "mapping": "PROVISION FOR RECLAMATION AND MINE CLOSURE",
+        "baseUSD": -4900975,
+        "glMovementUSD": 0,
+        "closingUSD": -4900975
+      },
+      {
+        "code": "1530003",
+        "name": "Accrued Expense",
+        "mapping": "ACCRUED EXPENSES",
+        "baseUSD": -9931100,
+        "glMovementUSD": 0,
+        "closingUSD": -6795543
+      },
+      {
+        "code": "1530004",
+        "name": "Functional Currency Impact",
+        "mapping": "ACCRUED EXPENSES",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1530005",
+        "name": "Accrued Interest Advance",
+        "mapping": "ADVANCES FROM CUSTOMER",
+        "baseUSD": -3902860,
+        "glMovementUSD": 0,
+        "closingUSD": -3902860
+      },
+      {
+        "code": "1540010",
+        "name": "Contra for Liabilities for Good Receipt",
+        "mapping": "ACCRUED EXPENSES",
+        "baseUSD": -1819893,
+        "glMovementUSD": 0,
+        "closingUSD": -1177724
+      },
+      {
+        "code": "1540020",
+        "name": "Contra for Liabilities for Services Receipt",
+        "mapping": "ACCRUED EXPENSES",
+        "baseUSD": -334417,
+        "glMovementUSD": 0,
+        "closingUSD": -441594
+      },
+      {
+        "code": "1540030",
+        "name": "Contra for Liabilities for Capex Items",
+        "mapping": "ACCRUED EXPENSES",
+        "baseUSD": -3381,
+        "glMovementUSD": 0,
+        "closingUSD": -8031
+      },
+      {
+        "code": "1540040",
+        "name": "Contra for Liabilities for Good Receipt Consigment",
+        "mapping": "ACCRUED EXPENSES",
+        "baseUSD": -25224,
+        "glMovementUSD": 0,
+        "closingUSD": -60784
+      },
+      {
+        "code": "1201011",
+        "name": "Collateral Loan - BNI",
+        "mapping": "LOANS PAYABLE CURRENT",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1201012",
+        "name": "Collateral Loan - Mandiri",
+        "mapping": "LOANS PAYABLE CURRENT",
+        "baseUSD": -3000000,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1202010",
+        "name": "Loan Related Party-IMR Holding AG",
+        "mapping": "LOANS PAYABLE NON CURRENT",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1202020",
+        "name": "Loan Related Party-IMR Asia Holding Pte Ltd",
+        "mapping": "LOANS PAYABLE NON CURRENT",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1202030",
+        "name": "Loan Related Party-PT. Pacific Samudra Perkasa",
+        "mapping": "LOANS PAYABLE NON CURRENT",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1202040",
+        "name": "Loan Related Party-PT IMR Anugrah Maju",
+        "mapping": "LOANS PAYABLE NON CURRENT",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1202050",
+        "name": "Loan Related Party-PT IMR Anugrah Greens",
+        "mapping": "LOANS PAYABLE NON CURRENT",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1202060",
+        "name": "Loan Related Party-PT IMR Arc Steel",
+        "mapping": "LOANS PAYABLE NON CURRENT",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1202080",
+        "name": "Loan Shinhan Bank",
+        "mapping": "LOANS PAYABLE NON CURRENT",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1110060",
+        "name": "Perpetual Loan",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": -121844021,
+        "glMovementUSD": 0,
+        "closingUSD": -121844021
+      },
+      {
+        "code": "1300010",
+        "name": "Leasing Liablity-Non Current Sun Finance",
+        "mapping": "FINANCE LEASE LIABILITIES, NON-CURRENT PORTION",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1300020",
+        "name": "Leasing Liablity-Non Current ROU",
+        "mapping": "FINANCE LEASE LIABILITIES, NON-CURRENT PORTION",
+        "baseUSD": -20140,
+        "glMovementUSD": 0,
+        "closingUSD": -20140
+      },
+      {
+        "code": "1400010",
+        "name": "Deferred Tax Liabilities",
+        "mapping": "DEFERRED TAX LIABILITIES",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1800010",
+        "name": "Derivative Financial Liability – CCC",
+        "mapping": "Derivative Financial Liabilities",
+        "baseUSD": -3240,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1110010",
+        "name": "Share Capital",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": -1112431,
+        "glMovementUSD": 0,
+        "closingUSD": -1112431
+      },
+      {
+        "code": "1110020",
+        "name": "Paid-up Capital",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1110030",
+        "name": "Share Premium",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "1110040",
+        "name": "Retained Earnings",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 73950868,
+        "glMovementUSD": 0,
+        "closingUSD": 73950868
+      },
+      {
+        "code": "3000010",
+        "name": "Coal Sales Export Coking Coal",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": -13027502,
+        "glMovementUSD": 0,
+        "closingUSD": -7548442
+      },
+      {
+        "code": "3000020",
+        "name": "Coal Sales Export Non Coking Coal",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "3000030",
+        "name": "Coal Sales Domestic Coking Coal",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": -3740227,
+        "glMovementUSD": 0,
+        "closingUSD": -3740227
+      },
+      {
+        "code": "3000040",
+        "name": "Coal Sales Domestic Non Coking Coal",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "3100010",
+        "name": "Sales Return Coking Coal",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "3100020",
+        "name": "Sales Return Non Coking Coal",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "3200010",
+        "name": "Sales - Others Items",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "4000010",
+        "name": "COGM - BUA",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": -13100724,
+        "glMovementUSD": 0,
+        "closingUSD": -5859190
+      },
+      {
+        "code": "4000020",
+        "name": "COGM - Wash Plant",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": -1571012,
+        "glMovementUSD": 0,
+        "closingUSD": -484062
+      },
+      {
+        "code": "4000030",
+        "name": "COGM - ISP Road",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "4000040",
+        "name": "COGM - Port",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": -4382807,
+        "glMovementUSD": 0,
+        "closingUSD": -1192514
+      },
+      {
+        "code": "4000050",
+        "name": "COGM - ISP MGM",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "4000051",
+        "name": "COGM - ISP BAT/KUNZ",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "4100010",
+        "name": "Cost of Good Sold - Coking Coal Export",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 7993609,
+        "glMovementUSD": 0,
+        "closingUSD": 5306180
+      },
+      {
+        "code": "4100020",
+        "name": "Cost of Good Sold - Non Coking Coal Export",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "4100030",
+        "name": "Cost of Good Sold - Coking Coal Domestic",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "4100040",
+        "name": "Cost of Good Sold - Non Coking Coal Domestic",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5000051",
+        "name": "Salaries",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 1701479,
+        "glMovementUSD": 0,
+        "closingUSD": 559723
+      },
+      {
+        "code": "5000052",
+        "name": "Overtime",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 53089,
+        "glMovementUSD": 0,
+        "closingUSD": 22742
+      },
+      {
+        "code": "5000053",
+        "name": "Insentif / Bonus/ THR",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 70499,
+        "glMovementUSD": 0,
+        "closingUSD": -6431
+      },
+      {
+        "code": "5000054",
+        "name": "Allowance & Compensation",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 184268,
+        "glMovementUSD": 0,
+        "closingUSD": 65875
+      },
+      {
+        "code": "5000055",
+        "name": "Severence Pay",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 28906,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5000056",
+        "name": "Medical",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 53352,
+        "glMovementUSD": 0,
+        "closingUSD": 16162
+      },
+      {
+        "code": "5000057",
+        "name": "Employee Insurance (BPJS TK)",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 120974,
+        "glMovementUSD": 0,
+        "closingUSD": 39069
+      },
+      {
+        "code": "5000058",
+        "name": "Employee Insurance (BPJS Health)",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 35970,
+        "glMovementUSD": 0,
+        "closingUSD": 11551
+      },
+      {
+        "code": "5000059",
+        "name": "Employee Insurance (Pension)",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5000060",
+        "name": "Employee Wellfare (Natura)",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5000061",
+        "name": "Provision Employee Retirement Benefit",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 194617,
+        "glMovementUSD": 0,
+        "closingUSD": 50522
+      },
+      {
+        "code": "5000101",
+        "name": "Equipment Rent",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 3290,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5000102",
+        "name": "Vehicle Rent",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 227028,
+        "glMovementUSD": 0,
+        "closingUSD": 66346
+      },
+      {
+        "code": "5000103",
+        "name": "Tug and Barge Hire",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 1261433,
+        "glMovementUSD": 0,
+        "closingUSD": 845014
+      },
+      {
+        "code": "5000104",
+        "name": "Barge Loading Conveyor Rent",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 174480,
+        "glMovementUSD": 0,
+        "closingUSD": 73964
+      },
+      {
+        "code": "5000105",
+        "name": "Wash Plant Rent",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 1388919,
+        "glMovementUSD": 0,
+        "closingUSD": 418782
+      },
+      {
+        "code": "5000108",
+        "name": "ISP Rent",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 887321,
+        "glMovementUSD": 0,
+        "closingUSD": 313619
+      },
+      {
+        "code": "5000109",
+        "name": "Land And Road Rent",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 100818,
+        "glMovementUSD": 0,
+        "closingUSD": 23648
+      },
+      {
+        "code": "5000201",
+        "name": "Building Rent Expense",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 118841,
+        "glMovementUSD": 0,
+        "closingUSD": 45845
+      },
+      {
+        "code": "5000301",
+        "name": "Freight & Handling Heavy Equipment",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5000302",
+        "name": "Freight & Handling Fuel",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 411334,
+        "glMovementUSD": 0,
+        "closingUSD": -24690
+      },
+      {
+        "code": "5000303",
+        "name": "Freight & Handling Sparepart",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 14058,
+        "glMovementUSD": 0,
+        "closingUSD": 4963
+      },
+      {
+        "code": "5000304",
+        "name": "Freight & Handling Others Material",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 52213,
+        "glMovementUSD": 0,
+        "closingUSD": 24459
+      },
+      {
+        "code": "5000401",
+        "name": "Contractor Fee",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5000402",
+        "name": "Labour Outsourcing Expense",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 482906,
+        "glMovementUSD": 0,
+        "closingUSD": 170376
+      },
+      {
+        "code": "5000403",
+        "name": "Security Expenses",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 343423,
+        "glMovementUSD": 0,
+        "closingUSD": 105523
+      },
+      {
+        "code": "5000404",
+        "name": "OB Cost",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 7161868,
+        "glMovementUSD": 0,
+        "closingUSD": 3332294
+      },
+      {
+        "code": "5000405",
+        "name": "Coal Getting",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 250840,
+        "glMovementUSD": 0,
+        "closingUSD": 142473
+      },
+      {
+        "code": "5000406",
+        "name": "Coal Hauling Pit to BUA / Stock Pile",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 41112,
+        "glMovementUSD": 0,
+        "closingUSD": 26874
+      },
+      {
+        "code": "5000407",
+        "name": "Coal Hauling BUA to WP",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 74548,
+        "glMovementUSD": 0,
+        "closingUSD": 14473
+      },
+      {
+        "code": "5000408",
+        "name": "Coal Hauling WP to Port",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 631692,
+        "glMovementUSD": 0,
+        "closingUSD": 365307
+      },
+      {
+        "code": "5000409",
+        "name": "Coal hauling BUA to Port",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 1090545,
+        "glMovementUSD": 0,
+        "closingUSD": 265459
+      },
+      {
+        "code": "5000410",
+        "name": "Road Maintenance",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5000411",
+        "name": "Coal Loading",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 55963,
+        "glMovementUSD": 0,
+        "closingUSD": 5270
+      },
+      {
+        "code": "5000501",
+        "name": "Consultant Fee",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 315740,
+        "glMovementUSD": 0,
+        "closingUSD": 104149
+      },
+      {
+        "code": "5000502",
+        "name": "Survey Expenses - Production",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5000601",
+        "name": "Fuel",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 6730111,
+        "glMovementUSD": 0,
+        "closingUSD": 1750108
+      },
+      {
+        "code": "5000602",
+        "name": "Explosive & Accessories",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5000603",
+        "name": "Wash Plant Stores",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 174,
+        "glMovementUSD": 0,
+        "closingUSD": 54
+      },
+      {
+        "code": "5000604",
+        "name": "Stores",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 177596,
+        "glMovementUSD": 0,
+        "closingUSD": 65994
+      },
+      {
+        "code": "5000605",
+        "name": "Tools",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 20860,
+        "glMovementUSD": 0,
+        "closingUSD": 9390
+      },
+      {
+        "code": "5000606",
+        "name": "Office Supplies",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 23194,
+        "glMovementUSD": 0,
+        "closingUSD": 3893
+      },
+      {
+        "code": "5000607",
+        "name": "IT Consumables",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 4224,
+        "glMovementUSD": 0,
+        "closingUSD": 1425
+      },
+      {
+        "code": "5000701",
+        "name": "Land & Building Tax",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 218332,
+        "glMovementUSD": 0,
+        "closingUSD": 155979
+      },
+      {
+        "code": "5001712",
+        "name": "Safety & Environmental",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 82836,
+        "glMovementUSD": 0,
+        "closingUSD": 23405
+      },
+      {
+        "code": "5001714",
+        "name": "Extracomptable",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 12635,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5000801",
+        "name": "Repair & Maintenance-Service",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 829,
+        "glMovementUSD": 0,
+        "closingUSD": 1304
+      },
+      {
+        "code": "5000802",
+        "name": "Repair & Maintenance-Sparepart",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 312709,
+        "glMovementUSD": 0,
+        "closingUSD": 88946
+      },
+      {
+        "code": "5000803",
+        "name": "Repair & Maintenance-Oil & Lubricants",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 58155,
+        "glMovementUSD": 0,
+        "closingUSD": 19439
+      },
+      {
+        "code": "5000804",
+        "name": "Repair & Maintenance-Tyre & Accessories",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 146013,
+        "glMovementUSD": 0,
+        "closingUSD": 37595
+      },
+      {
+        "code": "5000805",
+        "name": "Repair & Maintenance Building",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 11206,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5000806",
+        "name": "Repair & Maintenance Office Equipment",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 20,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5000807",
+        "name": "Repair & Maintenance Vehicle",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": -95,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5000808",
+        "name": "Repair & Maintenance Hauling Road",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 253,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5000901",
+        "name": "Depreciation of Building Permanent",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5000902",
+        "name": "Depreciation of Building Non Permanent",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 329500,
+        "glMovementUSD": 0,
+        "closingUSD": 108784
+      },
+      {
+        "code": "5000903",
+        "name": "Depreciation of Machine-Own",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 115053,
+        "glMovementUSD": 0,
+        "closingUSD": 35474
+      },
+      {
+        "code": "5000904",
+        "name": "Depreciation Wheel &Track Equipment Own",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 439226,
+        "glMovementUSD": 0,
+        "closingUSD": 146409
+      },
+      {
+        "code": "5000905",
+        "name": "Depreciation of Machine-leasing",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5000906",
+        "name": "Depreciation Wheel &Track Equipment Leasing",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 249616,
+        "glMovementUSD": 0,
+        "closingUSD": 83205
+      },
+      {
+        "code": "5000907",
+        "name": "Depreciation of Office Equipment",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 61737,
+        "glMovementUSD": 0,
+        "closingUSD": 20441
+      },
+      {
+        "code": "5000908",
+        "name": "Depreciation of Furniture & Fixture",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 6893,
+        "glMovementUSD": 0,
+        "closingUSD": 2298
+      },
+      {
+        "code": "5000909",
+        "name": "Depreciation of Motor Vehicle-Own",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 613,
+        "glMovementUSD": 0,
+        "closingUSD": 220
+      },
+      {
+        "code": "5000910",
+        "name": "Depreciation of Motor Vehicle-Leasing",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5000911",
+        "name": "Depreciation of Project Equipment",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 6760,
+        "glMovementUSD": 0,
+        "closingUSD": 2253
+      },
+      {
+        "code": "5000912",
+        "name": "Depreciation of Infrastructure",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 610012,
+        "glMovementUSD": 0,
+        "closingUSD": 223450
+      },
+      {
+        "code": "5000913",
+        "name": "Amortization of Right of Use Assets-Vehicle",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5000914",
+        "name": "Amortization of Right of Use Assets-Building",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 50939,
+        "glMovementUSD": 0,
+        "closingUSD": 16979
+      },
+      {
+        "code": "5000915",
+        "name": "Amortization Mining Properties",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 360179,
+        "glMovementUSD": 0,
+        "closingUSD": 191486
+      },
+      {
+        "code": "5000916",
+        "name": "Amortization Land Compensation",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 5345,
+        "glMovementUSD": 0,
+        "closingUSD": 2876
+      },
+      {
+        "code": "5000917",
+        "name": "Amortization of Asset Retirement Obligation",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5000918",
+        "name": "Amortization Expense",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 277540,
+        "glMovementUSD": 0,
+        "closingUSD": 92512
+      },
+      {
+        "code": "5000919",
+        "name": "Reclamation and Mine Closure Expense",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 801,
+        "glMovementUSD": 0,
+        "closingUSD": 801
+      },
+      {
+        "code": "5001001",
+        "name": "Licence & Permit",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 126966,
+        "glMovementUSD": 0,
+        "closingUSD": 82203
+      },
+      {
+        "code": "5001101",
+        "name": "Coal Sampling Analysis",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 41040,
+        "glMovementUSD": 0,
+        "closingUSD": 13911
+      },
+      {
+        "code": "5001201",
+        "name": "Electricity & Water",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 6630,
+        "glMovementUSD": 0,
+        "closingUSD": 2423
+      },
+      {
+        "code": "5001203",
+        "name": "Water",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": -229,
+        "glMovementUSD": 0,
+        "closingUSD": 958
+      },
+      {
+        "code": "5001301",
+        "name": "Telephone & Fax",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 617,
+        "glMovementUSD": 0,
+        "closingUSD": 233
+      },
+      {
+        "code": "5001302",
+        "name": "Network",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 37657,
+        "glMovementUSD": 0,
+        "closingUSD": 17204
+      },
+      {
+        "code": "5001401",
+        "name": "Printing & Stationery",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 4655,
+        "glMovementUSD": 0,
+        "closingUSD": 1245
+      },
+      {
+        "code": "5001402",
+        "name": "Mess Expense",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 18254,
+        "glMovementUSD": 0,
+        "closingUSD": 6693
+      },
+      {
+        "code": "5001403",
+        "name": "Postage & Courier",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 9883,
+        "glMovementUSD": 0,
+        "closingUSD": 447
+      },
+      {
+        "code": "5001404",
+        "name": "Office Expense",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 4281,
+        "glMovementUSD": 0,
+        "closingUSD": 637
+      },
+      {
+        "code": "5001501",
+        "name": "Travel Exp Domestic",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 138289,
+        "glMovementUSD": 0,
+        "closingUSD": 33431
+      },
+      {
+        "code": "5001502",
+        "name": "Travel Exp International",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 19418,
+        "glMovementUSD": 0,
+        "closingUSD": 5780
+      },
+      {
+        "code": "5001503",
+        "name": "Hotels & Accommodation",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 9656,
+        "glMovementUSD": 0,
+        "closingUSD": 2775
+      },
+      {
+        "code": "5001601",
+        "name": "Insurance Building",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5001602",
+        "name": "Insurance Equipment",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5001603",
+        "name": "Insurance Coal",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5001604",
+        "name": "Insurance Vehicle",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5001605",
+        "name": "Credit Insurance",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5001606",
+        "name": "Insurance - Health Insurance",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5001701",
+        "name": "Catering",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 450806,
+        "glMovementUSD": 0,
+        "closingUSD": 164971
+      },
+      {
+        "code": "5001702",
+        "name": "Local Tax",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 45395,
+        "glMovementUSD": 0,
+        "closingUSD": 12217
+      },
+      {
+        "code": "5001703",
+        "name": "PNBP Expenses",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5001704",
+        "name": "PSDH-DR",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5001705",
+        "name": "Dead Rent",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "5001709",
+        "name": "Training Expense",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 3095,
+        "glMovementUSD": 0,
+        "closingUSD": 385
+      },
+      {
+        "code": "5001801",
+        "name": "Entertainment",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 102304,
+        "glMovementUSD": 0,
+        "closingUSD": 48222
+      },
+      {
+        "code": "5001802",
+        "name": "Donation & Gift",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 800,
+        "glMovementUSD": 0,
+        "closingUSD": 208
+      },
+      {
+        "code": "5001901",
+        "name": "Channel Fee",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 28133,
+        "glMovementUSD": 0,
+        "closingUSD": 18499
+      },
+      {
+        "code": "5999999",
+        "name": "Heavy Equipment Rent - Contra",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": -54941,
+        "glMovementUSD": 0,
+        "closingUSD": -17837
+      },
+      {
+        "code": "6000001",
+        "name": "Advertaising and Promotion",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 28,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "6000002",
+        "name": "Demurage",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "6000003",
+        "name": "Royalty Coal Sales Export",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 2129719,
+        "glMovementUSD": 0,
+        "closingUSD": 1423336
+      },
+      {
+        "code": "6000004",
+        "name": "Royalty Coal Sales Domestic",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "6000005",
+        "name": "Survey Expenses - Sales",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "6000010",
+        "name": "DMO Penalty",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "7000001",
+        "name": "Interest Income Bank",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": -11050,
+        "glMovementUSD": 0,
+        "closingUSD": -2415
+      },
+      {
+        "code": "7000002",
+        "name": "Interest Deposit Bank",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": -19684,
+        "glMovementUSD": 0,
+        "closingUSD": -16250
+      },
+      {
+        "code": "7000003",
+        "name": "Tax On Bank Interest",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 1472,
+        "glMovementUSD": 0,
+        "closingUSD": 236
+      },
+      {
+        "code": "7001001",
+        "name": "Interest Expenses Lease Financing",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 6957,
+        "glMovementUSD": 0,
+        "closingUSD": 2862
+      },
+      {
+        "code": "7001002",
+        "name": "Interest Expense Loan",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "7001003",
+        "name": "Bank Charges",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 2653,
+        "glMovementUSD": 0,
+        "closingUSD": 1023
+      },
+      {
+        "code": "7001004",
+        "name": "Interest Expense Bank",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 119850,
+        "glMovementUSD": 0,
+        "closingUSD": 46266
+      },
+      {
+        "code": "7001006",
+        "name": "Round Off",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 2,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "7001007",
+        "name": "Provision of inventory (P/L)",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "7001008",
+        "name": "Interest Expense Perpetual Loan",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "7001005",
+        "name": "Amortisation on Loan Modification",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "7001011",
+        "name": "Interest Advance From Customer",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 415328,
+        "glMovementUSD": 0,
+        "closingUSD": 415328
+      },
+      {
+        "code": "7001013",
+        "name": "Interest Expense Bank - CCC",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 1057,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "7002001",
+        "name": "Forex (Gain)/Losses Unrealised",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": -130216,
+        "glMovementUSD": 0,
+        "closingUSD": -28992
+      },
+      {
+        "code": "7002002",
+        "name": "Forex (Gain)/Losses Realised",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": -432461,
+        "glMovementUSD": 0,
+        "closingUSD": -107949
+      },
+      {
+        "code": "7003001",
+        "name": "(Gain) & Loss-Asset",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "7003003",
+        "name": "Gain / (Loss) on Fair Value of Derivative",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": -6633,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "7004001",
+        "name": "Provision",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 59502,
+        "glMovementUSD": 0,
+        "closingUSD": 59502
+      },
+      {
+        "code": "7004002",
+        "name": "Inventory Adjustment",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": -1960,
+        "glMovementUSD": 0,
+        "closingUSD": -1960
+      },
+      {
+        "code": "7007001",
+        "name": "Other income",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": -59,
+        "glMovementUSD": 0,
+        "closingUSD": -60
+      },
+      {
+        "code": "8000001",
+        "name": "Current Income Tax Expense/(Benefit)",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "8000002",
+        "name": "Deferred Income Tax Expense/(Benefit)",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": -25335,
+        "glMovementUSD": 0,
+        "closingUSD": -25335
+      },
+      {
+        "code": "8000003",
+        "name": "Other Tax Expense",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 250729,
+        "glMovementUSD": 0,
+        "closingUSD": 223144
+      },
+      {
+        "code": "7006001",
+        "name": "Other Comprehensive Income",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": -11444,
+        "glMovementUSD": 0,
+        "closingUSD": -11444
+      },
+      {
+        "code": "7006002",
+        "name": "Forward point expense / OCI",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": -6238,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "7001009",
+        "name": "Distributions on Perpetual Loans",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 12314,
+        "glMovementUSD": 0,
+        "closingUSD": 12314
+      },
+      {
+        "code": "9999998",
+        "name": "Inventory Movement",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      },
+      {
+        "code": "9999999",
+        "name": "Balance Account",
+        "mapping": "TOTAL EQUITY",
+        "baseUSD": 0,
+        "glMovementUSD": 0,
+        "closingUSD": 0
+      }
+    ],
+    "incomeStatement": {
+      "period": "2026-03",
+      "currency": "USD",
+      "salesVolumeMT": null,
+      "revenue": {
+        "totalRevenue": 3740227
+      },
+      "cogs": {
+        "totalCOGS": 1998837
+      },
+      "grossProfit": 1741390,
+      "grossProfitMarginPct": 46.55840407547456,
+      "operatingExpenses": {
+        "generalAdministrative": 279226,
+        "sellingExpense": 406432,
+        "royaltyCoalSales": 404297,
+        "totalOpex": 1089955
+      },
+      "operatingProfitEBITDA": 651435,
+      "ebitdaMarginPct": 17.416991000813585,
+      "otherItems": {
+        "financeIncome": 20858,
+        "financeCost": 426734,
+        "forexGainLoss": -60502,
+        "includedInGA": false
+      },
+      "netProfitBeforeTax": 306061,
+      "netProfitAfterTax": 306061,
+      "netProfitMarginPct": 8.182952532025462
+    },
+    "balanceSheet": {
+      "asOfDate": "2026-03",
+      "currency": "USD",
+      "assets": {
+        "currentAssets": {
+          "cashAndBank": 2570525,
+          "tradeReceivables": 13649848,
+          "coalInventories": {
+            "totalInventory": 8264550
+          },
+          "prepaidExpensesAndTaxes": 8605204,
+          "totalCurrentAssets": 33090126
+        },
+        "nonCurrentAssets": {
+          "fixedAssetsHeavyEquipment": 6739054,
+          "miningPropertiesAndInfrastructure": 49519881,
+          "totalNonCurrentAssets": 107347548
+        },
+        "totalAssets": 140437674
+      },
+      "liabilities": {
+        "currentLiabilities": {
+          "totalCurrentLiabilities": 85000693
+        },
+        "nonCurrentLiabilities": {
+          "totalNonCurrentLiabilities": 5465436
+        },
+        "totalLiabilities": 90466129
+      },
+      "equity": {
+        "shareCapital": 0,
+        "retainedEarnings": 49971546,
+        "currentYearEarnings": 0,
+        "totalEquity": 49971546
+      },
+      "totalLiabilitiesEquity": 140437675
+    },
+    "inventoryReconciliation": {
+      "bookInventoryUSD": 8264550,
+      "coalInventoryUSD": 7491105.230846192,
+      "quantitySource": "workbook"
+    }
+  }
+}
