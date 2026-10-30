@@ -115,8 +115,9 @@ async function inventory(period) {
         <p class="source-row">${badge('inventory_model.json')} ${badge('inventory_movements.json')} ${badge('gl_data.json')}</p>
         <div class="inventory-summary"><article><span>Total Closing Stock</span><strong>${qty(totalQty)} MT</strong></article><article><span>Total Inventory Value</span><strong>${money(totalValue)}</strong></article><article><span>Average Cost / MT</span><strong>${totalQty ? money(totalValue / totalQty) : '—'}</strong></article></div>
         <div class="inventory-location-grid">${cards}</div>
-        ${card(`Inventory Balances and Movements ${badge('inventory_model.json')} ${badge('gl_data.json')}`, table(['Stockpile', 'Opening MT', 'Opening USD', 'Inflow MT', 'Inflow Value', 'Add Cost', 'Outflow MT', 'Outflow USD', 'Closing MT', 'Closing USD', 'Rate Closing'], rows))}
-        ${card('Coal Stock Composition', `<div class="inventory-composition">${stages.map(stage => `<p><i></i><span>${esc(stage.name)}</span><b>${qty(stage.endingQtyMT)} MT</b></p>`).join('')}</div>`)}`;
+        ${card(`Coal Stock Composition — ${period} ${badge('inventory_movements.json')}`, `<p class="inventory-chart-caption">Slices represent closing stock volume (MT) by location.</p>${donut}`)}
+        ${card(`Inventory Balances and Movements ${badge('inventory_model.json')} ${badge('gl_data.json')}`, table(['Stockpile', 'Opening MT', 'Opening USD', 'Inflow MT', 'Inflow Value USD', 'Add Cost USD', 'Outflow MT', 'Outflow USD', 'Closing MT', 'Closing USD', 'Rate Closing USD/MT'], rows))}
+        ${card('Closing Balance History — rolled forward from first period', table(['Month', 'Total Stock MT', 'Stock Value USD', 'COGS USD', 'Cost Data'], (data.history || []).map(item => `<tr><td>${esc(item.period)}</td><td class="num">${qty(item.totalEndingQtyMT)}</td><td class="num">${money(item.totalEndingValueUSD)}</td><td class="num">${money(item.cogsShippedValUSD)}</td><td>${esc(item.costSource)}</td></tr>`)))}`;
 }
 
 async function financial(period, mode) {
