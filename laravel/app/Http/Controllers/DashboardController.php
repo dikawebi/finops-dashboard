@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\MonthlyMetric;
 use App\Models\DailyProduction;
+use App\Models\CostVarianceRemark;
 use App\Services\CostMatrixService;
 use App\Services\FinancialStatementService;
 use App\Services\InventoryValuationService;
@@ -109,6 +110,7 @@ class DashboardController extends Controller
         $current = $service->build($period, $mode);
         $prior = $service->build($previous, 'mtd');
         $variance = [];
+        $remarks = CostVarianceRemark::period($period)->get()->keyBy('account_code');
         $priorRows = collect($prior['rows'])->keyBy('code');
         foreach ($current['rows'] as $row) {
             $old = $priorRows->get($row['code']);
@@ -119,7 +121,7 @@ class DashboardController extends Controller
             $sumFields = static fn (array $source, array $fields): float => array_sum(array_map(static fn (string $field): float => (float) ($source[$field] ?? 0), $fields));
             $currentCategories = ['cogp' => $sumFields($row, $cogpFields), 'direct' => $sumFields($row, $directFields)];
             $previousCategories = ['cogp' => $sumFields($old ?? [], $cogpFields), 'direct' => $sumFields($old ?? [], $directFields)];
-            $variance[] = ['code' => $row['code'], 'name' => $row['name'], 'current' => (float) $row['allCost'], 'previous' => $base, 'change' => $delta, 'changePct' => $base == 0.0 ? null : $delta / abs($base) * 100, 'categories' => ['current' => $currentCategories, 'previous' => $previousCategories], 'isParent' => $row['isParent']];
+            $variance[] = ['code' => $row['code'], 'name' => $row['name'], 'current' => (float) $row['allCost'], 'previous' => $base, 'change' => $delta, 'changePct' => $base == 0.0 ? null : $delta / abs($base) * 100, 'categories' => ['current' => $currentCategories, 'previous' => $previousCategories], 'remark' => $remarks->get($row['code'])?->remark, 'isParent' => $row['isParent']];
         }
         return response()->json(['success' => true, 'data' => ['period' => $period, 'previousPeriod' => $previous, 'current' => $current, 'previous' => $prior, 'rows' => $variance]]);
     }
