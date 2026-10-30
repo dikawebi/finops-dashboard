@@ -6,48 +6,39 @@ This checklist records the remaining differences between the Laravel dashboard a
 
 ## Executive Overview
 
-- Compare the KPI card dimensions, source labels, spacing, and values against the reference at the same viewport.
-- Match the allocation card colors, explanatory copy, Top Cost Drivers rows, and daily production chart sizing/axes/labels to the reference.
-- Ensure the daily chart displays the same selected-period production records as the reference source. The Laravel API currently uses `daily_production` rows and reports no records when that table is empty.
-- Match the DB production card visibility and missing-period notes to the reference behavior.
+- Implemented: KPI cards, allocation cards, Top Cost Drivers, production DB table, daily SVG chart, source notes, and missing-data messaging.
+- Remaining: compare spacing, dimensions, and chart sizing at matching desktop/mobile viewports.
 
 ## Report Cost (COGP)
 
-- The grouped, two-row COGP/Direct Expense header and grand-total footer are present, but column labels and each cell mapping still need a field-by-field comparison with the reference matrix.
-- Implement working account search, Show All Accounts, parent-only, and hide-zero controls against the existing Cost Matrix response.
-- Match the reference account hierarchy, check values, source notes, route warnings, table count, and sticky total behavior.
+- Implemented: grouped two-row COGP/Direct Expense header, grand-total footer, account search, Show All Accounts, parent-only, hide-zero, account hierarchy collapse, export, source notes, route warnings, and table count.
+- Remaining: field-by-field visual comparison of column widths, colors, and sticky total behavior.
 - Multipart GL import, export, and delete actions are outside this visual-parity pass; import/configuration remain deferred.
 
 ## Cost Variance Analysis
 
-- Implement the reference location/category filter, account search, and hide-zero behavior.
-- Connect the existing variance remark response/persistence workflow to the matching reference row controls; current inputs are placeholders.
-- Match the previous/current month headings, variance colors, totals/footer, table spacing, and empty-state behavior.
+- Implemented: location/category filter, category filter, account search, hide-zero behavior, previous/current headings, variance colors, totals/footer, export, and empty state.
+- Remaining: remark editing/persistence is deferred with authorization/CSRF.
 
 ## Cost per Metric Ton
 
-- Match stage cards and the detailed table columns to the reference, including valuation cost, costing cost, total cost, operating volume, stage cost/MT, and total production cost/MT.
-- Recreate the monthly comparison tables for location COGP, activity-based cost, and counterpart breakdown using source data only.
-- Recreate DB Cost Summary by Activity controls and table using the existing `/api/db-cost-summary` response; do not synthesize missing comparison values.
+- Implemented: stage cards, detailed cost table, monthly performance comparisons, activity/counterpart tables, and DB Cost Summary controls/table from `/api/db-cost-summary`.
+- Remaining: compare exact row ordering and spacing against the reference at matching viewport sizes.
 
 ## Inventory Valuation (Moving Avg)
 
-- Compare donut dimensions, segment colors/order, center labels, and the location legend with the reference.
-- Match location card layout and the complete 14-column movement ledger, including adjustment fields and transfer rate.
-- Add the hauling-route summary, BUA monthly history, stockpile flow cards, and closing-balance history with the reference ordering and labels.
-- Verify opening/closing values and included/excluded stockpile totals against the source response.
+- Implemented: SVG donut, location legend, location cards, 14-column movement ledger, hauling-route summary, BUA monthly history, stockpile flow cards, and closing-balance history.
+- Remaining: compare exact segment order, card spacing, and table dimensions against a browser screenshot.
 
 ## Financial Statements (FS)
 
-- Replace the generic two-column presentation with the reference P&L and Balance Sheet table structures and period headers.
-- Add the reference balances-by-account detail table and match heading/total row formatting.
-- Reconcile the displayed values against the reference financial baseline. Current financial API `incomeStatement` is provisional and contains placeholder zero values in some fields; do not present those as final figures.
+- Implemented: P&L and Balance Sheet period tables, selected-period highlighting, GL source labels, diagnostics, and balances-by-account detail.
+- Remaining: business reconciliation of diagnostics and browser comparison of header/total row styling.
 
 ## Integration & Data Sources
 
-- Match connector cards, source labels, detail rows, status badges, and spacing to the reference.
-- Display latest production records only when the underlying records exist; the current daily production table contains date and tonnage fields and does not provide ticket/vehicle details.
-- Keep sync and accrual controls clearly aligned with available backend workflows. Authorization remains deferred; do not imply a live external D365 or Sheets connection when using local snapshots.
+- Implemented: connector cards, source labels, status details, D365 staging entity table, sync progress panel, GL preview entry point, accrual display, and latest production records when present.
+- Remaining: browser comparison of connector spacing and labels. External sync remains explicitly represented as configured or local snapshot based on API status.
 
 ## Final Visual QA
 
