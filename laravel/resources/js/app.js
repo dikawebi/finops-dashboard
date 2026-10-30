@@ -16,6 +16,14 @@ const api = async path => {
     const payload = await response.json();
     return payload && Object.prototype.hasOwnProperty.call(payload, 'data') ? payload.data : payload;
 };
+const postJson = async (path, body) => {
+    const response = await fetch(path, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }, body: JSON.stringify(body) });
+    const text = await response.text();
+    let payload = null;
+    try { payload = text ? JSON.parse(text) : null; } catch { payload = null; }
+    if (!response.ok) throw new Error(payload?.message || (response.status === 419 ? 'Session expired. Refresh the page and try again.' : `Request failed: ${response.status}`));
+    return payload?.data ?? payload;
+};
 const badge = text => `<span class="source-badge">📂 ${esc(text)}</span>`;
 const table = (headers, rows, extra = '') => { const body = Array.isArray(rows) ? rows.join('') : String(rows || ''); return `<div class="table-responsive"><table class="table-accounting ${extra}"><thead><tr>${headers.map(header => `<th>${esc(header)}</th>`).join('')}</tr></thead><tbody>${body.length ? body : `<tr><td colspan="${headers.length}">No data available.</td></tr>`}</tbody></table></div>`; };
 const card = (title, content, classes = '') => `<section class="table-card ${classes}"><div class="card-title">${title}</div>${content}</section>`;
@@ -577,8 +585,8 @@ async function allocationMapping() {
         } catch (error) { $('#mappingMasterStatus').textContent = error.message; }
     });
     const range = () => ({ date_from: $('#mappingDateFrom').value || null, date_to: $('#mappingDateTo').value || null, entity: 'gl_entries' });
-    $('#mappingPreview').addEventListener('click', async () => { const response = await fetch('/api/d365/staging/preview', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }, body: JSON.stringify(range()) }); const result = await response.json(); $('#mappingPreviewResult').textContent = response.ok ? `${result.rows} rows · ${result.mapped} mapped · ${result.unmapped} unmapped · Reporting total ${money(result.total_reporting)}` : (result.message || 'Preview failed.'); });
-    $('#mappingImport').addEventListener('click', async () => { const response = await fetch('/api/d365/staging/import', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }, body: JSON.stringify(range()) }); const result = await response.json(); $('#mappingPreviewResult').textContent = response.ok ? `Imported ${result.rows} rows · ${result.mapped} mapped · ${result.unmapped} unmapped.` : (result.message || 'Import failed.'); });
+    $('#mappingPreview').addEventListener('click', async event => { const button = event.currentTarget; const output = $('#mappingPreviewResult'); button.disabled = true; output.textContent = 'Previewing D365 GL staging…'; try { const result = await postJson('/api/d365/staging/preview', range()); output.textContent = `${result.rows} rows · ${result.mapped} mapped · ${result.unmapped} unmapped · Reporting total ${money(result.total_reporting)}`; } catch (error) { output.textContent = `Preview failed: ${error.message}`; } finally { button.disabled = false; } });
+    $('#mappingImport').addEventListener('click', async event => { const button = event.currentTarget; const output = $('#mappingPreviewResult'); button.disabled = true; output.textContent = 'Importing D365 GL staging…'; try { const result = await postJson('/api/d365/staging/import', range()); output.textContent = `Imported ${result.rows} rows · ${result.mapped} mapped · ${result.unmapped} unmapped.`; } catch (error) { output.textContent = `Import failed: ${error.message}`; } finally { button.disabled = false; } });
 }
 
 async function viewGlData(period) {
