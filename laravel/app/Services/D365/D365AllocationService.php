@@ -7,10 +7,17 @@ use Illuminate\Support\Facades\DB;
 
 class D365AllocationService
 {
+    private ?Collection $activeRules = null;
+
+    private function activeRules(): Collection
+    {
+        return $this->activeRules ??= DB::table('d365_allocation_mappings')->where('is_active', true)->get();
+    }
+
     public function resolve(array $row): array
     {
         $dimensions = array_change_key_case((array) ($row['dimensions'] ?? []), CASE_UPPER);
-        $candidates = DB::table('d365_allocation_mappings')->where('is_active', true)->get()->filter(function ($rule) use ($row, $dimensions): bool {
+        $candidates = $this->activeRules()->filter(function ($rule) use ($row, $dimensions): bool {
             foreach ([
                 ['code' => 'group_activity_code', 'name' => 'group_activity_name', 'legacy' => 'group_activity', 'source' => 'GROUP_ACTIVITY', 'source_name' => 'GROUP_ACTIVITY_NAME'],
                 ['code' => 'activity_code', 'name' => 'activity_name', 'legacy' => 'activity', 'source' => 'ACTIVITY', 'source_name' => 'ACTIVITY_NAME'],
