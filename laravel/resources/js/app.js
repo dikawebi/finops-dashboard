@@ -133,7 +133,7 @@ async function variance(period, mode) {
 }
 
 async function metric(period, mode) {
-    const [data, dbSummary] = await Promise.all([api(`/api/cost-per-mt?period=${period}&mode=${mode}`), api(`/api/db-cost-summary?period=${period}&mode=${mode}`)]);
+    const [data, dbSummary, excel] = await Promise.all([api(`/api/cost-per-mt?period=${period}&mode=${mode}`), api(`/api/db-cost-summary?period=${period}&mode=${mode}`), api('/api/excel-cost-example')]);
     const stageCards = data.stages.map(stage => `<article class="stage-card"><span>${esc(stage.stage)}</span><strong>${stage.costPerMT == null ? 'USD —' : `USD ${detailMoney(stage.costPerMT)}`}</strong><small>per stage MT (${qty(stage.metricTons)} MT)</small><em>Total Cost: ${money(stage.totalCost)} (USD)</em></article>`).join('');
     const rows = data.stages.map(stage => `<tr><td><strong>${esc(stage.stage)}</strong></td><td class="num">${reportAmount(stage.valuationCost)}</td><td class="num">${reportAmount(stage.operatingCost)}</td><td class="num">${reportAmount(stage.totalCost)}</td><td class="num">${qty(stage.metricTons)} MT</td><td class="num stage-rate">${stage.costPerMT == null ? 'USD —' : `USD ${detailMoney(stage.costPerMT)}`}</td><td class="num">${stage.costPerTotalMT == null ? 'USD —' : `USD ${detailMoney(stage.costPerTotalMT)}`}</td></tr>`);
     $('#pageContent').innerHTML = `
@@ -142,8 +142,65 @@ async function metric(period, mode) {
         <p class="source-row">${badge('gl_data.json')} ${badge('production_daily_sheets.json (DB)')}</p>
         <div class="cost-stage-grid">${stageCards}</div>
         ${card(`Coal Mining Cost by Stage ${badge('gl_data.json')} ${badge('production_daily_sheets.json')}`, table(['Mining Activity', 'From Valuation to (USD)', 'From Costing to (USD)', 'Total Cost (USD)', 'Operating Volume (MT)', 'Stage Cost / MT', 'Cost / MT Total Production'], rows))}
-        ${card(`Monthly Cost Comparison <span class="subtle">${esc(data.comparisonPeriod || 'previous month')}</span>`, table(['Stage', 'Previous Cost / MT', 'Current Cost / MT', 'Change', 'Change %'], (data.comparison || []).map(item => `<tr><td>${esc(item.stage)}</td><td class="num">${item.previousCostPerMT == null ? 'USD —' : `USD ${detailMoney(item.previousCostPerMT)}`}</td><td class="num">${item.currentCostPerMT == null ? 'USD —' : `USD ${detailMoney(item.currentCostPerMT)}`}</td><td class="num ${item.change > 0 ? 'negative' : 'positive'}">${item.change == null ? 'USD —' : `USD ${detailMoney(item.change)}`}</td><td class="num">${item.changePct == null ? '—' : `${Number(item.changePct).toFixed(2)}%`}</td></tr>`)))}, 'cost-analysis-card')}
+        ${monthlyPerformance(period, excel)}
         ${card(`DB Cost Summary by Activity ${badge(dbSummary.dataSource)}`, table(['Entity', 'Activity', 'Component', 'Amount USD'], (dbSummary.rows || []).filter(row => Number(row.amount || 0) !== 0).map(row => `<tr><td>${esc(row.entity)}</td><td>${esc(row.activity)}</td><td class="center">${esc(row.component)}</td><td class="num">${money(row.amount)}</td></tr>`)), 'cost-analysis-card')}`;
+}
+
+function monthlyPerformance(period, excel) {
+    const abcMonthly = excel?.abcMonthly || [];
+    const cogpMonthly = excel?.cogpMonthly || [];
+    const date = new Date(`${period}-01T00:00:00Z`);
+    const previousDate = new Date(date);
+    previousDate.setUTCMonth(previousDate.getUTCMonth() - 1);
+    const monthLabel = value => value.toLocaleDateString('en-US', { month: 'short', year: '2-digit', timeZone: 'UTC' }).replace(',', '');
+    const currentMonth = date.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+    const previousPeriod = `${previousDate.getUTCFullYear()}-${String(previousDate.getUTCMonth() + 1).padStart(2, '0')}`;
+    const previousMonth = previousDate.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+    const rowsFor = month => abcMonthly.filter(row => String(row.month).toLowerCase() === month.toLowerCase());
+    const aggregate = (items, key) => {
+        const groups = new Map();
+        items.forEach(row => {
+            const groupKey = key(row);
+            if (!groups.has(groupKey)) groups.set(groupKey, { activity: row.activity, entity: row.entity, qty: 0, cost: 0, hasQty: false, hasCost: false });
+            const item = groups.get(groupKey);
+            if (Number.isFinite(Number(row.qty))) { item.qty += Number(row.qty); item.hasQty = true; }
+            if (Number.isFinite(Number(row.cost))) { item.cost += Number(row.cost); item.hasCost = true; }
+        });
+        return groups;
+    };
+    const current = aggregate(rowsFor(currentMonth), row => row.activity);
+    const previous = aggregate(rowsFor(previousMonth), row => row.activity);
+    const rate = item => item?.hasQty && item?.hasCost && item.qty > 0 ? item.cost / item.qty : null;
+    const calc = (item, old) => {
+        const currentRate = rate(item), previousRate = rate(old), change = currentRate !== null && previousRate !== null ? currentRate - previousRate : null;
+        return [currentRate, previousRate, change, change !== null && previousRate !== 0 ? change / Math.abs(previousRate) : null];
+    };
+    const formatCell = (value, percent = false, whole = false) => {
+        if (value == null || !Number.isFinite(Number(value))) return '—';
+        if (whole) return Number(value).toLocaleString('en-US', { maximumFractionDigits: 0 });
+        return `${detailMoney(percent ? Number(value) * 100 : value)}${percent ? '%' : ''}`;
+    };
+    const movementRows = [...new Set([...current.keys(), ...previous.keys()])].map(key => {
+        const item = current.get(key) || previous.get(key);
+        const values = calc(current.get(key), previous.get(key));
+        return `<tr><td>${esc(item.activity)}</td><td class="num">${formatCell(item.hasQty ? item.qty : null, false, true)}</td><td class="num">${formatCell(item.hasCost ? item.cost : null, false, true)}</td><td class="num">${formatCell(values[0])}</td><td class="num">${formatCell(values[1])}</td><td class="num ${values[2] > 0 ? 'negative' : values[2] < 0 ? 'positive' : ''}">${formatCell(values[2])}</td><td class="num ${values[3] > 0 ? 'negative' : values[3] < 0 ? 'positive' : ''}">${formatCell(values[3], true)}</td><td>—</td></tr>`;
+    });
+    const counterpartCurrent = aggregate(rowsFor(currentMonth), row => JSON.stringify([row.activity, row.entity]));
+    const counterpartPrevious = aggregate(rowsFor(previousMonth), row => JSON.stringify([row.activity, row.entity]));
+    const counterpartRows = [...new Set([...counterpartCurrent.keys(), ...counterpartPrevious.keys()])].map(key => {
+        const item = counterpartCurrent.get(key) || counterpartPrevious.get(key), values = calc(counterpartCurrent.get(key), counterpartPrevious.get(key));
+        return `<tr><td>${esc(item.activity)}</td><td>${esc(item.entity)}</td><td class="num">${formatCell(values[0])}</td><td class="num">${formatCell(values[1])}</td><td class="num ${values[2] > 0 ? 'negative' : values[2] < 0 ? 'positive' : ''}">${formatCell(values[2])}</td><td class="num ${values[3] > 0 ? 'negative' : values[3] < 0 ? 'positive' : ''}">${formatCell(values[3], true)}</td><td>—</td></tr>`;
+    });
+    const monthIndex = date.getUTCMonth(), previousIndex = previousDate.getUTCMonth();
+    const cogpRows = cogpMonthly.map(row => {
+        const currentValue = period >= '2026-10' && Number(row.months?.[monthIndex]) === 0 ? null : row.months?.[monthIndex];
+        const previousValue = previousPeriod >= '2026-10' && Number(row.months?.[previousIndex]) === 0 ? null : row.months?.[previousIndex];
+        const change = Number.isFinite(Number(currentValue)) && Number.isFinite(Number(previousValue)) ? Number(currentValue) - Number(previousValue) : null;
+        const percent = change !== null && Number(previousValue) !== 0 ? change / Math.abs(Number(previousValue)) : null;
+        return `<tr><td>${esc(row.label)}</td><td class="num">${formatCell(currentValue)}</td><td class="num">${formatCell(previousValue)}</td><td class="num ${change > 0 ? 'negative' : change < 0 ? 'positive' : ''}">${formatCell(change)}</td><td class="num ${percent > 0 ? 'negative' : percent < 0 ? 'positive' : ''}">${formatCell(percent, true)}</td></tr>`;
+    });
+    const status = excel?.abcMonthly && excel?.cogpMonthly ? `${monthLabel(date)} vs ${monthLabel(previousDate)}. Activity cost uses the synced spreadsheet. Red = increase, green = decrease.` : 'Monthly data unavailable. Use Sync Production Now to load the spreadsheet.';
+    return `<section class="table-card cost-analysis-card monthly-performance"><div class="cost-analysis-heading"><div><span class="cost-eyebrow">MONTHLY PERFORMANCE</span><h3>Monthly Cost Comparison</h3><p>Compare activity costs with the previous month.</p></div><label class="cost-period-control">Comparison month <input type="month" value="${esc(period)}" disabled></label></div><p id="excel-example-status">${esc(status)}</p><h4 class="cost-subheading">COGP Comparison <span>Production cost per metric ton</span></h4>${table(['Location', 'Current USD/MT', 'Previous USD/MT', 'Change USD/MT', 'Change %'], cogpRows)}<h4 class="cost-subheading">Activity-Based Cost <span>Volume, cost and monthly movement</span></h4>${table(['Activity', 'Qty', 'Cost USD', 'Current USD/Unit', 'Previous USD/Unit', 'Change USD/Unit', 'Change %', 'Remarks'], movementRows)}<h4 class="cost-subheading">Activity-Based Cost by Counterpart <span>Breakdown by entity</span></h4>${table(['Activity', 'Counterpart', 'Current USD/Unit', 'Previous USD/Unit', 'Change USD/Unit', 'Change %', 'Remarks'], counterpartRows)}</section>`;
 }
 
 async function inventory(period, mode) {

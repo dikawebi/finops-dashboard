@@ -69,6 +69,20 @@ class DashboardController extends Controller
         return response()->json(['success' => true, 'data' => $service->build($period, $mode)]);
     }
 
+    public function excelCostExample(): JsonResponse
+    {
+        $path = base_path('../baseline/reference_dump/excel-cost-example.static.json');
+        if (!is_file($path)) {
+            return response()->json(['success' => true, 'data' => ['abcMonthly' => null, 'cogpMonthly' => null]]);
+        }
+
+        $data = json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR)['data'] ?? [];
+        return response()->json(['success' => true, 'data' => [
+            'abcMonthly' => $data['abcMonthly'] ?? null,
+            'cogpMonthly' => $data['cogpMonthly'] ?? null,
+        ]]);
+    }
+
     public function dbCostSummary(Request $request): JsonResponse
     {
         [$period, $mode] = $this->periodMode($request);
