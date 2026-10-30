@@ -66,7 +66,7 @@ async function overview(period, mode) {
         ['GROSS PROFIT', Number(financial.incomeStatement?.grossProfit || 0) === 0 ? 'USD -' : money(line('grossProfit')), 'Coal sales less cost of sales', 'blue'],
         ['OPERATING PROFIT / BEFORE INTEREST', money(line('profitBeforeInterest')), 'Operating profit for the period', 'blue'],
     ];
-    const topDrivers = (costPerMt.costByAccountGroup || []).slice().sort((a, b) => Number(b.amount) - Number(a.amount)).slice(0, 8).map(item => { const percentage = Number(cost.grandTotal.allCost) ? Number(item.amount) / Number(cost.grandTotal.allCost) * 100 : 0; return `<div class="driver-row"><div><span>${esc(item.group)}</span><div class="driver-track"><i style="width:${Math.max(1, percentage)}%"></i></div></div><b>${money(item.amount)} (${percentage.toFixed(0)}%)</b></div>`; }).join('');
+    const topDrivers = (costPerMt.costByAccountGroup || []).slice().sort((a, b) => Number(b.amount) - Number(a.amount)).slice(0, 8).map(item => { const percentage = Number(cost.grandTotal.allCost) ? Number(item.amount) / Number(cost.grandTotal.allCost) * 100 : 0; return `<div class="driver-row"><div><span>${esc(item.group)}</span><div class="driver-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percentage.toFixed(1)}" aria-label="${esc(item.group)} ${percentage.toFixed(1)} percent"><i style="width:${Math.min(100, Math.max(1, percentage))}%"></i></div></div><b>${money(item.amount)} (${percentage.toFixed(0)}%)</b></div>`; }).join('');
     const maxMT = Math.max(...daily.map(item => Number(item.nettoMT) || 0), 10);
     const chartWidth = 560, chartHeight = 200, padding = 30;
     const barWidth = Math.max(5, Math.floor((chartWidth - padding * 2) / Math.max(daily.length, 1)) - 4);
@@ -89,11 +89,12 @@ async function cost(period, mode) {
     const fields = [['costMining', 'Mining'], ['costHaulingBUAToWP', 'Haul BUA→WP'], ['costHaulingBUAToPort', 'Haul BUA→Port'], ['costHaulingWPToPort', 'Haul WP→Port'], ['costWP', 'Washing Plant'], ['costPort', 'BP PORT'], ['valMining', 'Mining'], ['valHauling', 'Coal Hauling'], ['valWP', 'Washing Plant'], ['valPort', 'BP PORT'], ['directGA', 'GA'], ['sellingExpense', 'Selling']];
     const search = state.costSearch.trim().toLowerCase();
     const visibleRows = data.rows.filter(row => (!search || `${row.code} ${row.name}`.toLowerCase().includes(search)) && (!state.costParentOnly || row.isParent) && (!state.costCollapsed[row.parent]) && (!state.costHideZero || Number(row.allCost || 0) !== 0));
+    const allAccountsActive = !state.costSearch && !state.costParentOnly && !state.costHideZero;
     const unallocatedRows = data.rows.filter(row => !row.isParent && Math.abs(Number(row.unallocatedHauling || 0)) > 0.000001);
     const unallocatedTotal = unallocatedRows.reduce((sum, row) => sum + Number(row.unallocatedHauling || 0), 0);
     const rows = visibleRows.map(row => `<tr class="${row.isParent ? 'parent-row' : ''}"><td>${esc(row.code)}</td><td class="account-name">${row.isParent ? `<button type="button" class="account-toggle" data-toggle-parent="${esc(row.code)}" aria-label="${state.costCollapsed[row.code] ? 'Expand' : 'Collapse'} ${esc(row.name)}">${state.costCollapsed[row.code] ? '+' : '−'}</button>` : ''}${esc(row.name)}</td><td class="center">-</td><td class="num">${reportAmount(row.allCost)}</td>${fields.map(([field], index) => `<td class="num ${index === 6 ? 'direct-start' : ''}">${reportAmount(row[field])}</td>`).join('')}</tr>`);
     $('#pageContent').innerHTML = `
-        ${sectionHeader('Report Cost: COGP & Direct Expense', 'Accounts beginning 7–9 are allocated to GA. Accounts beginning 5–6 follow Costing to; Direct Expense is allocated by Valuation to, with Not Valuated in GA. Selling Expense has its own column. Amounts in USD.', `<label>Month <input id="costPeriod" type="month" value="${period}"></label><input id="costSearch" class="input-search" placeholder="🔍 Search account code / name..." value="${esc(state.costSearch)}"><button id="costShowAll" class="btn btn-outline" type="button">Show All Accounts</button><button id="costParentOnly" class="btn btn-outline" type="button">${state.costParentOnly ? 'Show All Rows' : 'Parent Accounts Only (Summary)'}</button><button id="costHideZero" class="btn btn-outline" type="button">${state.costHideZero ? 'Show Zero Balances' : 'Hide Zero Balances'}</button><button id="costDeleteGl" class="btn btn-outline" type="button">Delete GL Data</button><button id="costExport" class="btn btn-primary" type="button">📥 Export Excel/CSV</button>`)}
+        ${sectionHeader('Report Cost: COGP & Direct Expense', 'Accounts beginning 7–9 are allocated to GA. Accounts beginning 5–6 follow Costing to; Direct Expense is allocated by Valuation to, with Not Valuated in GA. Selling Expense has its own column. Amounts in USD.', `<label class="period-control">Month <input id="costPeriod" type="month" value="${period}" aria-label="Report cost period"></label><input id="costSearch" class="input-search" placeholder="🔍 Search account code / name..." value="${esc(state.costSearch)}"><button id="costShowAll" class="btn btn-outline ${allAccountsActive ? 'is-active' : ''}" type="button" aria-pressed="${allAccountsActive}">Show All Accounts</button><button id="costParentOnly" class="btn btn-outline ${state.costParentOnly ? 'is-active' : ''}" type="button" aria-pressed="${state.costParentOnly}">${state.costParentOnly ? 'Show All Rows' : 'Parent Accounts Only (Summary)'}</button><button id="costHideZero" class="btn btn-outline ${state.costHideZero ? 'is-active' : ''}" type="button" aria-pressed="${state.costHideZero}">${state.costHideZero ? 'Show Zero Balances' : 'Hide Zero Balances'}</button><button id="costDeleteGl" class="btn btn-outline" type="button">Delete GL Data</button><button id="costExport" class="btn btn-primary" type="button">📥 Export Excel/CSV</button>`)}
         <div class="cost-report-card"><p class="table-note">Showing ${visibleRows.length} of ${data.rows.length} accounts</p><div class="cost-notice">Source: uploaded GL for the selected period.</div>${unallocatedRows.length ? `<div class="cost-notice">Coal Hauling has no route for ${unallocatedRows.length} accounts (net USD ${Math.round(Math.abs(unallocatedTotal)).toLocaleString('en-US')}). The balance remains in ALL Cost. Upload GL with Costing to: Coal Hauling BUA to WP, Coal Hauling Bua to Port, or Coal Hauling WP to Port.</div>` : ''}<div class="table-responsive"><table class="table-accounting cost-report-table"><thead><tr><th rowspan="2">AccountCode</th><th rowspan="2">AccountName</th><th rowspan="2">Check</th><th rowspan="2" class="all-cost-header">ALL Cost</th><th colspan="6" class="group-header">COGP</th><th colspan="6" class="group-header direct-group">Direct Expense</th></tr><tr>${fields.map(([field, label], index) => `<th class="${index === 6 ? 'direct-start' : ''}">${esc(label)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody><tfoot><tr><th colspan="3">Grand Total</th><th class="num">${reportAmount(data.grandTotal.allCost)}</th>${fields.map(([field], index) => `<th class="num ${index === 6 ? 'direct-start' : ''}">${reportAmount(data.grandTotal[field])}</th>`).join('')}</tr></tfoot></table></div></div>`;
     $('#costPeriod').addEventListener('change', event => { $('#period').value = event.target.value; render(); });
     $('#costSearch').addEventListener('input', event => { state.costSearch = event.target.value; cost(period, mode); });
@@ -142,7 +143,8 @@ async function variance(period, mode) {
 }
 
 async function metric(period, mode) {
-    const [data, dbSummary, excel] = await Promise.all([api(`/api/cost-per-mt?period=${period}&mode=${mode}`), api(`/api/db-cost-summary?period=${period}&mode=${mode}`), api('/api/excel-cost-example')]);
+    const previousPeriod = (() => { const date = new Date(`${period}-01T00:00:00Z`); date.setUTCMonth(date.getUTCMonth() - 1); return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`; })();
+    const [data, dbSummary, excel, production, previousProduction] = await Promise.all([api(`/api/cost-per-mt?period=${period}&mode=${mode}`), api(`/api/db-cost-summary?period=${period}&mode=${mode}`), api('/api/excel-cost-example'), api(`/api/production-summary?period=${period}&mode=${mode}`), api(`/api/production-summary?period=${previousPeriod}&mode=${mode}`)]);
     const stageCards = data.stages.map(stage => `<article class="stage-card"><span>${esc(stage.stage)}</span><strong>${stage.costPerMT == null ? 'USD —' : `USD ${detailMoney(stage.costPerMT)}`}</strong><small>per stage MT (${qty(stage.metricTons)} MT)</small><em>Total Cost: ${money(stage.totalCost)} (USD)</em></article>`).join('');
     const rows = data.stages.map(stage => `<tr><td><strong>${esc(stage.stage)}</strong></td><td class="num">${reportAmount(stage.valuationCost)}</td><td class="num">${reportAmount(stage.operatingCost)}</td><td class="num">${reportAmount(stage.totalCost)}</td><td class="num">${qty(stage.metricTons)} MT</td><td class="num stage-rate">${stage.costPerMT == null ? 'USD —' : `USD ${detailMoney(stage.costPerMT)}`}</td><td class="num">${stage.costPerTotalMT == null ? 'USD —' : `USD ${detailMoney(stage.costPerTotalMT)}`}</td></tr>`);
     $('#pageContent').innerHTML = `
@@ -151,7 +153,7 @@ async function metric(period, mode) {
         <p class="source-row">${badge('gl_data.json')} ${badge('production_daily_sheets.json (DB)')}</p>
         <div class="cost-stage-grid">${stageCards}</div>
         ${card(`Coal Mining Cost by Stage ${badge('gl_data.json')} ${badge('production_daily_sheets.json')}`, table(['Mining Activity', 'From Valuation to (USD)', 'From Costing to (USD)', 'Total Cost (USD)', 'Operating Volume (MT)', 'Stage Cost / MT', 'Cost / MT Total Production'], rows))}
-        ${monthlyPerformance(period, excel)}
+        ${monthlyPerformance(period, excel, dbSummary, { [period]: production, [previousPeriod]: previousProduction })}
         ${dbSummaryMarkup(dbSummary, period)}`;
     bindDbSummary(dbSummary);
 }
@@ -234,7 +236,7 @@ function renderDbSummary(summary) {
     };
 }
 
-function monthlyPerformance(period, excel) {
+function monthlyPerformance(period, excel, dashboardSummary = null, productionByPeriod = {}) {
     const abcMonthly = (excel?.abcMonthly || []).map(row => ({ ...row }));
     const cogpMonthly = excel?.cogpMonthly || [];
     const date = new Date(`${period}-01T00:00:00Z`);
@@ -279,6 +281,46 @@ function monthlyPerformance(period, excel) {
         const item = counterpartCurrent.get(key) || counterpartPrevious.get(key), values = calc(counterpartCurrent.get(key), counterpartPrevious.get(key));
         return `<tr><td>${esc(item.activity)}</td><td>${esc(item.entity)}</td><td class="num">${formatCell(values[0])}</td><td class="num">${formatCell(values[1])}</td><td class="num ${values[2] > 0 ? 'negative' : values[2] < 0 ? 'positive' : ''}">${formatCell(values[2])}</td><td class="num ${values[3] > 0 ? 'negative' : values[3] < 0 ? 'positive' : ''}">${formatCell(values[3], true)}</td><td>—</td></tr>`;
     });
+    const volumeKeys = { 'Topsoil': 'topsoil', 'Mud': 'mud', 'Coal Getting': 'coalGetting', 'Coal Hauling Overdistance': 'coalGetting', 'Coal Loading at ROM to Port': 'loadingBuaPort', 'Coal Loading at ROM to WP': 'loadingBuaWp', 'Coal Loading at WP to Port': 'loadingWpPort', 'Coal Hauling ROM BUA to Port': 'haulingBuaPort', 'Coal Hauling ROM BUA to WP': 'haulingBuaWp', 'Coal Hauling WP to Port': 'haulingWpPort', 'Washplant': 'washCoal', 'Loading BLC': 'portLoading', 'ISP Rent': 'portToIsp', 'Transhipmet BP Port To Taboneo': 'portToTaboneo', 'Transhipmet BP Port To ISP': 'portToIsp', 'Transhipmet ISP to Taboneo': 'ispToTaboneo', 'Overhead BUA': 'coalGetting', 'OVH JKT & PC': 'coalGetting' };
+    const applyDashboardSource = (targetPeriod, activities, entities) => {
+        if (targetPeriod < '2026-10' || !dashboardSummary?.rows) return;
+        const metrics = productionByPeriod[targetPeriod]?.dbMetrics || {};
+        const grouped = new Map();
+        dashboardSummary.rows.forEach(row => {
+            const value = row.months?.[targetPeriod];
+            if (!Number.isFinite(Number(value))) return;
+            const key = JSON.stringify([row.activity, row.entity]);
+            if (!grouped.has(key)) grouped.set(key, { activity: row.activity, entity: row.entity, cost: 0 });
+            grouped.get(key).cost += Number(value);
+        });
+        const activityTotals = new Map();
+        grouped.forEach(item => {
+            const existing = entities.get(JSON.stringify([item.activity, item.entity])) || { activity: item.activity, entity: item.entity, qty: 0, hasQty: false };
+            existing.cost = item.cost; existing.hasCost = true;
+            if (!Number.isFinite(existing.qty) || existing.qty <= 0) { existing.qty = 0; existing.hasQty = false; }
+            entities.set(JSON.stringify([item.activity, item.entity]), existing);
+            const total = activityTotals.get(item.activity) || { cost: 0, entities: 0 };
+            total.cost += item.cost; total.entities += 1; activityTotals.set(item.activity, total);
+        });
+        activityTotals.forEach((total, name) => {
+            const existing = activities.get(name) || { activity: name, qty: 0, hasQty: false };
+            existing.cost = total.cost; existing.hasCost = true;
+            let volume = Number(metrics[volumeKeys[name]]?.value);
+            if (name === 'OB Removal') { const blasting = Number(metrics.blasting?.value), freedig = Number(metrics.freedig?.value); volume = Number.isFinite(blasting) && Number.isFinite(freedig) ? blasting + freedig : NaN; }
+            existing.qty = Number.isFinite(volume) ? volume : 0; existing.hasQty = Number.isFinite(volume); activities.set(name, existing);
+            if (total.entities === 1 && existing.hasQty) entities.forEach(item => { if (item.activity === name && !item.hasQty) { item.qty = volume; item.hasQty = true; } });
+        });
+    };
+    applyDashboardSource(period, current, counterpartCurrent);
+    applyDashboardSource(previousPeriod, previous, counterpartPrevious);
+    const dashboardMovementRows = [...new Set([...current.keys(), ...previous.keys()])].map(key => {
+        const item = current.get(key) || previous.get(key); const values = calc(current.get(key), previous.get(key));
+        return `<tr><td>${esc(item.activity)}</td><td class="num">${formatCell(item.hasQty ? item.qty : null, false, true)}</td><td class="num">${formatCell(item.hasCost ? item.cost : null, false, true)}</td><td class="num">${formatCell(values[0])}</td><td class="num">${formatCell(values[1])}</td><td class="num ${values[2] > 0 ? 'negative' : values[2] < 0 ? 'positive' : ''}">${formatCell(values[2])}</td><td class="num ${values[3] > 0 ? 'negative' : values[3] < 0 ? 'positive' : ''}">${formatCell(values[3], true)}</td><td>Dashboard DB source</td></tr>`;
+    });
+    const dashboardCounterpartRows = [...new Set([...counterpartCurrent.keys(), ...counterpartPrevious.keys()])].map(key => {
+        const item = counterpartCurrent.get(key) || counterpartPrevious.get(key); const values = calc(counterpartCurrent.get(key), counterpartPrevious.get(key));
+        return `<tr><td>${esc(item.activity)}</td><td>${esc(item.entity)}</td><td class="num">${formatCell(values[0])}</td><td class="num">${formatCell(values[1])}</td><td class="num ${values[2] > 0 ? 'negative' : values[2] < 0 ? 'positive' : ''}">${formatCell(values[2])}</td><td class="num ${values[3] > 0 ? 'negative' : values[3] < 0 ? 'positive' : ''}">${formatCell(values[3], true)}</td><td>Dashboard DB source</td></tr>`;
+    });
     const monthIndex = date.getUTCMonth(), previousIndex = previousDate.getUTCMonth();
     const cogpRows = cogpMonthly.map(row => {
         const currentValue = period >= '2026-10' && Number(row.months?.[monthIndex]) === 0 ? null : row.months?.[monthIndex];
@@ -287,8 +329,9 @@ function monthlyPerformance(period, excel) {
         const percent = change !== null && Number(previousValue) !== 0 ? change / Math.abs(Number(previousValue)) : null;
         return `<tr><td>${esc(row.label)}</td><td class="num">${formatCell(currentValue)}</td><td class="num">${formatCell(previousValue)}</td><td class="num ${change > 0 ? 'negative' : change < 0 ? 'positive' : ''}">${formatCell(change)}</td><td class="num ${percent > 0 ? 'negative' : percent < 0 ? 'positive' : ''}">${formatCell(percent, true)}</td></tr>`;
     });
-    const status = excel?.abcMonthly && excel?.cogpMonthly ? `${monthLabel(date)} vs ${monthLabel(previousDate)}. Activity-Based Cost and Counterpart rates use the abcMonthly spreadsheet snapshot, calculated as aggregated cost ÷ aggregated quantity by activity/entity. Localhost 3000 may use DB Cost Summary + Production Summary for October, so differences are datasource differences. Uploaded GL/XLS data is not substituted here. Red = increase, green = decrease.` : 'Monthly data unavailable. Use Sync Production Now to load the spreadsheet.';
-    return `<section class="table-card cost-analysis-card monthly-performance"><div class="cost-analysis-heading"><div><span class="cost-eyebrow">MONTHLY PERFORMANCE</span><h3>Monthly Cost Comparison</h3><p>Compare activity costs with the previous month.</p></div><label class="cost-period-control">Comparison month <input type="month" value="${esc(period)}" disabled></label></div><p id="excel-example-status">${esc(status)}</p><h4 class="cost-subheading">COGP Comparison <span>Production cost per metric ton</span></h4>${table(['Location', 'Current USD/MT', 'Previous USD/MT', 'Change USD/MT', 'Change %'], cogpRows)}<h4 class="cost-subheading">Activity-Based Cost <span>Volume, cost and monthly movement</span></h4>${table(['Activity', 'Qty', 'Cost USD', 'Current USD/Unit', 'Previous USD/Unit', 'Change USD/Unit', 'Change %', 'Remarks'], movementRows)}<h4 class="cost-subheading">Activity-Based Cost by Counterpart <span>Breakdown by entity</span></h4>${table(['Activity', 'Counterpart', 'Current USD/Unit', 'Previous USD/Unit', 'Change USD/Unit', 'Change %', 'Remarks'], counterpartRows)}</section>`;
+    const useDashboardSource = period >= '2026-10' && Boolean(dashboardSummary?.rows?.length);
+    const status = excel?.abcMonthly && excel?.cogpMonthly ? `${monthLabel(date)} vs ${monthLabel(previousDate)}. Activity-Based Cost and Counterpart rates use ${useDashboardSource ? 'DB Cost Summary ÷ dashboard production volume for October 2026, matching localhost 3000' : 'the abcMonthly spreadsheet snapshot'}. Red = increase, green = decrease.` : 'Monthly data unavailable. Use Sync Production Now to load the spreadsheet.';
+    return `<section class="table-card cost-analysis-card monthly-performance"><div class="cost-analysis-heading"><div><span class="cost-eyebrow">MONTHLY PERFORMANCE</span><h3>Monthly Cost Comparison</h3><p>Compare activity costs with the previous month.</p></div><label class="cost-period-control">Comparison month <input type="month" value="${esc(period)}" disabled></label></div><p id="excel-example-status">${esc(status)}</p><h4 class="cost-subheading">COGP Comparison <span>Production cost per metric ton</span></h4>${table(['Location', 'Current USD/MT', 'Previous USD/MT', 'Change USD/MT', 'Change %'], cogpRows)}<h4 class="cost-subheading">Activity-Based Cost <span>Volume, cost and monthly movement</span></h4>${table(['Activity', 'Qty', 'Cost USD', 'Current USD/Unit', 'Previous USD/Unit', 'Change USD/Unit', 'Change %', 'Remarks'], useDashboardSource ? dashboardMovementRows : movementRows)}<h4 class="cost-subheading">Activity-Based Cost by Counterpart <span>Breakdown by entity</span></h4>${table(['Activity', 'Counterpart', 'Current USD/Unit', 'Previous USD/Unit', 'Change USD/Unit', 'Change %', 'Remarks'], useDashboardSource ? dashboardCounterpartRows : counterpartRows)}</section>`;
 }
 
 async function inventory(period, mode) {
@@ -318,16 +361,16 @@ async function inventory(period, mode) {
     const colors = ['#2563eb', '#0891b2', '#7c3aed', '#eab308', '#0f766e', '#f97316', '#64748b', '#b45309'];
     const includedStages = stages.filter(stage => stage.includedInQuantityTotal !== false);
     const totalIncludedQty = includedStages.reduce((sum, stage) => sum + Number(stage.endingQtyMT || 0), 0);
+    const chartCanDraw = totalIncludedQty > 0 && includedStages.every(stage => Number(stage.endingQtyMT) >= 0);
+    const share = value => !chartCanDraw ? '—' : Number(value) / totalIncludedQty * 100 < 0.5 ? '<1%' : `${(Number(value) / totalIncludedQty * 100).toLocaleString('en-US', { maximumFractionDigits: 0 })}%`;
     let offset = 0;
     const circumference = 2 * Math.PI * 108;
     const segments = includedStages.filter(stage => Number(stage.endingQtyMT) > 0 && totalIncludedQty > 0).map((stage, index) => {
         const length = Number(stage.endingQtyMT) / totalIncludedQty * circumference;
-        const segment = `<circle class="inventory-donut-segment" cx="140" cy="140" r="108" fill="none" stroke="${colors[index % colors.length]}" stroke-width="32" stroke-dasharray="${length} ${circumference - length}" stroke-dashoffset="${-offset}" transform="rotate(-90 140 140)"><title>${esc(stage.name)} ${volume(stage.endingQtyMT)} MT · USD ${number(stage.endingValueUSD)}</title></circle>`;
+        const segment = `<circle class="inventory-donut-segment" cx="140" cy="140" r="108" fill="none" stroke="${colors[index % colors.length]}" stroke-width="32" stroke-dasharray="${length} ${circumference - length}" stroke-dashoffset="${-offset}" transform="rotate(-90 140 140)"><title>${esc(stage.name)} · ${volume(stage.endingQtyMT)} MT · ${share(stage.endingQtyMT)} · USD ${number(stage.endingValueUSD)}</title></circle>`;
         offset += length;
         return segment;
     }).join('');
-    const chartCanDraw = totalIncludedQty > 0 && includedStages.every(stage => Number(stage.endingQtyMT) >= 0);
-    const share = value => !chartCanDraw ? '—' : Number(value) / totalIncludedQty * 100 < 0.5 ? '<1%' : `${(Number(value) / totalIncludedQty * 100).toLocaleString('en-US', { maximumFractionDigits: 0 })}%`;
     const donut = `<div class="inventory-donut-layout"><svg viewBox="0 0 280 280" class="inventory-donut" role="img" aria-label="Coal stock composition ${esc(period)}"><circle cx="140" cy="140" r="108" fill="none" stroke="#e2e8f0" stroke-width="32"/>${segments}<text x="140" y="123" text-anchor="middle" fill="#64748b" font-size="12">Total volume</text><text x="140" y="153" text-anchor="middle" fill="#0f172a" font-size="22" font-weight="700">${volume(totalIncludedQty)}</text><text x="140" y="174" text-anchor="middle" fill="#64748b" font-size="12">MT</text></svg><div class="inventory-chart-legend"><div class="inventory-chart-legend-row inventory-chart-header"><span></span><span>Location</span><span>USD/MT</span><span>Volume</span><span>Share</span></div>${stages.map((stage, index) => `<div class="inventory-chart-legend-row"><i style="background:${colors[index % colors.length]}" aria-hidden="true"></i><span>${esc(stage.name)}</span><strong>USD ${number(stage.endingRateUSD)}</strong><span>${volume(stage.endingQtyMT)} MT</span><span class="inventory-chart-percent">${stage.includedInQuantityTotal === false ? 'Excluded' : share(stage.endingQtyMT)}</span></div>`).join('')}</div></div>`;
     const ledgerRows = stages.map(stage => `<tr><td><strong>${esc(stage.name)}</strong>${stage.includedInTotal === false ? '<br><small>Quantity excluded from total; USD value included</small>' : ''}</td>${['beginningQtyMT', 'beginningValueUSD', 'inflowQtyMT', 'receiptValueUSD', 'addedCostUSD', 'movingAverageRateUSD', 'outflowQtyMT', 'outflowValueUSD', 'adjustmentQtyMT', 'adjustmentValueUSD', 'endingQtyMT', 'endingValueUSD', 'endingRateUSD'].map(key => `<td class="num">${key.endsWith('MT') ? volume(stage[key]) : number(stage[key])}</td>`).join('')}</tr>`).join('');
     const buaRows = (data.buaHistory || []).map(stage => { const mined = (stage.rows || []).find(row => row.source === 'COGP BUA') || {}; return `<tr><td>${esc(stage.period)}</td><td class="num">${volume(stage.beginningQtyMT)}</td><td class="num">${number(stage.beginningValueUSD)}</td><td class="num">${volume(mined.qtyMT)}</td><td class="num">${number(mined.valueUSD)}</td><td class="num">${number(stage.adjustmentValueUSD)}</td><td class="num">${number(stage.movingAverageRateUSD)}</td><td class="num">${volume(stage.endingQtyMT)}</td><td class="num">${number(stage.endingValueUSD)}</td><td class="num">${number(stage.endingRateUSD)}</td><td>${esc(stage.costSource === 'workbook' ? 'Temporary Excel history' : stage.costSource === 'gl' ? 'GL' : 'Awaiting upload')}</td></tr>`; }).join('');
