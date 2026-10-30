@@ -14,7 +14,7 @@ const api = async path => {
     return (await response.json()).data;
 };
 const badge = text => `<span class="source-badge">📂 ${esc(text)}</span>`;
-const table = (headers, rows, extra = '') => `<div class="table-responsive"><table class="table-accounting ${extra}"><thead><tr>${headers.map(header => `<th>${esc(header)}</th>`).join('')}</tr></thead><tbody>${rows.length ? rows.join('') : `<tr><td colspan="${headers.length}">No data available.</td></tr>`}</tbody></table></div>`;
+const table = (headers, rows, extra = '') => { const body = Array.isArray(rows) ? rows.join('') : String(rows || ''); return `<div class="table-responsive"><table class="table-accounting ${extra}"><thead><tr>${headers.map(header => `<th>${esc(header)}</th>`).join('')}</tr></thead><tbody>${body.length ? body : `<tr><td colspan="${headers.length}">No data available.</td></tr>`}</tbody></table></div>`; };
 const card = (title, content, classes = '') => `<section class="table-card ${classes}"><div class="card-title">${title}</div>${content}</section>`;
 const sectionHeader = (title, description, actions = '') => `<div class="section-header"><div class="section-title"><h2>${title}</h2><p>${description}</p></div>${actions ? `<div class="section-actions">${actions}</div>` : ''}</div>`;
 const unavailable = label => `<button class="btn btn-outline" type="button" disabled title="Deferred by project scope">${label}</button>`;
