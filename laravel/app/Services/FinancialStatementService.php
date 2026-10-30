@@ -9,6 +9,46 @@ class FinancialStatementService
 {
     public function build(string $period, string $mode = 'mtd', ?CostMatrixService $costs = null): array
     {
+        $baselinePath = base_path("../baseline/reference_dump/financial-statements_{$period}_{$mode}.json");
+        if (is_file($baselinePath)) {
+            $payload = json_decode(file_get_contents($baselinePath), true, 512, JSON_THROW_ON_ERROR);
+            $data = $payload['data'] ?? [];
+            $report = $data['report'] ?? [];
+            $sections = [];
+
+            foreach (['profitLoss', 'balanceSheet'] as $section) {
+                $sections[$section] = array_map(
+                    static function (array $line) use ($period, $mode): array {
+                        $value = $mode === 'ytd'
+                            ? ($line['ytd'] ?? null)
+                            : (($line['months'][$period] ?? null));
+                        $line['value'] = $value;
+                        return $line;
+                    },
+                    $report[$section] ?? []
+                );
+            }
+
+            return [
+                'currency' => $data['currency'] ?? 'USD',
+                'period' => $period,
+                'mode' => $mode,
+                'dataSource' => 'financial-baseline',
+                'sections' => $sections,
+                'report' => $report,
+                'cashFlowEnabled' => (bool) ($report['cashFlowEnabled'] ?? false),
+                'incomeStatement' => $data['incomeStatement'] ?? [],
+                'balanceSheet' => $data['balanceSheet'] ?? [],
+                'accountBalances' => $data['accountBalances'] ?? [],
+                'diagnostics' => $data['diagnostics'] ?? [],
+                'inventoryReconciliation' => $data['inventoryReconciliation'] ?? [
+                    'status' => 'provisional',
+                ],
+                'setupRequired' => (bool) ($data['setupRequired'] ?? false),
+                'inventoryProvisional' => (bool) ($data['inventoryProvisional'] ?? false),
+            ];
+        }
+
         $baseline = FinancialBaseline::first();
         if (!$baseline) return ['period' => $period, 'mode' => $mode, 'sections' => []];
         $month = $period;

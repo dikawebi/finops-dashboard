@@ -4,7 +4,7 @@ const $ = selector => document.querySelector(selector);
 const money = value => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(value || 0));
 const qty = value => Number(value || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
 const esc = value => String(value ?? '—').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' })[char]);
-const state = { view: new URLSearchParams(location.search).get('view') || 'overview' };
+const state = { view: new URLSearchParams(location.search).get('view') || 'overview', costSearch: '', costParentOnly: false, costHideZero: false, varianceSearch: '', varianceHideZero: true, varianceCategory: 'all' };
 const api = async path => {
     const response = await fetch(path);
     if (!response.ok) throw new Error(`Request failed: ${response.status}`);
@@ -15,6 +15,15 @@ const table = (headers, rows, extra = '') => `<div class="table-responsive"><tab
 const card = (title, content, classes = '') => `<section class="table-card ${classes}"><div class="card-title">${title}</div>${content}</section>`;
 const sectionHeader = (title, description, actions = '') => `<div class="section-header"><div class="section-title"><h2>${title}</h2><p>${description}</p></div>${actions ? `<div class="section-actions">${actions}</div>` : ''}</div>`;
 const unavailable = label => `<button class="btn btn-outline" type="button" disabled title="Deferred by project scope">${label}</button>`;
+const downloadCsv = (filename, headers, rows) => {
+    const quote = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
+    const content = [headers, ...rows].map(row => row.map(quote).join(',')).join('\r\n');
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8' }));
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(link.href);
+};
 
 function updateNavigation(period, mode) {
     $('#periodText').textContent = period;
@@ -27,7 +36,7 @@ async function overview(period, mode) {
     const [cost, financial, inventory, production] = await Promise.all([
         api(`/api/cost-matrix?period=${period}&mode=${mode}`),
         api(`/api/financial-statements?period=${period}&mode=${mode}`),
-        api(`/api/inventory-valuation?period=${period}`),
+        api(`/api/inventory-valuation?period=${period}&mode=${mode}`),
         api(`/api/production-summary?period=${period}`),
     ]);
     const metrics = production.dbMetrics || [];
@@ -66,22 +75,35 @@ async function overview(period, mode) {
 async function cost(period, mode) {
     const data = await api(`/api/cost-matrix?period=${period}&mode=${mode}`);
     const fields = [['costMining', 'Mining'], ['costHaulingBUAToWP', 'Haul BUA→WP'], ['costHaulingBUAToPort', 'Haul BUA→Port'], ['costHaulingWPToPort', 'Haul WP→Port'], ['costWP', 'Washing Plant'], ['costPort', 'BP PORT'], ['valMining', 'Mining'], ['valHauling', 'Coal Hauling'], ['valWP', 'Washing Plant'], ['valPort', 'BP PORT'], ['directGA', 'GA'], ['sellingExpense', 'Selling']];
-    const rows = data.rows.map(row => `<tr class="${row.isParent ? 'parent-row' : ''}"><td>${esc(row.code)}</td><td>${esc(row.name)}</td><td class="center">${row.isParent ? 'Σ' : '✓'}</td><td class="num">${money(row.allCost)}</td>${fields.map(([field]) => `<td class="num">${money(row[field])}</td>`).join('')}</tr>`);
+    const search = state.costSearch.trim().toLowerCase();
+    const visibleRows = data.rows.filter(row => (!search || `${row.code} ${row.name}`.toLowerCase().includes(search)) && (!state.costParentOnly || row.isParent) && (!state.costHideZero || Number(row.allCost || 0) !== 0));
+    const rows = visibleRows.map(row => `<tr class="${row.isParent ? 'parent-row' : ''}"><td>${esc(row.code)}</td><td>${esc(row.name)}</td><td class="center">${row.isParent ? 'Σ' : '✓'}</td><td class="num">${money(row.allCost)}</td>${fields.map(([field]) => `<td class="num">${money(row[field])}</td>`).join('')}</tr>`);
     $('#pageContent').innerHTML = `
-        ${sectionHeader('Report Cost: COGP & Direct Expense', 'Accounts beginning 7–9 are allocated to GA. Accounts beginning 5–6 follow Costing to; Direct Expense is allocated by Valuation to. Amounts in USD.', `<label>Month <input type="month" value="${period}" disabled></label><input class="input-search" placeholder="🔍 Search account code / name..." disabled>${unavailable('Show All Accounts')}${unavailable('Parent Accounts Only')}${unavailable('Hide Zero Balances')}${unavailable('📥 Export Excel/CSV')}`)}
-        ${card(`${badge('gl_data.json')} ${badge('cost_matrix_definition.json')} ${badge('accruals.json')}<p class="table-note">${data.rows.length} accounts • ${mode.toUpperCase()} • ${period}</p><div class="table-responsive"><table class="table-accounting cost-report-table"><thead><tr><th rowspan="2">AccountCode</th><th rowspan="2">AccountName</th><th rowspan="2">Check</th><th rowspan="2">ALL Cost</th><th colspan="6">COGP</th><th colspan="6">Direct Expense</th></tr><tr>${fields.map(([, label]) => `<th>${esc(label)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody><tfoot><tr><th colspan="3">Grand Total</th><th class="num">${money(data.grandTotal.allCost)}</th>${fields.map(([field]) => `<th class="num">${money(data.grandTotal[field])}</th>`).join('')}</tr></tfoot></table></div>`)}`;
+        ${sectionHeader('Report Cost: COGP & Direct Expense', 'Accounts beginning 7–9 are allocated to GA. Accounts beginning 5–6 follow Costing to; Direct Expense is allocated by Valuation to. Amounts in USD.', `<label>Month <input type="month" value="${period}" disabled></label><input id="costSearch" class="input-search" placeholder="🔍 Search account code / name..." value="${esc(state.costSearch)}"><button id="costShowAll" class="btn btn-outline" type="button">Show All Accounts</button><button id="costParentOnly" class="btn btn-outline" type="button">${state.costParentOnly ? 'Show All Rows' : 'Parent Accounts Only'}</button><button id="costHideZero" class="btn btn-outline" type="button">${state.costHideZero ? 'Show Zero Balances' : 'Hide Zero Balances'}</button><button id="costExport" class="btn btn-outline" type="button">📥 Export CSV</button>`)}
+        ${card(`${badge('gl_data.json')} ${badge('cost_matrix_definition.json')} ${badge('accruals.json')}<p class="table-note">${visibleRows.length} of ${data.rows.length} accounts • ${mode.toUpperCase()} • ${period}</p><div class="table-responsive"><table class="table-accounting cost-report-table"><thead><tr><th rowspan="2">AccountCode</th><th rowspan="2">AccountName</th><th rowspan="2">Check</th><th rowspan="2">ALL Cost</th><th colspan="6">COGP</th><th colspan="6">Direct Expense</th></tr><tr>${fields.map(([, label]) => `<th>${esc(label)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody><tfoot><tr><th colspan="3">Grand Total</th><th class="num">${money(data.grandTotal.allCost)}</th>${fields.map(([field]) => `<th class="num">${money(data.grandTotal[field])}</th>`).join('')}</tr></tfoot></table></div>`)}`;
+    $('#costSearch').addEventListener('input', event => { state.costSearch = event.target.value; cost(period, mode); });
+    $('#costShowAll').addEventListener('click', () => { state.costSearch = ''; state.costParentOnly = false; state.costHideZero = false; cost(period, mode); });
+    $('#costParentOnly').addEventListener('click', () => { state.costParentOnly = !state.costParentOnly; cost(period, mode); });
+    $('#costHideZero').addEventListener('click', () => { state.costHideZero = !state.costHideZero; cost(period, mode); });
+    $('#costExport').addEventListener('click', () => downloadCsv(`report-cost-${period}-${mode}.csv`, ['Account Code', 'Account Name', 'All Cost', ...fields.map(([, label]) => label)], visibleRows.map(row => [row.code, row.name, row.allCost, ...fields.map(([field]) => row[field])] )));
 }
 
 async function variance(period, mode) {
     const data = await api(`/api/cost-variance?period=${period}&mode=${mode}`);
-    const rows = data.rows.filter(row => !row.isParent).map(row => `<tr><td>${esc(row.code)}</td><td>${esc(row.name)}</td><td class="num">${money(row.previous)}</td><td class="num">${money(row.current)}</td><td class="num ${row.change > 0 ? 'negative' : 'positive'}">${money(row.change)}</td><td class="num">${row.changePct == null ? '—' : `${Number(row.changePct).toFixed(2)}%`}</td><td><input class="remark-input" value="" placeholder="Remark unavailable" disabled></td></tr>`);
+    const search = state.varianceSearch.trim().toLowerCase();
+    const categoryValue = row => row.categories?.current?.[state.varianceCategory] ?? row.current;
+    const visibleRows = data.rows.filter(row => !row.isParent && (!search || `${row.code} ${row.name}`.toLowerCase().includes(search)) && (!state.varianceHideZero || Number(row.change || 0) !== 0) && (state.varianceCategory === 'all' || Number(categoryValue(row) || 0) !== 0));
+    const rows = visibleRows.map(row => `<tr><td>${esc(row.code)}</td><td>${esc(row.name)}</td><td class="num">${money(row.previous)}</td><td class="num">${money(row.current)}</td><td class="num ${row.change > 0 ? 'negative' : 'positive'}">${money(row.change)}</td><td class="num">${row.changePct == null ? '—' : `${Number(row.changePct).toFixed(2)}%`}</td><td><input class="remark-input" value="" placeholder="Remark unavailable" disabled></td></tr>`);
     $('#pageContent').innerHTML = `
         ${sectionHeader('Cost Variance Analysis', 'Compare monthly cost by account and location; record explanations for each variance.')}
-        ${card(`<div class="variance-controls"><label>Current month <input type="month" value="${period}" disabled></label><label>Location / category <select disabled><option>All categories</option></select></label><label>Search account <input type="search" placeholder="Account code or name" disabled></label><label class="variance-checkbox"><input type="checkbox" checked disabled> Hide zero balances</label></div><p class="table-note">${badge('gl_data.json')} ${badge('cost_variance_remarks.json')} Comparison ${data.previousPeriod} → ${data.period}</p>`, table(['Account', 'Account Name', 'Previous month', 'Current month', 'Variance USD', 'Variance %', 'Remark'], rows, 'variance-table'))}`;
+        ${card(`<div class="variance-controls"><label>Current month <input type="month" value="${period}" disabled></label><label>Location / category <select id="varianceCategory"><option value="all" ${state.varianceCategory === 'all' ? 'selected' : ''}>All categories</option><option value="cogp" ${state.varianceCategory === 'cogp' ? 'selected' : ''}>COGP</option><option value="direct" ${state.varianceCategory === 'direct' ? 'selected' : ''}>Direct Expense</option></select></label><label>Search account <input id="varianceSearch" type="search" placeholder="Account code or name" value="${esc(state.varianceSearch)}"></label><label class="variance-checkbox"><input id="varianceHideZero" type="checkbox" ${state.varianceHideZero ? 'checked' : ''}> Hide zero balances</label></div><p class="table-note">${badge('gl_data.json')} ${badge('cost_variance_remarks.json')} ${visibleRows.length} rows • Comparison ${data.previousPeriod} → ${data.period}</p>`, table(['Account', 'Account Name', 'Previous month', 'Current month', 'Variance USD', 'Variance %', 'Remark'], rows, 'variance-table'))}`;
+    $('#varianceSearch').addEventListener('input', event => { state.varianceSearch = event.target.value; variance(period, mode); });
+    $('#varianceHideZero').addEventListener('change', event => { state.varianceHideZero = event.target.checked; variance(period, mode); });
+    $('#varianceCategory').addEventListener('change', event => { state.varianceCategory = event.target.value; variance(period, mode); });
 }
 
 async function metric(period, mode) {
-    const data = await api(`/api/cost-per-mt?period=${period}&mode=${mode}`);
+    const [data, dbSummary] = await Promise.all([api(`/api/cost-per-mt?period=${period}&mode=${mode}`), api(`/api/db-cost-summary?period=${period}&mode=${mode}`)]);
     const stageCards = data.stages.map(stage => `<article class="stage-card"><span>${esc(stage.stage)}</span><strong>${stage.costPerMT == null ? '—' : `${money(stage.costPerMT)} / MT`}</strong><small>${qty(stage.metricTons)} MT operating volume</small><em>${money(stage.totalCost)} total cost</em></article>`).join('');
     const rows = data.stages.map(stage => `<tr><td>${esc(stage.stage)}</td><td class="num">${money(stage.valuationCost)}</td><td class="num">${money(stage.operatingCost)}</td><td class="num">${money(stage.totalCost)}</td><td class="num">${qty(stage.metricTons)}</td><td class="num">${stage.costPerMT == null ? '—' : money(stage.costPerMT)}</td><td class="num">${stage.costPerTotalMT == null ? '—' : money(stage.costPerTotalMT)}</td></tr>`);
     $('#pageContent').innerHTML = `
@@ -89,15 +111,26 @@ async function metric(period, mode) {
         <p class="source-row">${badge('gl_data.json')} ${badge('production_daily_sheets.json (DB)')}</p>
         <div class="cost-stage-grid">${stageCards}</div>
         ${card(`Coal Mining Cost by Stage ${badge('gl_data.json')} ${badge('production_daily_sheets.json')}`, table(['Mining Activity', 'From Valuation to', 'From Costing to', 'Total Cost', 'Operating Volume', 'Stage Cost / MT', 'Cost / MT Total Production'], rows))}
-        ${card('Monthly Cost Comparison <span class="subtle">Previous-month comparison will be populated from historical activity data.</span>', `<div class="placeholder-analysis"><b>MONTHLY PERFORMANCE</b><p>Current overall cost: ${money(data.grandTotalCost)} • Overall cost per MT: ${data.overallCostPerMT == null ? '—' : money(data.overallCostPerMT)}</p></div>`, 'cost-analysis-card')}`;
+        ${card(`Monthly Cost Comparison <span class="subtle">${esc(data.comparisonPeriod || 'previous month')}</span>`, table(['Stage', 'Previous Cost / MT', 'Current Cost / MT', 'Change', 'Change %'], (data.comparison || []).map(item => `<tr><td>${esc(item.stage)}</td><td class="num">${item.previousCostPerMT == null ? '—' : money(item.previousCostPerMT)}</td><td class="num">${item.currentCostPerMT == null ? '—' : money(item.currentCostPerMT)}</td><td class="num ${item.change > 0 ? 'negative' : 'positive'}">${item.change == null ? '—' : money(item.change)}</td><td class="num">${item.changePct == null ? '—' : `${Number(item.changePct).toFixed(2)}%`}</td></tr>`)))}, 'cost-analysis-card')}
+        ${card(`DB Cost Summary by Activity ${badge(dbSummary.dataSource)}`, table(['Entity', 'Activity', 'Component', 'Amount USD'], (dbSummary.rows || []).filter(row => Number(row.amount || 0) !== 0).map(row => `<tr><td>${esc(row.entity)}</td><td>${esc(row.activity)}</td><td class="center">${esc(row.component)}</td><td class="num">${money(row.amount)}</td></tr>`)), 'cost-analysis-card')}`;
 }
 
-async function inventory(period) {
-    const data = await api(`/api/inventory-valuation?period=${period}`);
+async function inventory(period, mode) {
+    const data = await api(`/api/inventory-valuation?period=${period}&mode=${mode}`);
     const stages = data.stages || [];
-    const totalQty = stages.reduce((total, stage) => total + Number(stage.endingQtyMT || 0), 0);
-    const totalValue = stages.reduce((total, stage) => total + Number(stage.endingValueUSD || 0), 0);
+    const totalQty = Number(data.totalEndingQtyMT || stages.reduce((total, stage) => total + Number(stage.endingQtyMT || 0), 0));
+    const totalValue = Number(data.totalEndingValueUSD || stages.reduce((total, stage) => total + Number(stage.endingValueUSD || 0), 0));
     const cards = stages.map(stage => `<article class="inventory-stage"><h3>${esc(stage.name)}</h3><p><span>Closing Qty</span><b>${qty(stage.endingQtyMT)} MT</b></p><p><span>Closing Value</span><b>${money(stage.endingValueUSD)}</b></p><p><span>Moving Average</span><b>${money(stage.endingRateUSD)} / MT</b></p></article>`).join('');
+    const rows = stages.flatMap(stage => (stage.rows || []).map(row => `<tr><td>${esc(stage.name)}</td><td class="num">${qty(row.beginningQtyMT)}</td><td class="num">${money(row.beginningValueUSD)}</td><td class="num">${qty(row.availableQtyMT)}</td><td class="num">${money(row.availableValueUSD)}</td><td class="num">${qty(row.inflowQtyMT)}</td><td class="num">${money(row.inflowTotalValueUSD ?? row.receiptValueUSD)}</td><td class="num">${money(row.addedCostUSD)}</td><td class="num">${qty(row.outflowQtyMT)}</td><td class="num">${money(row.outflowValueUSD)}</td><td class="num">${qty(row.adjustmentQtyMT)}</td><td class="num">${money(row.adjustmentValueUSD)}</td><td class="num">${qty(row.endingQtyMT)}</td><td class="num">${money(row.endingValueUSD)}</td><td class="num">${money(row.endingRateUSD)}</td></tr>`));
+    const routeTotals = {};
+    stages.flatMap(stage => stage.rows || []).filter(row => row.type === 'outflow').forEach(row => {
+        const key = row.label || row.source || 'Other outflow';
+        routeTotals[key] = (routeTotals[key] || 0) + Number(row.qtyMT || 0);
+    });
+    const routeRows = Object.entries(routeTotals).map(([label, value]) => `<tr><td>${esc(label)}</td><td class="num">${qty(Math.abs(value))}</td><td>${value < 0 ? 'Outflow' : 'Inflow'}</td></tr>`);
+    const bua = (data.buaHistory || []).find(item => item.period === data.period);
+    const buaRows = (bua?.rows || []).map(row => `<tr><td>${esc(row.label)}</td><td class="num">${qty(row.qtyMT)}</td><td class="num">${money(row.valueUSD)}</td><td class="num">${money(row.rateUSD)}</td><td>${esc(row.type)}</td></tr>`);
+    const flowRows = stages.map(stage => `<tr><td>${esc(stage.name)}</td><td class="num">${qty(stage.inflowQtyMT)}</td><td class="num">${qty(stage.outflowQtyMT)}</td><td class="num">${qty(stage.adjustmentQtyMT)}</td><td class="num">${qty(stage.endingQtyMT)}</td><td class="num">${money(stage.endingValueUSD)}</td></tr>`);
     const colors = ['#2563eb', '#0891b2', '#7c3aed', '#eab308', '#0f766e', '#f97316', '#64748b', '#b45309'];
     const totalIncludedQty = stages.filter(stage => stage.includedInQuantityTotal !== false).reduce((sum, stage) => sum + Number(stage.endingQtyMT || 0), 0);
     let offset = 0;
@@ -116,18 +149,27 @@ async function inventory(period) {
         <div class="inventory-summary"><article><span>Total Closing Stock</span><strong>${qty(totalQty)} MT</strong></article><article><span>Total Inventory Value</span><strong>${money(totalValue)}</strong></article><article><span>Average Cost / MT</span><strong>${totalQty ? money(totalValue / totalQty) : '—'}</strong></article></div>
         <div class="inventory-location-grid">${cards}</div>
         ${card(`Coal Stock Composition — ${period} ${badge('inventory_movements.json')}`, `<p class="inventory-chart-caption">Slices represent closing stock volume (MT) by location.</p>${donut}`)}
-        ${card(`Inventory Balances and Movements ${badge('inventory_model.json')} ${badge('gl_data.json')}`, table(['Stockpile', 'Opening MT', 'Opening USD', 'Inflow MT', 'Inflow Value USD', 'Add Cost USD', 'Outflow MT', 'Outflow USD', 'Closing MT', 'Closing USD', 'Rate Closing USD/MT'], rows))}
+        ${card(`Inventory Balances and Movements ${badge('inventory_model.json')} ${badge('gl_data.json')}`, table(['Stage', 'Opening MT', 'Opening USD', 'Available MT', 'Available USD', 'Inflow MT', 'Inflow Value USD', 'Added Cost USD', 'Outflow MT', 'Outflow USD', 'Adjustment MT', 'Adjustment USD', 'Closing MT', 'Closing USD', 'Rate Closing USD/MT'], rows))}
+        ${card(`Hauling Route Summary ${badge(data.costMapping?.source || 'inventory_model.json')}`, table(['Route / Movement', 'Quantity MT', 'Direction'], routeRows))}
+        ${card(`Stockpile Flow Summary — ${period}`, table(['Stockpile', 'Inflow MT', 'Outflow MT', 'Adjustment MT', 'Closing MT', 'Closing USD'], flowRows))}
+        ${card(`BUA Monthly History — ${period}`, table(['Movement', 'Quantity MT', 'Value USD', 'Rate USD/MT', 'Type'], buaRows))}
         ${card('Closing Balance History — rolled forward from first period', table(['Month', 'Total Stock MT', 'Stock Value USD', 'COGS USD', 'Cost Data'], (data.history || []).map(item => `<tr><td>${esc(item.period)}</td><td class="num">${qty(item.totalEndingQtyMT)}</td><td class="num">${money(item.totalEndingValueUSD)}</td><td class="num">${money(item.cogsShippedValUSD)}</td><td>${esc(item.costSource)}</td></tr>`)))}`;
 }
 
 async function financial(period, mode) {
     const data = await api(`/api/financial-statements?period=${period}&mode=${mode}`);
     const statement = (title, lines) => card(title, table(['Description', 'Amount USD'], (lines || []).map(line => `<tr class="${line.kind === 'heading' ? 'statement-heading' : line.kind === 'total' ? 'statement-total' : ''}"><td>${esc(line.label || line.id)}</td><td class="num">${money(line.value)}</td></tr>`)), 'financial-card');
+    const income = data.incomeStatement || {};
+    const reconciliation = data.inventoryReconciliation || {};
+    const diagnostics = data.diagnostics || {};
+    const accountRows = (data.accountBalances || []).map(row => `<tr><td>${esc(row.code)}</td><td>${esc(row.name)}</td><td>${esc(row.mapping)}</td><td class="num">${money(row.baseUSD)}</td><td class="num">${money(row.glMovementUSD)}</td><td class="num">${money(row.closingUSD)}</td></tr>`);
     $('#pageContent').innerHTML = `
         ${sectionHeader('Financial Statements', 'Profit & Loss, balance sheet, and financial baseline reconciliation.', `<label>Month <input type="month" value="${period}" disabled></label>`)}
         <p class="source-row">${badge('financial_baseline.json')} ${badge('gl_data.json')}</p>
+        <div class="kpi-grid"><article class="kpi-card blue"><span class="kpi-title">TOTAL REVENUE</span><strong class="kpi-value">${money(income.revenue?.totalRevenue)}</strong><small class="kpi-sub">${esc(period)} ${esc(mode).toUpperCase()}</small></article><article class="kpi-card cost"><span class="kpi-title">EBITDA</span><strong class="kpi-value">${money(income.operatingProfitEBITDA)}</strong><small class="kpi-sub">Operating profit before tax</small></article><article class="kpi-card success"><span class="kpi-title">NET PROFIT AFTER TAX</span><strong class="kpi-value">${money(income.netProfitAfterTax)}</strong><small class="kpi-sub">Baseline financial statement</small></article></div>
         <div class="financial-grid">${statement('Profit & Loss Statement', data.sections?.profitLoss)}${statement('Balance Sheet', data.sections?.balanceSheet)}</div>
-        ${card('Financial Statement Diagnostics', `<div class="diagnostic-grid"><p><span>Data source</span><b>${esc(data.dataSource)}</b></p><p><span>Period</span><b>${esc(data.period)} ${esc(data.mode).toUpperCase()}</b></p><p><span>Inventory reconciliation</span><b>Available</b></p></div>`)}`;
+        ${card('Balances by Account', table(['Account', 'Name', 'Mapping', 'Base USD', 'GL Movement USD', 'Closing USD'], accountRows), 'financial-accounts-card')}
+        ${card('Financial Statement Diagnostics', `<div class="diagnostic-grid"><p><span>Data source</span><b>${esc(data.dataSource)}</b></p><p><span>Period</span><b>${esc(data.period)} ${esc(data.mode).toUpperCase()}</b></p><p><span>Balance difference</span><b>${money(diagnostics.balanceDifferenceUSD)}</b></p><p><span>Unmapped accounts</span><b>${qty((diagnostics.unmappedAccounts || []).length)}</b></p><p><span>Inventory book value</span><b>${money(reconciliation.bookInventoryUSD)}</b></p><p><span>Coal inventory value</span><b>${money(reconciliation.coalInventoryUSD)}</b></p><p><span>Cash flow</span><b>${data.cashFlowEnabled ? 'Enabled' : 'Not available'}</b></p></div>`)}`;
 }
 
 async function integration() {
@@ -150,7 +192,7 @@ async function render() {
         else if (state.view === 'cost') await cost(period, mode);
         else if (state.view === 'variance') await variance(period, mode);
         else if (state.view === 'metric') await metric(period, mode);
-        else if (state.view === 'inventory') await inventory(period);
+        else if (state.view === 'inventory') await inventory(period, mode);
         else if (state.view === 'financial') await financial(period, mode);
         else await integration();
     } catch (error) {

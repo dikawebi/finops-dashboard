@@ -25,6 +25,7 @@ Route::prefix('api')->group(function () {
     Route::get('/inventory-valuation', [DashboardController::class, 'inventory']);
     Route::get('/production-summary', [DashboardController::class, 'production']);
     Route::get('/cost-per-mt', [DashboardController::class, 'costPerMt']);
+    Route::get('/db-cost-summary', [DashboardController::class, 'dbCostSummary']);
     Route::get('/cost-variance', [DashboardController::class, 'variance']);
     Route::get('/integration-status', [DashboardController::class, 'integration']);
 });

@@ -7,12 +7,12 @@ use Illuminate\Console\Command;
 
 class DashboardInventoryValuation extends Command
 {
-    protected $signature = 'dashboard:inventory-valuation {period=2026-10}';
+    protected $signature = 'dashboard:inventory-valuation {period=2026-10} {--mode=mtd}';
     protected $description = 'Calculate inventory quantity, value, and cost per MT';
 
     public function handle(InventoryValuationService $service): int
     {
-        $result = $service->build($this->argument('period'));
+        $result = $service->build($this->argument('period'), $this->option('mode'));
         if (isset($result['stages'])) {
             $this->table(['Stage', 'Location', 'Rows'], array_map(fn ($stage) => [$stage['name'], $stage['location'], count($stage['rows'] ?? [])], $result['stages']));
         } else {

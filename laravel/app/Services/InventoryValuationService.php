@@ -6,9 +6,9 @@ use App\Models\InventoryOpening;
 
 class InventoryValuationService
 {
-    public function build(string $period): array
+    public function build(string $period, string $mode = 'mtd'): array
     {
-        $baseline = base_path("../baseline/reference_dump/inventory-valuation_{$period}_ytd.json");
+        $baseline = base_path("../baseline/reference_dump/inventory-valuation_{$period}_{$mode}.json");
         if (is_file($baseline)) {
             return json_decode(file_get_contents($baseline), true, 512, JSON_THROW_ON_ERROR)['data'];
         }
