@@ -24,9 +24,18 @@ class D365Controller extends Controller
         $data = $request->validate(['entity' => ['nullable', 'string'], 'date_from' => ['nullable', 'date'], 'date_to' => ['nullable', 'date', 'after_or_equal:date_from']]);
         $entity = $data['entity'] ?? 'all';
         abort_unless($entity === 'all' || $this->sync->entityByKey($entity), 422, 'Entity tidak dikenal.');
-        $this->sync->clearStop();
-        $this->sync->ensureQueueWorker();
-        RunD365Sync::dispatch($entity, $data['date_from'] ?? null, $data['date_to'] ?? null);
+        $lock = Cache::lock('d365-sync-dispatch', 10);
+        if (! $lock->get()) return ['queued' => false, 'already_running' => true, 'message' => 'Sync request is already being queued.'];
+        try {
+            $hasRunningLog = DB::table('d365_sync_logs')->where('status', 'running')->exists();
+            $hasQueuedJob = DB::table('jobs')->where('queue', 'default')->where('payload', 'like', '%RunD365Sync%')->exists();
+            if ($hasRunningLog || $hasQueuedJob) return ['queued' => false, 'already_running' => true, 'message' => 'A D365 sync is already running or queued.'];
+            $this->sync->clearStop();
+            $this->sync->ensureQueueWorker();
+            RunD365Sync::dispatch($entity, $data['date_from'] ?? null, $data['date_to'] ?? null);
+        } finally {
+            $lock->release();
+        }
         return ['queued' => true, 'entity' => $entity];
     }
 

@@ -498,21 +498,29 @@ async function integration() {
         ${card('Latest 15 Production Records', table(['Date & Time', 'Product', 'Vehicle Plate', 'Driver', 'Weighbridge', 'BRUTO (Kg)', 'TARA (Kg)', 'NETTO (Kg)', 'NETTO (MT)', 'Operator'], recentRows))}`;
     $('#viewGlData').addEventListener('click', () => viewGlData($('#period').value));
     $('#d365SyncAll').addEventListener('click', async event => {
-        event.currentTarget.disabled = true;
+        const button = event.currentTarget;
+        button.disabled = true;
         const period = $('#period').value;
         const [year, month] = period.split('-').map(Number);
         const dateFrom = `${period}-01`;
         const dateTo = new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
-        writeD365SyncState({ period, dateFrom, dateTo, baseline: Object.fromEntries((d365.entities || []).map(item => [item.key, item.last?.updated_at || null])), finished: false });
-        mountD365ProgressMonitor();
         try {
             const response = await fetch('/api/d365/sync', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }, body: JSON.stringify({ entity: 'all', date_from: dateFrom, date_to: dateTo }) });
             if (!response.ok) throw new Error(`Sync request failed: ${response.status}`);
-            event.currentTarget.textContent = 'Queued';
+            const payload = await response.json();
+            const result = payload.data || payload;
+            if (result.already_running) {
+                button.textContent = 'Sync Already Running';
+                await refreshD365Progress();
+                return;
+            }
+            writeD365SyncState({ period, dateFrom, dateTo, baseline: Object.fromEntries((d365.entities || []).map(item => [item.key, item.last?.updated_at || null])), finished: false });
+            mountD365ProgressMonitor();
+            button.textContent = 'Queued';
         } catch (error) {
-            event.currentTarget.textContent = 'Sync Failed';
+            button.textContent = 'Sync Failed';
             console.error(error);
-        } finally { event.currentTarget.disabled = false; }
+        } finally { button.disabled = false; }
     });
     mountD365ProgressMonitor();
 }
