@@ -35,11 +35,11 @@ class D365SyncService
     }
     public function ensureQueueWorker(): void
     {
-        if (PHP_OS_FAMILY !== 'Windows' || ! app()->environment('local') || Cache::has('d365_queue_worker_started')) return;
+        if (PHP_OS_FAMILY !== 'Windows' || ! app()->environment('local')) return;
         $php = escapeshellarg(PHP_BINARY);
         $artisan = escapeshellarg(base_path('artisan'));
-        pclose(popen('start "" /B '.$php.' '.$artisan.' queue:work database --queue=default --tries=1 --timeout=900', 'r'));
-        Cache::put('d365_queue_worker_started', true, now()->addHours(12));
+        $command = 'start "" /B '.$php.' '.$artisan.' queue:work database --queue=default --tries=1 --timeout=900 --stop-when-empty';
+        pclose(popen($command, 'r'));
     }
 
     public function syncEntity(array $entity, ?int $limit = null, ?string $dateFrom = null, ?string $dateTo = null): array
