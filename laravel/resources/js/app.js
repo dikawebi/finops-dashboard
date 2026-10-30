@@ -49,12 +49,18 @@ function renderD365ProgressPanel(state, entities) {
     const baseline = state.baseline || {};
     const changed = entities.filter(item => (item.last?.updated_at || null) !== (baseline[item.key] || null));
     const running = changed.filter(item => item.last?.status === 'running');
-    const completed = changed.filter(item => ['success', 'failed'].includes(item.last?.status));
-    const finished = changed.length === entities.length && running.length === 0;
+    const completed = changed.filter(item => ['success', 'failed', 'stopped'].includes(item.last?.status));
+    const finished = (changed.length === entities.length || state.stopRequested) && running.length === 0;
     const failed = changed.filter(item => item.last?.status === 'failed');
+    const stopped = state.stopRequested || changed.some(item => item.last?.status === 'stopped');
     const percent = entities.length ? Math.round((completed.length / entities.length) * 100) : 0;
-    panel.innerHTML = `<div class="d365-progress-heading"><div><strong>D365 sync progress</strong><span>${esc(state.period || 'Selected month')} · ${finished ? (failed.length ? 'Finished with errors' : 'Finished') : 'Running'}</span></div>${finished ? '<button id="closeD365Progress" class="btn btn-outline" type="button">Close</button>' : '<span class="d365-progress-live">Live</span>'}</div><div class="d365-progress-track"><i style="width:${percent}%"></i></div><p class="d365-progress-summary">${completed.length} of ${entities.length} entities complete${running.length ? ` · Current: ${esc(running[0].label)}` : ''}</p><div class="d365-progress-list">${entities.map(item => { const log = item.last; const current = changed.some(row => row.key === item.key); return `<div><span>${esc(item.label)}</span><b class="status ${log?.status === 'success' ? 'online' : log?.status === 'failed' ? 'manual' : log?.status === 'running' && current ? 'online' : 'manual'}">${esc(current ? (log?.status || 'pending') : 'waiting')}</b></div>`; }).join('')}</div>`;
-    if (finished) { panel.classList.add('is-finished'); $('#closeD365Progress').addEventListener('click', () => { localStorage.removeItem(d365SyncStorageKey); clearD365ProgressPanel(); }); }
+    const totalFetched = entities.reduce((total, item) => total + Number(item.last?.fetched || 0), 0);
+    const totalInserted = entities.reduce((total, item) => total + Number(item.last?.inserted || 0), 0);
+    const totalUpdated = entities.reduce((total, item) => total + Number(item.last?.updated || 0), 0);
+    panel.innerHTML = `<div class="d365-progress-heading"><div><strong>D365 sync progress</strong><span>${esc(state.period || 'Selected month')} · ${finished ? (stopped ? 'Stopped' : failed.length ? 'Finished with errors' : 'Finished') : 'Running'}</span></div><div class="d365-progress-actions"><button id="closeD365Progress" class="btn btn-outline" type="button">Close</button>${finished ? '' : '<button id="stopD365Progress" class="btn btn-danger" type="button">Stop Sync</button>'}</div></div><div class="d365-progress-track"><i style="width:${percent}%"></i></div><p class="d365-progress-summary">${completed.length} of ${entities.length} entities complete${running.length ? ` · Current: ${esc(running[0].label)}` : ''}</p><div class="d365-progress-numbers"><span>Fetched <b>${qty(totalFetched)}</b></span><span>Inserted <b>${qty(totalInserted)}</b></span><span>Updated <b>${qty(totalUpdated)}</b></span></div><div class="d365-progress-list">${entities.map(item => { const log = item.last; const current = changed.some(row => row.key === item.key); const status = current ? (log?.status || 'pending') : 'waiting'; return `<div><span>${esc(item.label)}<small>${qty(log?.fetched || 0)} fetched · ${qty(log?.inserted || 0)} inserted · ${qty(log?.updated || 0)} updated</small></span><b class="status ${status === 'success' ? 'online' : status === 'failed' || status === 'stopped' ? 'manual' : status === 'running' && current ? 'online' : 'manual'}">${esc(status)}</b></div>`; }).join('')}</div>`;
+    $('#closeD365Progress').addEventListener('click', () => { localStorage.removeItem(d365SyncStorageKey); clearD365ProgressPanel(); });
+    if (!finished) $('#stopD365Progress').addEventListener('click', async event => { event.currentTarget.disabled = true; state.stopRequested = true; writeD365SyncState(state); try { await fetch('/api/d365/sync/stop', { method: 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' } }); } finally { await refreshD365Progress(); } });
+    if (finished) panel.classList.add('is-finished'); else panel.classList.remove('is-finished');
     return finished;
 }
 async function refreshD365Progress() {
@@ -69,7 +75,7 @@ async function refreshD365Progress() {
         if (finished && !syncState.finished) { syncState.finished = true; writeD365SyncState(syncState); }
     } catch (error) { console.error(error); }
 }
-function mountD365ProgressMonitor() { if (d365ProgressTimer) clearInterval(d365ProgressTimer); if (!readD365SyncState()) { clearD365ProgressPanel(); return; } refreshD365Progress(); d365ProgressTimer = setInterval(refreshD365Progress, 3000); }
+function mountD365ProgressMonitor() { if (d365ProgressTimer) clearInterval(d365ProgressTimer); if (!readD365SyncState()) { clearD365ProgressPanel(); return; } refreshD365Progress(); d365ProgressTimer = setInterval(refreshD365Progress, 2000); }
 
 function updateNavigation(period, mode) {
     $('#periodText').textContent = period;

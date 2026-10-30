@@ -9,6 +9,7 @@ use App\Services\D365\D365SyncService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Reader\Csv;
 
@@ -23,8 +24,17 @@ class D365Controller extends Controller
         $data = $request->validate(['entity' => ['nullable', 'string'], 'date_from' => ['nullable', 'date'], 'date_to' => ['nullable', 'date', 'after_or_equal:date_from']]);
         $entity = $data['entity'] ?? 'all';
         abort_unless($entity === 'all' || $this->sync->entityByKey($entity), 422, 'Entity tidak dikenal.');
+        $this->sync->clearStop();
         RunD365Sync::dispatch($entity, $data['date_from'] ?? null, $data['date_to'] ?? null);
         return ['queued' => true, 'entity' => $entity];
+    }
+
+    public function stopSync(): array
+    {
+        $this->sync->requestStop();
+        DB::table('jobs')->where('payload', 'like', '%RunD365Sync%')->delete();
+        DB::table('d365_sync_logs')->where('status', 'running')->update(['status' => 'stopped', 'message' => 'Sync dihentikan oleh user.', 'updated_at' => now()]);
+        return ['stopped' => true];
     }
 
     public function progress(): array

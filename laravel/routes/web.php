@@ -35,6 +35,7 @@ Route::prefix('api')->group(function () {
     Route::get('/integration-status', [DashboardController::class, 'integration']);
     Route::get('/d365/entities', [D365Controller::class, 'entities']);
     Route::post('/d365/sync', [D365Controller::class, 'sync']);
+    Route::post('/d365/sync/stop', [D365Controller::class, 'stopSync']);
     Route::get('/d365/progress', [D365Controller::class, 'progress']);
     Route::get('/d365/staging', [D365Controller::class, 'staging']);
     Route::post('/d365/staging/preview', [D365Controller::class, 'preview']);

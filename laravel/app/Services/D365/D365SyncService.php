@@ -3,6 +3,7 @@
 namespace App\Services\D365;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class D365SyncService
@@ -28,6 +29,7 @@ class D365SyncService
         $fetched = $inserted = $updated = $pages = 0;
         $maxSourceKey = null;
         try {
+            if ($this->stopRequested()) throw new D365Exception('Sync dihentikan oleh user.');
             if ($entity['mode'] === 'snapshot') {
                 DB::table('d365_raw_records')->where('entity_key', $entity['key'])->delete();
                 DB::table('d365_typed_records')->where('entity_key', $entity['key'])->delete();
@@ -35,6 +37,7 @@ class D365SyncService
             $filter = $this->filter($entity, $dateFrom, $dateTo);
             $client = $this->client();
             foreach ($client->streamEntity($entity['entity'], null, $filter) as $source) {
+                if ($this->stopRequested()) throw new D365Exception('Sync dihentikan oleh user.');
                 if ($limit !== null && $fetched >= $limit) break;
                 $fetched++;
                 $sourceKey = $this->sourceKey($source);
@@ -50,12 +53,16 @@ class D365SyncService
             DB::table('d365_sync_logs')->where('id', $logId)->update(['status' => 'success', 'fetched' => $fetched, 'inserted' => $inserted, 'updated' => $updated, 'pages' => $pages, 'progress_percent' => 100, 'max_source_key' => $maxSourceKey, 'updated_at' => now()]);
             return ['status' => 'success', 'entity' => $entity, 'fetched' => $fetched, 'inserted' => $inserted, 'updated' => $updated];
         } catch (\Throwable $exception) {
-            DB::table('d365_sync_logs')->where('id', $logId)->update(['status' => 'failed', 'fetched' => $fetched, 'message' => $exception->getMessage(), 'updated_at' => now()]);
-            return ['status' => 'failed', 'entity' => $entity, 'fetched' => $fetched, 'error' => $exception->getMessage()];
+            $status = $this->stopRequested() ? 'stopped' : 'failed';
+            DB::table('d365_sync_logs')->where('id', $logId)->update(['status' => $status, 'fetched' => $fetched, 'message' => $exception->getMessage(), 'updated_at' => now()]);
+            return ['status' => $status, 'entity' => $entity, 'fetched' => $fetched, 'error' => $exception->getMessage()];
         }
     }
 
-    public function syncAll(?int $limit = null, ?string $dateFrom = null, ?string $dateTo = null): array { return collect(self::ENTITIES)->map(fn (array $entity): array => $this->syncEntity($entity, $limit, $dateFrom, $dateTo))->all(); }
+    public function syncAll(?int $limit = null, ?string $dateFrom = null, ?string $dateTo = null): array { $results = []; foreach (self::ENTITIES as $entity) { if ($this->stopRequested()) break; $results[] = $this->syncEntity($entity, $limit, $dateFrom, $dateTo); } return $results; }
+    public function requestStop(): void { Cache::put('d365_sync_stop', true, now()->addHour()); }
+    public function clearStop(): void { Cache::forget('d365_sync_stop'); }
+    public function stopRequested(): bool { return (bool) Cache::get('d365_sync_stop', false); }
     public function latestStatus(): array { return collect(self::ENTITIES)->map(function (array $entity): array { $log = DB::table('d365_sync_logs')->where('entity_key', $entity['key'])->latest('id')->first(); return $entity + ['last' => $log, 'staging_count' => DB::table('d365_raw_records')->where('entity_key', $entity['key'])->count(), 'typed_count' => DB::table('d365_typed_records')->where('entity_key', $entity['key'])->count()]; })->all(); }
 
     private function filter(array $entity, ?string $dateFrom, ?string $dateTo): ?string
