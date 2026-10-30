@@ -48,6 +48,9 @@ class D365SyncService
                 $existing ? $updated++ : $inserted++;
                 $typed = $this->typed($entity, $source, $sourceKey);
                 DB::table('d365_typed_records')->upsert([$typed], ['entity_key', 'source_key'], array_keys(array_diff_key($typed, ['entity_key' => true, 'source_key' => true, 'created_at' => true])));
+                if ($fetched % 25 === 0) {
+                    DB::table('d365_sync_logs')->where('id', $logId)->update(['fetched' => $fetched, 'inserted' => $inserted, 'updated' => $updated, 'pages' => (int) ceil($fetched / 1000), 'max_source_key' => $maxSourceKey, 'updated_at' => now()]);
+                }
             }
             $pages = (int) ceil($fetched / 1000);
             DB::table('d365_sync_logs')->where('id', $logId)->update(['status' => 'success', 'fetched' => $fetched, 'inserted' => $inserted, 'updated' => $updated, 'pages' => $pages, 'progress_percent' => 100, 'max_source_key' => $maxSourceKey, 'updated_at' => now()]);
