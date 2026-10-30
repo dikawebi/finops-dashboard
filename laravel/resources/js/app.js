@@ -11,7 +11,8 @@ const state = { view: new URLSearchParams(location.search).get('view') || 'overv
 const api = async path => {
     const response = await fetch(path);
     if (!response.ok) throw new Error(`Request failed: ${response.status}`);
-    return (await response.json()).data;
+    const payload = await response.json();
+    return payload && Object.prototype.hasOwnProperty.call(payload, 'data') ? payload.data : payload;
 };
 const badge = text => `<span class="source-badge">📂 ${esc(text)}</span>`;
 const table = (headers, rows, extra = '') => { const body = Array.isArray(rows) ? rows.join('') : String(rows || ''); return `<div class="table-responsive"><table class="table-accounting ${extra}"><thead><tr>${headers.map(header => `<th>${esc(header)}</th>`).join('')}</tr></thead><tbody>${body.length ? body : `<tr><td colspan="${headers.length}">No data available.</td></tr>`}</tbody></table></div>`; };
