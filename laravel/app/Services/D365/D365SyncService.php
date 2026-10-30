@@ -53,22 +53,23 @@ class D365SyncService
                 DB::table('d365_raw_records')->where('entity_key', $entity['key'])->delete();
                 DB::table('d365_typed_records')->where('entity_key', $entity['key'])->delete();
             }
-            $filter = $this->filter($entity, $dateFrom, $dateTo);
             $client = $this->client();
-            foreach ($client->streamEntity($entity['entity'], null, $filter) as $source) {
-                if ($this->stopRequested()) throw new D365Exception('Sync dihentikan oleh user.');
-                if ($limit !== null && $fetched >= $limit) break;
-                $fetched++;
-                $sourceKey = $this->sourceKey($source);
-                if ($entity['mode'] === 'incremental' && ctype_digit($sourceKey) && ($maxSourceKey === null || (int) $sourceKey > (int) $maxSourceKey)) $maxSourceKey = $sourceKey;
-                $raw = ['entity_key' => $entity['key'], 'entity_name' => $entity['entity'], 'source_key' => $sourceKey, 'company' => $this->company($source, $entity), 'payload' => json_encode($source), 'created_at' => now(), 'updated_at' => now()];
-                $existing = DB::table('d365_raw_records')->where(['entity_key' => $entity['key'], 'source_key' => $sourceKey])->exists();
-                DB::table('d365_raw_records')->upsert([$raw], ['entity_key', 'source_key'], ['entity_name', 'company', 'payload', 'updated_at']);
-                $existing ? $updated++ : $inserted++;
-                $typed = $this->typed($entity, $source, $sourceKey);
-                DB::table('d365_typed_records')->upsert([$typed], ['entity_key', 'source_key'], array_keys(array_diff_key($typed, ['entity_key' => true, 'source_key' => true, 'created_at' => true])));
-                if ($fetched % 25 === 0) {
-                    DB::table('d365_sync_logs')->where('id', $logId)->update(['fetched' => $fetched, 'inserted' => $inserted, 'updated' => $updated, 'pages' => (int) ceil($fetched / 1000), 'max_source_key' => $maxSourceKey, 'updated_at' => now()]);
+            foreach ($this->filtersForEntity($entity, $dateFrom, $dateTo) as $filter) {
+                foreach ($client->streamEntity($entity['entity'], null, $filter) as $source) {
+                    if ($this->stopRequested()) throw new D365Exception('Sync dihentikan oleh user.');
+                    if ($limit !== null && $fetched >= $limit) break 2;
+                    $fetched++;
+                    $sourceKey = $this->sourceKey($source);
+                    if ($entity['mode'] === 'incremental' && ctype_digit($sourceKey) && ($maxSourceKey === null || (int) $sourceKey > (int) $maxSourceKey)) $maxSourceKey = $sourceKey;
+                    $raw = ['entity_key' => $entity['key'], 'entity_name' => $entity['entity'], 'source_key' => $sourceKey, 'company' => $this->company($source, $entity), 'payload' => json_encode($source), 'created_at' => now(), 'updated_at' => now()];
+                    $existing = DB::table('d365_raw_records')->where(['entity_key' => $entity['key'], 'source_key' => $sourceKey])->exists();
+                    DB::table('d365_raw_records')->upsert([$raw], ['entity_key', 'source_key'], ['entity_name', 'company', 'payload', 'updated_at']);
+                    $existing ? $updated++ : $inserted++;
+                    $typed = $this->typed($entity, $source, $sourceKey);
+                    DB::table('d365_typed_records')->upsert([$typed], ['entity_key', 'source_key'], array_keys(array_diff_key($typed, ['entity_key' => true, 'source_key' => true, 'created_at' => true])));
+                    if ($fetched % 25 === 0) {
+                        DB::table('d365_sync_logs')->where('id', $logId)->update(['fetched' => $fetched, 'inserted' => $inserted, 'updated' => $updated, 'pages' => (int) ceil($fetched / 1000), 'max_source_key' => $maxSourceKey, 'updated_at' => now()]);
+                    }
                 }
             }
             if ($this->stopRequested()) throw new D365Exception('Sync dihentikan oleh user.');
@@ -82,7 +83,7 @@ class D365SyncService
         }
     }
 
-    public function syncAll(?int $limit = null, ?string $dateFrom = null, ?string $dateTo = null): array { $results = []; foreach (self::ENTITIES as $entity) { if ($this->stopRequested()) break; $results[] = $this->syncEntity($entity, $limit, $dateFrom, $dateTo); } return $results; }
+    public function syncAll(?int $limit = null, ?string $dateFrom = null, ?string $dateTo = null): array { $order = ['main_accounts', 'dimension_values', 'vendors', 'customers', 'gl_journal_entries', 'gl_entries', 'ledger_journal_lines', 'ledger_entry_journals', 'inventory_trans']; $results = []; foreach ($order as $key) { if ($this->stopRequested()) break; $results[] = $this->syncEntity($this->entityByKey($key), $limit, $dateFrom, $dateTo); } return $results; }
     public function requestStop(): void { Cache::put('d365_sync_stop', true, now()->addHour()); }
     public function clearStop(): void { Cache::forget('d365_sync_stop'); }
     public function stopRequested(): bool { return (bool) Cache::get('d365_sync_stop', false); }
@@ -102,6 +103,20 @@ class D365SyncService
         if ($entity['date_field'] && $dateTo) $parts[] = $entity['date_field']." le ".date('Y-m-d', strtotime($dateTo));
         return $parts ? implode(' and ', $parts) : null;
     }
+    private function filtersForEntity(array $entity, ?string $dateFrom, ?string $dateTo): array
+    {
+        if (!$dateFrom && !$dateTo) return [$this->filter($entity, null, null)];
+        if ($entity['key'] === 'gl_entries') {
+            $keys = DB::table('d365_typed_records')->where('entity_key', 'gl_journal_entries')->when($dateFrom, fn ($query) => $query->whereDate('accounting_date', '>=', $dateFrom))->when($dateTo, fn ($query) => $query->whereDate('accounting_date', '<=', $dateTo))->pluck('source_key')->filter()->map(fn ($key): string => (string) $key)->unique()->values();
+            return $keys->chunk(50)->map(fn ($chunk): string => $this->appendFilter($this->filter($entity, null, null), $chunk->map(fn (string $key): string => 'GeneralJournalEntry eq '.$key)->implode(' or ')))->all();
+        }
+        if ($entity['key'] === 'ledger_entry_journals') {
+            $keys = DB::table('d365_typed_records')->where('entity_key', 'ledger_journal_lines')->when($dateFrom, fn ($query) => $query->whereDate('accounting_date', '>=', $dateFrom))->when($dateTo, fn ($query) => $query->whereDate('accounting_date', '<=', $dateTo))->pluck('journal_number')->filter()->map(fn ($key): string => (string) $key)->unique()->values();
+            return $keys->chunk(50)->map(fn ($chunk): string => $this->appendFilter($this->filter($entity, null, null), $chunk->map(fn (string $key): string => "JournalNumber eq '".str_replace("'", "''", $key)."'")->implode(' or ')))->all();
+        }
+        return [$this->filter($entity, $dateFrom, $dateTo)];
+    }
+    private function appendFilter(?string $base, string $parent): string { return $base ? $base.' and ('.$parent.')' : '('.$parent.')'; }
     private function sourceKey(array $row): string { return (string) ($row['SourceKey'] ?? $row['sourceKey'] ?? sha1(json_encode($row))); }
     private function company(array $row, array $entity): ?string { $field = $entity['company_field']; return $field ? (string) ($row[$field] ?? '') : null; }
     private function typed(array $entity, array $row, string $sourceKey): array
@@ -109,7 +124,7 @@ class D365SyncService
         $dimensions = $row['LedgerDimensionValuesJson'] ?? $row['Dimensions'] ?? [];
         if (is_string($dimensions)) $dimensions = json_decode($dimensions, true) ?: [];
         if (isset($dimensions[0]) && is_array($dimensions[0])) $dimensions = $dimensions[0];
-        return ['entity_key' => $entity['key'], 'source_key' => $sourceKey, 'company' => $this->company($row, $entity), 'account_code' => (string) ($row['MainAccount'] ?? $row['MainAccountId'] ?? $row['LedgerAccount'] ?? ''), 'account_name' => (string) ($row['Name'] ?? ''), 'journal_number' => (string) ($row['JournalNumber'] ?? ''), 'voucher' => (string) ($row['SubledgerVoucher'] ?? $row['Voucher'] ?? ''), 'accounting_date' => $this->date($row['AccountingDate'] ?? $row['DateFinancial'] ?? $row['DocumentDate'] ?? null), 'currency' => (string) ($row['TransactionCurrencyCode'] ?? $row['CurrencyCode'] ?? ''), 'amount_accounting' => $row['AccountingCurrencyAmount'] ?? $row['AmountCurDebit'] ?? null, 'amount_reporting' => $row['ReportingCurrencyAmount'] ?? null, 'amount_transaction' => $row['TransactionCurrencyAmount'] ?? null, 'quantity' => $row['Quantity'] ?? $row['Qty'] ?? null, 'description' => (string) ($row['Text'] ?? $row['Txt'] ?? ''), 'dimensions' => json_encode($dimensions), 'payload' => json_encode($row), 'created_at' => now(), 'updated_at' => now()];
+        return ['entity_key' => $entity['key'], 'source_key' => $sourceKey, 'company' => $this->company($row, $entity), 'account_code' => (string) ($row['MainAccount'] ?? $row['MainAccountId'] ?? $row['LedgerAccount'] ?? ''), 'account_name' => (string) ($row['Name'] ?? ''), 'journal_number' => (string) ($row['JournalNumber'] ?? $row['JournalNum'] ?? ''), 'voucher' => (string) ($row['SubledgerVoucher'] ?? $row['Voucher'] ?? ''), 'accounting_date' => $this->date($row['AccountingDate'] ?? $row['DateFinancial'] ?? $row['DocumentDate'] ?? $row['TransDate'] ?? null), 'currency' => (string) ($row['TransactionCurrencyCode'] ?? $row['CurrencyCode'] ?? ''), 'amount_accounting' => $row['AccountingCurrencyAmount'] ?? $row['AmountCurDebit'] ?? null, 'amount_reporting' => $row['ReportingCurrencyAmount'] ?? null, 'amount_transaction' => $row['TransactionCurrencyAmount'] ?? null, 'quantity' => $row['Quantity'] ?? $row['Qty'] ?? null, 'description' => (string) ($row['Text'] ?? $row['Txt'] ?? ''), 'dimensions' => json_encode($dimensions), 'payload' => json_encode($row), 'created_at' => now(), 'updated_at' => now()];
     }
     private function date(mixed $value): ?string { if (!$value) return null; try { return date('Y-m-d', strtotime((string) $value)); } catch (\Throwable) { return null; } }
 }
