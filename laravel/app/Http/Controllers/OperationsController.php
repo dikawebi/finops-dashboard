@@ -13,6 +13,29 @@ class OperationsController extends Controller
     public function accounts() { return response()->json(['success'=>true,'data'=>CostAccount::orderBy('account_code')->get()]); }
     public function accruals(Request $request) { $period=$request->query('period'); $q=Accrual::query(); if($period)$q->where('period',$period); return response()->json(['success'=>true,'data'=>$q->orderBy('period')->get()]); }
     public function config() { return response()->json(['success'=>true,'data'=>SystemConfig::query()->pluck('value','key')]); }
+    public function updateConfig(Request $request)
+    {
+        $payload = $request->validate([
+            'key' => ['required', 'string', 'in:system,d365Config,sheetsConfig,inventorySetup'],
+            'field' => ['required', 'string', 'max:80'],
+            'value' => ['present'],
+        ]);
+        $editable = [
+            'system' => ['companyName', 'currency', 'currencyUnit', 'periodYear', 'periodMonth', 'amountScale'],
+            'd365Config' => ['enabled', 'entityName', 'syncIntervalMinutes', 'autoSync'],
+            'sheetsConfig' => ['enabled', 'spreadsheetId', 'sheetName', 'range', 'syncIntervalMinutes', 'autoSync', 'gid'],
+            'inventorySetup' => ['valuationMethod'],
+        ];
+        abort_unless(in_array($payload['field'], $editable[$payload['key']], true), 422, 'This configuration field is read-only.');
+        $config = SystemConfig::get($payload['key'], []);
+        if (!is_array($config)) $config = [];
+        $value = $payload['value'];
+        if (in_array($payload['field'], ['enabled', 'autoSync'], true)) $value = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+        if (in_array($payload['field'], ['periodYear', 'periodMonth', 'amountScale', 'syncIntervalMinutes'], true)) $value = is_numeric($value) ? (int) $value : 0;
+        $config[$payload['field']] = $value;
+        SystemConfig::put($payload['key'], $config);
+        return response()->json(['success'=>true,'data'=>[$payload['key'] => $config]]);
+    }
     public function glData(Request $request)
     {
         $period = (string) $request->query('period', '2026-10');

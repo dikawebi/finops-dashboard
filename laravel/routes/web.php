@@ -18,6 +18,7 @@ Route::prefix('api')->group(function () {
     Route::get('/accounts', [OperationsController::class, 'accounts']);
     Route::get('/accruals', [OperationsController::class, 'accruals']);
     Route::get('/config', [OperationsController::class, 'config']);
+    Route::put('/config', [OperationsController::class, 'updateConfig']);
     Route::get('/gl-data', [OperationsController::class, 'glData']);
     Route::post('/upload-gl', [OperationsController::class, 'uploadGl'])->middleware(['auth', EnsurePeriodOpen::class]);
     Route::delete('/gl-data', [OperationsController::class, 'deleteGl'])->middleware(['auth', EnsurePeriodOpen::class]);

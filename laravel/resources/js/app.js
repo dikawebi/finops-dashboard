@@ -443,6 +443,12 @@ async function integration() {
 async function configuration() {
     const data = await api('/api/config');
     const label = key => key.replace(/([A-Z])/g, ' $1').replace(/^./, value => value.toUpperCase());
+    const editable = {
+        system: ['companyName', 'currency', 'currencyUnit', 'periodYear', 'periodMonth', 'amountScale'],
+        d365Config: ['enabled', 'entityName', 'syncIntervalMinutes', 'autoSync'],
+        sheetsConfig: ['enabled', 'spreadsheetId', 'sheetName', 'range', 'syncIntervalMinutes', 'autoSync', 'gid'],
+        inventorySetup: ['valuationMethod'],
+    };
     const sanitize = (value, key = '') => {
         if (/secret|password|token/i.test(key)) return 'Configured securely';
         if (Array.isArray(value)) return value.map(item => sanitize(item));
@@ -456,11 +462,35 @@ async function configuration() {
         if (typeof value === 'boolean') return value ? '<span class="status online">Enabled</span>' : '<span class="status manual">Disabled</span>';
         return esc(value);
     };
+    const editor = (section, key, value) => {
+        const inputType = typeof value === 'boolean' ? 'checkbox' : typeof value === 'number' ? 'number' : 'text';
+        const inputValue = inputType === 'checkbox' ? (value ? 'checked' : '') : `value="${esc(value)}"`;
+        return `<div class="config-editor"><input data-config-input="true" data-config-key="${esc(section)}" data-config-field="${esc(key)}" type="${inputType}" ${inputType === 'checkbox' ? inputValue : inputValue}><button type="button" class="btn btn-outline config-save" data-config-save="true">Save</button></div>`;
+    };
     const sections = Object.entries(data || {}).map(([section, values]) => {
-        const rows = Object.entries(values && typeof values === 'object' && !Array.isArray(values) ? values : { value: values }).map(([key, value]) => `<tr><th>${esc(label(key))}</th><td>${display(key, value)}</td></tr>`).join('');
+        const rows = Object.entries(values && typeof values === 'object' && !Array.isArray(values) ? values : { value: values }).map(([key, value]) => {
+            const canEdit = editable[section]?.includes(key) && (typeof value !== 'object' || value === null);
+            return `<tr><th>${esc(label(key))}</th><td>${canEdit ? editor(section, key, value) : display(key, value)}</td></tr>`;
+        }).join('');
         return `<section class="table-card config-card"><div class="card-title">${esc(label(section))}</div><div class="table-responsive"><table class="table-accounting config-table"><tbody>${rows || '<tr><td colspan="2">No configuration available.</td></tr>'}</tbody></table></div></section>`;
     }).join('');
-    $('#pageContent').innerHTML = `${sectionHeader('Configuration', 'System, connector, inventory, and period settings used by the dashboard.', `<span class="config-source">Source: /api/config</span>`)}<p class="financial-notice">Configuration is currently read-only. Sensitive values are masked in this view.</p><div class="config-grid">${sections || '<div class="table-card error-card">No configuration available.</div>'}</div>`;
+    $('#pageContent').innerHTML = `${sectionHeader('Configuration', 'System, connector, inventory, and period settings used by the dashboard.', `<span class="config-source">Source: /api/config</span>`)}<p class="financial-notice">Editable fields are marked with Save. Sensitive credentials and nested setup details remain read-only.</p><p id="config-status" class="config-status" aria-live="polite"></p><div class="config-grid">${sections || '<div class="table-card error-card">No configuration available.</div>'}</div>`;
+    document.querySelectorAll('[data-config-save]').forEach(button => button.addEventListener('click', async () => {
+        const editor = button.closest('.config-editor');
+        const input = editor?.querySelector('[data-config-input]');
+        if (!input) return;
+        const value = input.type === 'checkbox' ? input.checked : input.value;
+        button.disabled = true;
+        try {
+            const response = await fetch('/api/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: input.dataset.configKey, field: input.dataset.configField, value }) });
+            if (!response.ok) throw new Error((await response.json()).message || 'Save failed');
+            button.textContent = 'Saved';
+            $('#config-status').textContent = `${label(input.dataset.configField)} updated.`;
+            setTimeout(() => { button.textContent = 'Save'; }, 1600);
+        } catch (error) {
+            $('#config-status').textContent = `Could not save ${label(input.dataset.configField)}: ${error.message}`;
+        } finally { button.disabled = false; }
+    }));
 }
 
 async function viewGlData(period) {
