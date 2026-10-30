@@ -54,6 +54,7 @@
         <a href="#" data-view="inventory">📦 Inventory Valuation (Moving Avg)</a>
         <a href="#" data-view="financial">📑 Financial Statements (FS)</a>
         <a href="#" data-view="integration">🔄 Integration &amp; Data Sources</a>
+        <a href="#" data-view="mapping">🧭 Allocation Mapping</a>
         <a href="#" data-view="config">⚙️ Configuration</a>
     </nav>
     <main id="pageContent" class="content" aria-live="polite"></main>
