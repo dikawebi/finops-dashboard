@@ -3,17 +3,16 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>FinOps Dashboard — PT Borneo Prima</title>
+    @php($system = \App\Models\SystemConfig::get('system', []))
+    @php($companyName = $system['companyName'] ?? 'FinOps Dashboard')
+    @php($logoPath = $system['logoPath'] ?? '/images/logo-bp.svg')
+    <title>{{ $companyName }} — Coal Mining Accounting &amp; Cost Dashboard</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
     <header class="app-header">
-        <img class="logo" src="/images/logo-bp.svg" alt="BP">
-        <div class="brand"><b>PT BORNEO PRIMA</b><span>ACCOUNTING &amp; MINING COST DASHBOARD • LOCAL HOSTING (INTRANET)</span></div>
-        <button class="import" type="button">📥 Import GL<br><small>Data</small></button>
-        <div class="source-pill"><i></i>D365 GL:<br><span>Online</span></div>
-        <div class="source-pill"><i></i>Google Sheets:<br><span>Manual Sync</span></div>
-        <div class="period-label">Period:<b id="periodText">2026-10</b></div>
+        <div class="brand"><img class="logo" src="{{ e($logoPath) }}" alt="{{ e($companyName) }}"><div class="brand-info"><b>{{ $companyName }}</b><span>Accounting &amp; Mining Cost Management System • Local Hosting (Intranet)</span></div></div>
+        <div class="header-status"><button class="import" type="button">📤 Import GL Data</button><div class="source-pill"><i></i><span>D365 GL: Online</span></div><div class="source-pill"><i></i><span>Google Sheets: Manual Sync</span></div><div class="period-label">Period:<b id="periodText">2026-10</b></div></div>
     </header>
     <div class="filterbar">
         <label>Month <input id="period" type="month" value="2026-10"></label>
@@ -30,6 +29,6 @@
         <a href="#" data-view="integration">🔄 Integration &amp; Data Sources</a>
     </nav>
     <main id="pageContent" class="content" aria-live="polite"></main>
-    <footer>FinOps-Dashboard — PT Borneo Prima · Data freeze 2026-10-30</footer>
+    <footer>{{ $companyName }} • Coal Production Accounting &amp; Cost Dashboard · Data freeze 2026-10-30</footer>
 </body>
 </html>
