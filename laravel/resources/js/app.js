@@ -467,7 +467,7 @@ async function configuration() {
         const inputValue = inputType === 'checkbox' ? (value ? 'checked' : '') : `value="${esc(value)}"`;
         return `<div class="config-editor"><input data-config-input="true" data-config-key="${esc(section)}" data-config-field="${esc(key)}" type="${inputType}" ${inputValue}></div>`;
     };
-    const sections = Object.entries(data || {}).map(([section, values]) => {
+    const sections = Object.entries(data || {}).filter(([section]) => section !== 'd365Config').map(([section, values]) => {
         const rows = Object.entries(values && typeof values === 'object' && !Array.isArray(values) ? values : { value: values }).map(([key, value]) => {
             const canEdit = editable[section]?.includes(key) && (typeof value !== 'object' || value === null);
             return `<tr><th>${esc(label(key))}</th><td>${canEdit ? editor(section, key, value) : display(key, value)}</td></tr>`;

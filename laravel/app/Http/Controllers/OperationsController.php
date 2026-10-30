@@ -12,7 +12,11 @@ class OperationsController extends Controller
 {
     public function accounts() { return response()->json(['success'=>true,'data'=>CostAccount::orderBy('account_code')->get()]); }
     public function accruals(Request $request) { $period=$request->query('period'); $q=Accrual::query(); if($period)$q->where('period',$period); return response()->json(['success'=>true,'data'=>$q->orderBy('period')->get()]); }
-    public function config() { return response()->json(['success'=>true,'data'=>SystemConfig::query()->pluck('value','key')]); }
+    public function config()
+    {
+        $configs = SystemConfig::query()->pluck('value', 'key')->except(['d365Config']);
+        return response()->json(['success'=>true,'data'=>$configs]);
+    }
     public function updateConfig(Request $request)
     {
         $payload = $request->validate([
