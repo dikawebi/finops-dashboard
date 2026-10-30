@@ -22,6 +22,25 @@ class D365SyncService
 
     public function client(): D365ODataClient { return new D365ODataClient(config('services.d365', [])); }
     public function entityByKey(string $key): ?array { return collect(self::ENTITIES)->firstWhere('key', $key); }
+    public function transactionEntityKeys(): array { return ['gl_entries', 'gl_journal_entries', 'ledger_journal_lines', 'ledger_entry_journals', 'inventory_trans']; }
+    public function clearTransactionStaging(): void
+    {
+        $entities = $this->transactionEntityKeys();
+        DB::transaction(function () use ($entities): void {
+            DB::table('d365_raw_records')->whereIn('entity_key', $entities)->delete();
+            DB::table('d365_typed_records')->whereIn('entity_key', $entities)->delete();
+            DB::table('gl_entries')->where('source_type', 'd365')->delete();
+            DB::table('jobs')->where('payload', 'like', '%RunD365Sync%')->delete();
+        });
+    }
+    public function ensureQueueWorker(): void
+    {
+        if (PHP_OS_FAMILY !== 'Windows' || ! app()->environment('local') || Cache::has('d365_queue_worker_started')) return;
+        $php = escapeshellarg(PHP_BINARY);
+        $artisan = escapeshellarg(base_path('artisan'));
+        pclose(popen('start "" /B '.$php.' '.$artisan.' queue:work database --queue=default --tries=1 --timeout=900', 'r'));
+        Cache::put('d365_queue_worker_started', true, now()->addHours(12));
+    }
 
     public function syncEntity(array $entity, ?int $limit = null, ?string $dateFrom = null, ?string $dateTo = null): array
     {
@@ -52,6 +71,7 @@ class D365SyncService
                     DB::table('d365_sync_logs')->where('id', $logId)->update(['fetched' => $fetched, 'inserted' => $inserted, 'updated' => $updated, 'pages' => (int) ceil($fetched / 1000), 'max_source_key' => $maxSourceKey, 'updated_at' => now()]);
                 }
             }
+            if ($this->stopRequested()) throw new D365Exception('Sync dihentikan oleh user.');
             $pages = (int) ceil($fetched / 1000);
             DB::table('d365_sync_logs')->where('id', $logId)->update(['status' => 'success', 'fetched' => $fetched, 'inserted' => $inserted, 'updated' => $updated, 'pages' => $pages, 'progress_percent' => 100, 'max_source_key' => $maxSourceKey, 'updated_at' => now()]);
             return ['status' => 'success', 'entity' => $entity, 'fetched' => $fetched, 'inserted' => $inserted, 'updated' => $updated];

@@ -25,6 +25,7 @@ class D365Controller extends Controller
         $entity = $data['entity'] ?? 'all';
         abort_unless($entity === 'all' || $this->sync->entityByKey($entity), 422, 'Entity tidak dikenal.');
         $this->sync->clearStop();
+        $this->sync->ensureQueueWorker();
         RunD365Sync::dispatch($entity, $data['date_from'] ?? null, $data['date_to'] ?? null);
         return ['queued' => true, 'entity' => $entity];
     }
@@ -32,7 +33,7 @@ class D365Controller extends Controller
     public function stopSync(): array
     {
         $this->sync->requestStop();
-        DB::table('jobs')->where('payload', 'like', '%RunD365Sync%')->delete();
+        $this->sync->clearTransactionStaging();
         DB::table('d365_sync_logs')->where('status', 'running')->update(['status' => 'stopped', 'message' => 'Sync dihentikan oleh user.', 'updated_at' => now()]);
         return ['stopped' => true];
     }
