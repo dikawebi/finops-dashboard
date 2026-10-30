@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\MonthlyMetric;
 use App\Models\DailyProduction;
 use App\Models\CostVarianceRemark;
+use App\Models\GlEntry;
 use App\Services\CostMatrixService;
 use App\Services\FinancialStatementService;
 use App\Services\InventoryValuationService;
@@ -112,7 +113,15 @@ class DashboardController extends Controller
         $variance = [];
         $remarks = CostVarianceRemark::period($period)->get()->keyBy('account_code');
         $priorRows = collect($prior['rows'])->keyBy('code');
+        $location = trim((string) $request->query('location', ''));
+        $locationMap = [];
+        foreach (GlEntry::where('period', $period)->get(['main_account', 'valuation_to']) as $entry) {
+            $name = trim((string) $entry->valuation_to);
+            if ($name !== '') $locationMap[(string) $entry->main_account][$name] = true;
+        }
         foreach ($current['rows'] as $row) {
+            $rowLocations = $locationMap[(string) $row['code']] ?? [];
+            if ($location !== '' && !isset($rowLocations[$location])) continue;
             $old = $priorRows->get($row['code']);
             $base = (float) ($old['allCost'] ?? 0);
             $delta = (float) $row['allCost'] - $base;
@@ -123,7 +132,8 @@ class DashboardController extends Controller
             $previousCategories = ['cogp' => $sumFields($old ?? [], $cogpFields), 'direct' => $sumFields($old ?? [], $directFields)];
             $variance[] = ['code' => $row['code'], 'name' => $row['name'], 'current' => (float) $row['allCost'], 'previous' => $base, 'change' => $delta, 'changePct' => $base == 0.0 ? null : $delta / abs($base) * 100, 'categories' => ['current' => $currentCategories, 'previous' => $previousCategories], 'remark' => $remarks->get($row['code'])?->remark, 'isParent' => $row['isParent']];
         }
-        return response()->json(['success' => true, 'data' => ['period' => $period, 'previousPeriod' => $previous, 'current' => $current, 'previous' => $prior, 'rows' => $variance]]);
+        $locationOptions = collect($locationMap)->flatMap(fn (array $values) => array_keys($values))->unique()->sort()->values();
+        return response()->json(['success' => true, 'data' => ['period' => $period, 'previousPeriod' => $previous, 'current' => $current, 'previous' => $prior, 'rows' => $variance, 'locations' => $locationOptions]]);
     }
 
     private function periodMode(Request $request): array

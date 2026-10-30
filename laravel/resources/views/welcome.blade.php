@@ -9,7 +9,7 @@
     <title>{{ $companyName }} — Coal Mining Accounting &amp; Cost Dashboard</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body>
+<body data-company-name="{{ e($companyName) }}">
     <header class="app-header">
         <div class="brand"><img class="logo" src="{{ e($logoPath) }}" alt="{{ e($companyName) }}"><div class="brand-info"><b>{{ $companyName }}</b><span>Accounting &amp; Mining Cost Management System • Local Hosting (Intranet)</span></div></div>
         <div class="header-status"><button class="import" type="button">📤 Import GL Data</button><div class="source-pill"><i></i><span>D365 GL: Online</span></div><div class="source-pill"><i></i><span>Google Sheets: Manual Sync</span></div><div class="period-label">Period:<b id="periodText">2026-10</b></div></div>

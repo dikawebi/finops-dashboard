@@ -4,7 +4,8 @@ const $ = selector => document.querySelector(selector);
 const money = value => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(value || 0));
 const qty = value => Number(value || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
 const esc = value => String(value ?? '—').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' })[char]);
-const state = { view: new URLSearchParams(location.search).get('view') || 'overview', costSearch: '', costParentOnly: false, costHideZero: false, varianceSearch: '', varianceHideZero: true, varianceCategory: 'all' };
+const companyName = document.body.dataset.companyName || 'FinOps Dashboard';
+const state = { view: new URLSearchParams(location.search).get('view') || 'overview', costSearch: '', costParentOnly: false, costHideZero: false, varianceSearch: '', varianceHideZero: true, varianceCategory: 'all', varianceLocation: '' };
 const api = async path => {
     const response = await fetch(path);
     if (!response.ok) throw new Error(`Request failed: ${response.status}`);
@@ -20,6 +21,15 @@ const downloadCsv = (filename, headers, rows) => {
     const content = [headers, ...rows].map(row => row.map(quote).join(',')).join('\r\n');
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8' }));
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(link.href);
+};
+const downloadExcel = (filename, headers, rows) => {
+    const cell = value => `<td>${esc(value)}</td>`;
+    const html = `<html><head><meta charset="utf-8"></head><body><table><thead><tr>${headers.map(cell).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${row.map(cell).join('')}</tr>`).join('')}</tbody></table></body></html>`;
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' }));
     link.download = filename;
     link.click();
     URL.revokeObjectURL(link.href);
@@ -79,27 +89,30 @@ async function cost(period, mode) {
     const visibleRows = data.rows.filter(row => (!search || `${row.code} ${row.name}`.toLowerCase().includes(search)) && (!state.costParentOnly || row.isParent) && (!state.costHideZero || Number(row.allCost || 0) !== 0));
     const rows = visibleRows.map(row => `<tr class="${row.isParent ? 'parent-row' : ''}"><td>${esc(row.code)}</td><td>${esc(row.name)}</td><td class="center">${row.isParent ? 'Σ' : '✓'}</td><td class="num">${money(row.allCost)}</td>${fields.map(([field]) => `<td class="num">${money(row[field])}</td>`).join('')}</tr>`);
     $('#pageContent').innerHTML = `
-        ${sectionHeader('Report Cost: COGP & Direct Expense', 'Accounts beginning 7–9 are allocated to GA. Accounts beginning 5–6 follow Costing to; Direct Expense is allocated by Valuation to. Amounts in USD.', `<label>Month <input type="month" value="${period}" disabled></label><input id="costSearch" class="input-search" placeholder="🔍 Search account code / name..." value="${esc(state.costSearch)}"><button id="costShowAll" class="btn btn-outline" type="button">Show All Accounts</button><button id="costParentOnly" class="btn btn-outline" type="button">${state.costParentOnly ? 'Show All Rows' : 'Parent Accounts Only'}</button><button id="costHideZero" class="btn btn-outline" type="button">${state.costHideZero ? 'Show Zero Balances' : 'Hide Zero Balances'}</button><button id="costExport" class="btn btn-outline" type="button">📥 Export CSV</button>`)}
+        ${sectionHeader('Report Cost: COGP & Direct Expense', 'Accounts beginning 7–9 are allocated to GA. Accounts beginning 5–6 follow Costing to; Direct Expense is allocated by Valuation to. Amounts in USD.', `<label>Month <input type="month" value="${period}" disabled></label><input id="costSearch" class="input-search" placeholder="🔍 Search account code / name..." value="${esc(state.costSearch)}"><button id="costShowAll" class="btn btn-outline" type="button">Show All Accounts</button><button id="costParentOnly" class="btn btn-outline" type="button">${state.costParentOnly ? 'Show All Rows' : 'Parent Accounts Only'}</button><button id="costHideZero" class="btn btn-outline" type="button">${state.costHideZero ? 'Show Zero Balances' : 'Hide Zero Balances'}</button><button id="costExport" class="btn btn-outline" type="button">📥 Export CSV</button><button id="costExcel" class="btn btn-outline" type="button">📊 Export Excel</button>`)}
         ${card(`${badge('gl_data.json')} ${badge('cost_matrix_definition.json')} ${badge('accruals.json')}<p class="table-note">${visibleRows.length} of ${data.rows.length} accounts • ${mode.toUpperCase()} • ${period}</p><div class="table-responsive"><table class="table-accounting cost-report-table"><thead><tr><th rowspan="2">AccountCode</th><th rowspan="2">AccountName</th><th rowspan="2">Check</th><th rowspan="2">ALL Cost</th><th colspan="6">COGP</th><th colspan="6">Direct Expense</th></tr><tr>${fields.map(([, label]) => `<th>${esc(label)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody><tfoot><tr><th colspan="3">Grand Total</th><th class="num">${money(data.grandTotal.allCost)}</th>${fields.map(([field]) => `<th class="num">${money(data.grandTotal[field])}</th>`).join('')}</tr></tfoot></table></div>`)}`;
     $('#costSearch').addEventListener('input', event => { state.costSearch = event.target.value; cost(period, mode); });
     $('#costShowAll').addEventListener('click', () => { state.costSearch = ''; state.costParentOnly = false; state.costHideZero = false; cost(period, mode); });
     $('#costParentOnly').addEventListener('click', () => { state.costParentOnly = !state.costParentOnly; cost(period, mode); });
     $('#costHideZero').addEventListener('click', () => { state.costHideZero = !state.costHideZero; cost(period, mode); });
     $('#costExport').addEventListener('click', () => downloadCsv(`report-cost-${period}-${mode}.csv`, ['Account Code', 'Account Name', 'All Cost', ...fields.map(([, label]) => label)], visibleRows.map(row => [row.code, row.name, row.allCost, ...fields.map(([field]) => row[field])] )));
+    $('#costExcel').addEventListener('click', () => downloadExcel(`report-cost-${period}-${mode}.xls`, ['Account Code', 'Account Name', 'All Cost', ...fields.map(([, label]) => label)], visibleRows.map(row => [row.code, row.name, row.allCost, ...fields.map(([field]) => row[field])] )));
 }
 
 async function variance(period, mode) {
-    const data = await api(`/api/cost-variance?period=${period}&mode=${mode}`);
+    const data = await api(`/api/cost-variance?period=${period}&mode=${mode}&location=${encodeURIComponent(state.varianceLocation)}`);
     const search = state.varianceSearch.trim().toLowerCase();
     const categoryValue = row => row.categories?.current?.[state.varianceCategory] ?? row.current;
     const visibleRows = data.rows.filter(row => !row.isParent && (!search || `${row.code} ${row.name}`.toLowerCase().includes(search)) && (!state.varianceHideZero || Number(row.change || 0) !== 0) && (state.varianceCategory === 'all' || Number(categoryValue(row) || 0) !== 0));
     const rows = visibleRows.map(row => `<tr><td>${esc(row.code)}</td><td>${esc(row.name)}</td><td class="num">${money(row.previous)}</td><td class="num">${money(row.current)}</td><td class="num ${row.change > 0 ? 'negative' : 'positive'}">${money(row.change)}</td><td class="num">${row.changePct == null ? '—' : `${Number(row.changePct).toFixed(2)}%`}</td><td><input class="remark-input" value="${esc(row.remark || '')}" placeholder="No remark" disabled></td></tr>`);
     $('#pageContent').innerHTML = `
-        ${sectionHeader('Cost Variance Analysis', 'Compare monthly cost by account and location; record explanations for each variance.')}
-        ${card(`<div class="variance-controls"><label>Current month <input type="month" value="${period}" disabled></label><label>Location / category <select id="varianceCategory"><option value="all" ${state.varianceCategory === 'all' ? 'selected' : ''}>All categories</option><option value="cogp" ${state.varianceCategory === 'cogp' ? 'selected' : ''}>COGP</option><option value="direct" ${state.varianceCategory === 'direct' ? 'selected' : ''}>Direct Expense</option></select></label><label>Search account <input id="varianceSearch" type="search" placeholder="Account code or name" value="${esc(state.varianceSearch)}"></label><label class="variance-checkbox"><input id="varianceHideZero" type="checkbox" ${state.varianceHideZero ? 'checked' : ''}> Hide zero balances</label></div><p class="table-note">${badge('gl_data.json')} ${badge('cost_variance_remarks.json')} ${visibleRows.length} rows • Comparison ${data.previousPeriod} → ${data.period}</p>`, table(['Account', 'Account Name', 'Previous month', 'Current month', 'Variance USD', 'Variance %', 'Remark'], rows, 'variance-table'))}`;
+        ${sectionHeader('Cost Variance Analysis', 'Compare monthly cost by account and location; record explanations for each variance.', `<button id="varianceExcel" class="btn btn-outline" type="button">📊 Export Excel</button>`)}
+        ${card(`<div class="variance-controls"><label>Current month <input type="month" value="${period}" disabled></label><label>Location <select id="varianceLocation"><option value="">All locations</option>${(data.locations || []).map(item => `<option value="${esc(item)}" ${state.varianceLocation === item ? 'selected' : ''}>${esc(item)}</option>`).join('')}</select></label><label>Category <select id="varianceCategory"><option value="all" ${state.varianceCategory === 'all' ? 'selected' : ''}>All categories</option><option value="cogp" ${state.varianceCategory === 'cogp' ? 'selected' : ''}>COGP</option><option value="direct" ${state.varianceCategory === 'direct' ? 'selected' : ''}>Direct Expense</option></select></label><label>Search account <input id="varianceSearch" type="search" placeholder="Account code or name" value="${esc(state.varianceSearch)}"></label><label class="variance-checkbox"><input id="varianceHideZero" type="checkbox" ${state.varianceHideZero ? 'checked' : ''}> Hide zero balances</label></div><p class="table-note">${badge('gl_data.json')} ${badge('cost_variance_remarks.json')} ${visibleRows.length} rows • Comparison ${data.previousPeriod} → ${data.period}</p>`, table(['Account', 'Account Name', 'Previous month', 'Current month', 'Variance USD', 'Variance %', 'Remark'], rows, 'variance-table'))}`;
     $('#varianceSearch').addEventListener('input', event => { state.varianceSearch = event.target.value; variance(period, mode); });
     $('#varianceHideZero').addEventListener('change', event => { state.varianceHideZero = event.target.checked; variance(period, mode); });
     $('#varianceCategory').addEventListener('change', event => { state.varianceCategory = event.target.value; variance(period, mode); });
+    $('#varianceLocation').addEventListener('change', event => { state.varianceLocation = event.target.value; variance(period, mode); });
+    $('#varianceExcel').addEventListener('click', () => downloadExcel(`cost-variance-${period}-${mode}.xls`, ['Account', 'Account Name', 'Previous month', 'Current month', 'Variance USD', 'Variance %', 'Remark'], visibleRows.map(row => [row.code, row.name, row.previous, row.current, row.change, row.changePct == null ? '' : row.changePct, row.remark || ''])));
 }
 
 async function metric(period, mode) {
@@ -183,8 +196,8 @@ async function financial(period, mode) {
         ${sectionHeader('Financial Statements', 'Profit & Loss, balance sheet, and financial baseline reconciliation.', `<label>Month <input type="month" value="${period}" disabled></label>`)}
         <p class="source-row">${badge('financial_baseline.json')} ${badge('gl_data.json')}</p>
         <div class="kpi-grid"><article class="kpi-card blue"><span class="kpi-title">TOTAL REVENUE</span><strong class="kpi-value">${money(income.revenue?.totalRevenue)}</strong><small class="kpi-sub">${esc(period)} ${esc(mode).toUpperCase()}</small></article><article class="kpi-card cost"><span class="kpi-title">EBITDA</span><strong class="kpi-value">${money(income.operatingProfitEBITDA)}</strong><small class="kpi-sub">Operating profit before tax</small></article><article class="kpi-card success"><span class="kpi-title">NET PROFIT AFTER TAX</span><strong class="kpi-value">${money(income.netProfitAfterTax)}</strong><small class="kpi-sub">Baseline financial statement</small></article></div>
-        ${card(`PT Borneo Prima — Profit & Loss Statement (USD)`, reportTable(report.profitLoss || data.sections?.profitLoss), 'financial-reference-card')}
-        ${card(`PT Borneo Prima — Balance Sheet (USD)`, reportTable(report.balanceSheet || data.sections?.balanceSheet), 'financial-reference-card')}
+        ${card(`${esc(companyName)} — Profit & Loss Statement (USD)`, reportTable(report.profitLoss || data.sections?.profitLoss), 'financial-reference-card')}
+        ${card(`${esc(companyName)} — Balance Sheet (USD)`, reportTable(report.balanceSheet || data.sections?.balanceSheet), 'financial-reference-card')}
         ${card('Balances by Account', table(['Account', 'Name', 'Mapping', 'Base USD', 'GL Movement USD', 'Closing USD'], accountRows), 'financial-accounts-card')}
         ${card('Financial Statement Diagnostics', `<div class="diagnostic-grid"><p><span>Data source</span><b>${esc(data.dataSource)}</b></p><p><span>Period</span><b>${esc(data.period)} ${esc(data.mode).toUpperCase()}</b></p><p><span>Balance difference</span><b>${money(diagnostics.balanceDifferenceUSD)}</b></p><p><span>Unmapped accounts</span><b>${qty((diagnostics.unmappedAccounts || []).length)}</b></p><p><span>Inventory book value</span><b>${money(reconciliation.bookInventoryUSD)}</b></p><p><span>Coal inventory value</span><b>${money(reconciliation.coalInventoryUSD)}</b></p><p><span>Cash flow</span><b>${data.cashFlowEnabled ? 'Enabled' : 'Not available'}</b></p></div>`)}`;
 }
@@ -194,9 +207,17 @@ async function integration() {
     const connector = (name, detail, status, button) => `<article class="connector-card"><div><span class="connector-icon">🔄</span><h3>${name}</h3><p>${detail}</p></div><div><span class="status ${status === 'online' ? 'online' : 'manual'}">${esc(status)}</span>${button}</div></article>`;
     $('#pageContent').innerHTML = `
         ${sectionHeader('Integration & Real-Time Data Sources', 'Connection status and source freshness for local dashboard data.')}
-        <div class="connector-grid">${connector('Microsoft Dynamics 365 General Ledger', data.d365.mode, data.d365.status, unavailable('View GL Data'))}${connector('Google Sheets Production Connector', data.googleSheets.mode, data.googleSheets.status, unavailable('Sync Production Now'))}</div>
+        <div class="connector-grid">${connector('Microsoft Dynamics 365 General Ledger', data.d365.mode, data.d365.status, '<button id="viewGlData" class="btn btn-outline" type="button">View GL Data</button>')}${connector('Google Sheets Production Connector', data.googleSheets.mode, data.googleSheets.status, unavailable('Sync Production Now'))}</div>
         ${card('Accrual Input — Add to Report Cost', `<p class="integration-note">Accrual adds amount to Report Cost and Cost/MT for the selected period. Entry form remains available only after authentication is enabled.</p>${unavailable('Add Accrual')}`)}
         ${card('Data Source Summary', table(['Source', 'Status', 'Detail'], [`<tr><td>D365 GL</td><td><span class="status online">${esc(data.d365.status)}</span></td><td>${esc(data.d365.mode)} • ${qty(data.database.glEntries)} GL records</td></tr>`, `<tr><td>Google Sheets</td><td><span class="status manual">${esc(data.googleSheets.status)}</span></td><td>${esc(data.googleSheets.mode)} • ${qty(data.database.monthlyMetrics)} metrics</td></tr>`, `<tr><td>Frozen Baseline</td><td><span class="status verified">verified</span></td><td>Data freeze ${esc(data.dataFreeze)}</td></tr>`]))}`;
+    $('#viewGlData').addEventListener('click', () => viewGlData($('#period').value));
+}
+
+async function viewGlData(period) {
+    const data = await api(`/api/gl-data?period=${period}`);
+    const rows = (data.rows || []).map(row => `<tr><td>${esc(row.entry_date)}</td><td>${esc(row.journal_number)}</td><td>${esc(row.main_account)}</td><td>${esc(row.account_name)}</td><td>${esc(row.source_location || row.valuation_to)}</td><td>${esc(row.costing_to)}</td><td class="num">${money(row.amount_reporting)}</td></tr>`);
+    $('#pageContent').innerHTML = `${sectionHeader('D365 GL Data — Local Snapshot', `Read-only preview of ${data.limit} latest rows for ${period}.`, '<button id="backIntegration" class="btn btn-outline" type="button">← Back</button>')}${card(`${badge('gl_entries')} ${data.rows.length} rows`, table(['Date', 'Journal', 'Account', 'Account Name', 'Location', 'Costing To', 'Amount USD'], rows, 'gl-preview-table'))}`;
+    $('#backIntegration').addEventListener('click', integration);
 }
 
 async function render() {

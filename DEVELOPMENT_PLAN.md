@@ -86,15 +86,16 @@ Dokumen ini menjadi checklist kerja setelah data freeze 2026-10-30. Angka dashbo
 
 ## Next development plan
 
-### Task berikutnya: selesaikan visual parity dan data-source QA
+### Task berikutnya: visual parity, data-source QA, dan rekonsiliasi bisnis
 
 Urutan kerja:
 
 1. Bandingkan tujuh tab dengan referensi pada viewport desktop dan mobile.
-2. Selesaikan filter location, persistence remark, dan export Excel.
-3. Verifikasi inventory route/history, production chart, serta empty-state behavior.
-4. Jalankan `php artisan dashboard:regression --suite=all` setelah setiap perubahan engine.
-5. Catat mismatch yang bersifat data/asumsi terpisah dari bug engine.
+2. Verifikasi inventory route/history, production chart, serta empty-state behavior.
+3. Rekonsiliasi selisih Balance Sheet, mapping COA, volume fallback, inventory provisional, accrual, dan reversal dengan Accounting.
+4. Aktifkan persistence remark setelah authorization/CSRF tersedia (ditunda sesuai scope proyek).
+5. Jalankan `php artisan dashboard:regression --suite=all` setelah setiap perubahan engine.
+6. Catat mismatch yang bersifat data/asumsi terpisah dari bug engine.
 
 ### Status setelah P3.4 lulus
 
@@ -102,6 +103,7 @@ Urutan kerja:
 2. Cost/MT, DB Cost Summary, dan Production Summary sudah memiliki endpoint baseline-backed.
 3. Regression command sudah mencakup empat domain dashboard.
 4. Pekerjaan tersisa berfokus pada visual parity, integrasi data, dan release QA.
+5. Filter location pada Cost Variance, export Excel-compatible, dan preview read-only GL sudah tersedia.
 
 ## Definition of done per fase
 
