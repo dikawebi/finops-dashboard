@@ -41,6 +41,7 @@ Route::prefix('api')->group(function () {
     Route::post('/d365/staging/import', [D365Controller::class, 'import']);
     Route::get('/d365/mappings', [D365Controller::class, 'mappings']);
     Route::post('/d365/mappings', [D365Controller::class, 'storeMapping']);
+    Route::post('/d365/mappings/import', [D365Controller::class, 'importMappings']);
     Route::put('/d365/mappings/{id}', [D365Controller::class, 'updateMapping']);
     Route::delete('/d365/mappings/{id}', [D365Controller::class, 'deleteMapping']);
 });

@@ -7,7 +7,10 @@ use App\Models\GlImportBatch;
 use App\Services\D365\D365AllocationService;
 use App\Services\D365\D365SyncService;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Reader\Csv;
 
 class D365Controller extends Controller
 {
@@ -84,6 +87,48 @@ class D365Controller extends Controller
 
     public function updateMapping(Request $request, int $id): array { $data = $request->validate($this->mappingRules()); DB::table('d365_allocation_mappings')->where('id', $id)->update($data + ['is_active' => $request->boolean('is_active'), 'updated_at' => now()]); return ['updated' => true]; }
     public function deleteMapping(int $id): array { DB::table('d365_allocation_mappings')->where('id', $id)->delete(); return ['deleted' => true]; }
+
+    public function importMappings(Request $request): array|JsonResponse
+    {
+        $request->validate(['file' => ['required', 'file', 'max:10240', 'mimes:xls,xlsx,csv,tsv,txt']]);
+        $file = $request->file('file');
+        $extension = strtolower($file->getClientOriginalExtension());
+        try {
+            if (in_array($extension, ['csv', 'tsv', 'txt'], true)) {
+                $reader = new Csv();
+                $reader->setReadDataOnly(true)->setDelimiter($extension === 'csv' ? ',' : "\t");
+            } else {
+                $reader = IOFactory::createReaderForFile($file->getRealPath());
+                $reader->setReadDataOnly(true);
+            }
+            $sheet = $reader->load($file->getRealPath())->getActiveSheet();
+            $rows = $sheet->toArray(null, true, true, false);
+        } catch (\Throwable $exception) {
+            return response()->json(['message' => 'File mapping tidak dapat dibaca: '.$exception->getMessage()], 422);
+        }
+
+        $imported = 0; $skipped = 0; $errors = [];
+        foreach (array_slice($rows, 1) as $index => $row) {
+            $values = array_map(static fn ($value): string => trim((string) ($value ?? '')), array_values($row));
+            if (count($values) < 8 || count(array_filter($values, static fn (string $value): bool => $value !== '')) === 0) continue;
+            [$groupCode, $groupName, $activityCode, $activityName, $locationCode, $locationName, $valuationTo, $costingTo] = array_pad(array_slice($values, 0, 8), 8, '');
+            if ($groupCode === '' || $activityCode === '' || $locationCode === '' || $valuationTo === '' || $costingTo === '') {
+                $skipped++;
+                if (count($errors) < 10) $errors[] = 'Baris '.($index + 2).' harus memiliki 8 kolom mapping wajib.';
+                continue;
+            }
+            DB::table('d365_allocation_mappings')->updateOrInsert([
+                'group_activity_code' => $groupCode, 'activity_code' => $activityCode, 'location_code' => $locationCode,
+                'valuation_to' => $valuationTo, 'costing_to' => $costingTo,
+            ], [
+                'group_activity_name' => $groupName, 'activity_name' => $activityName, 'location_name' => $locationName,
+                'label' => $groupName.' / '.$activityName.' / '.$locationName, 'priority' => 100, 'is_active' => true,
+                'updated_at' => now(), 'created_at' => now(),
+            ]);
+            $imported++;
+        }
+        return ['imported' => $imported, 'skipped' => $skipped, 'errors' => $errors, 'total_rows' => max(0, count($rows) - 1)];
+    }
 
     private function mappingRules(): array
     {
