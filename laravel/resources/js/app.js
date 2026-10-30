@@ -465,7 +465,7 @@ async function configuration() {
     const editor = (section, key, value) => {
         const inputType = typeof value === 'boolean' ? 'checkbox' : typeof value === 'number' ? 'number' : 'text';
         const inputValue = inputType === 'checkbox' ? (value ? 'checked' : '') : `value="${esc(value)}"`;
-        return `<div class="config-editor"><input data-config-input="true" data-config-key="${esc(section)}" data-config-field="${esc(key)}" type="${inputType}" ${inputType === 'checkbox' ? inputValue : inputValue}><button type="button" class="btn btn-outline config-save" data-config-save="true">Save</button></div>`;
+        return `<div class="config-editor"><input data-config-input="true" data-config-key="${esc(section)}" data-config-field="${esc(key)}" type="${inputType}" ${inputValue}></div>`;
     };
     const sections = Object.entries(data || {}).map(([section, values]) => {
         const rows = Object.entries(values && typeof values === 'object' && !Array.isArray(values) ? values : { value: values }).map(([key, value]) => {
@@ -474,23 +474,27 @@ async function configuration() {
         }).join('');
         return `<section class="table-card config-card"><div class="card-title">${esc(label(section))}</div><div class="table-responsive"><table class="table-accounting config-table"><tbody>${rows || '<tr><td colspan="2">No configuration available.</td></tr>'}</tbody></table></div></section>`;
     }).join('');
-    $('#pageContent').innerHTML = `${sectionHeader('Configuration', 'System, connector, inventory, and period settings used by the dashboard.', `<span class="config-source">Source: /api/config</span>`)}<p class="financial-notice">Editable fields are marked with Save. Sensitive credentials and nested setup details remain read-only.</p><p id="config-status" class="config-status" aria-live="polite"></p><div class="config-grid">${sections || '<div class="table-card error-card">No configuration available.</div>'}</div>`;
-    document.querySelectorAll('[data-config-save]').forEach(button => button.addEventListener('click', async () => {
-        const editor = button.closest('.config-editor');
-        const input = editor?.querySelector('[data-config-input]');
-        if (!input) return;
-        const value = input.type === 'checkbox' ? input.checked : input.value;
+    $('#pageContent').innerHTML = `${sectionHeader('Configuration', 'System, connector, inventory, and period settings used by the dashboard.', `<span class="config-source">Source: /api/config</span>`)}<p class="financial-notice">Editable fields are marked with an input. Sensitive credentials and nested setup details remain read-only.</p><div class="config-actions"><button id="configSaveAll" class="btn btn-primary" type="button">Save All Changes</button><p id="config-status" class="config-status" aria-live="polite"></p></div><div class="config-grid">${sections || '<div class="table-card error-card">No configuration available.</div>'}</div>`;
+    $('#configSaveAll').addEventListener('click', async event => {
+        const button = event.currentTarget;
+        const inputs = [...document.querySelectorAll('[data-config-input]')];
         button.disabled = true;
+        $('#config-status').textContent = 'Saving configuration…';
         try {
-            const response = await fetch('/api/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: input.dataset.configKey, field: input.dataset.configField, value }) });
-            if (!response.ok) throw new Error((await response.json()).message || 'Save failed');
-            button.textContent = 'Saved';
-            $('#config-status').textContent = `${label(input.dataset.configField)} updated.`;
-            setTimeout(() => { button.textContent = 'Save'; }, 1600);
+            for (const input of inputs) {
+                const response = await fetch('/api/config', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '', 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ key: input.dataset.configKey, field: input.dataset.configField, value: input.type === 'checkbox' ? input.checked : input.value }) });
+                const text = await response.text();
+                let result = null;
+                try { result = text ? JSON.parse(text) : null; } catch { result = null; }
+                if (!response.ok) throw new Error(result?.message || `Request failed (${response.status})`);
+            }
+            $('#config-status').textContent = 'All configuration changes saved.';
+            setTimeout(() => location.reload(), 700);
         } catch (error) {
-            $('#config-status').textContent = `Could not save ${label(input.dataset.configField)}: ${error.message}`;
-        } finally { button.disabled = false; }
-    }));
+            $('#config-status').textContent = `Could not save configuration: ${error.message}`;
+            button.disabled = false;
+        }
+    });
 }
 
 async function viewGlData(period) {

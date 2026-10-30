@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     @php($system = \App\Models\SystemConfig::get('system', []))
     @php($companyName = $system['companyName'] ?? 'FinOps Dashboard')
     @php($logoPath = $system['logoPath'] ?? '/images/logo-bp.svg')
