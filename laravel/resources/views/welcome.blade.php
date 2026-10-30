@@ -8,6 +8,13 @@
     @php($logoPath = $system['logoPath'] ?? '/images/logo-bp.svg')
     <title>{{ $companyName }} — Coal Mining Accounting &amp; Cost Dashboard</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        .content { max-width: 1550px; margin: 0 auto; }
+        .overview-kpi-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+        .data-warning { margin: 0; padding: 12px 16px; background: #fff8e8; border-bottom: 1px solid #f1d28b; color: #8a5a16; font-size: 12px; }
+        @media (max-width: 1050px) { .overview-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+        @media (max-width: 640px) { .overview-kpi-grid { grid-template-columns: 1fr; } }
+    </style>
 </head>
 <body data-company-name="{{ e($companyName) }}">
     <header class="app-header">

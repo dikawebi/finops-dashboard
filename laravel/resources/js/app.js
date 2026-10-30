@@ -1,7 +1,7 @@
 import './bootstrap';
 
 const $ = selector => document.querySelector(selector);
-const money = value => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(value || 0));
+const money = value => { const amount = Number(value || 0); const formatted = Math.abs(amount).toLocaleString('en-US', { maximumFractionDigits: 0 }); return `USD ${amount < 0 ? `(${formatted})` : formatted}`; };
 const qty = value => Number(value || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
 const esc = value => String(value ?? '—').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' })[char]);
 const companyName = document.body.dataset.companyName || 'FinOps Dashboard';
@@ -51,17 +51,16 @@ async function overview(period, mode) {
     ]);
     const metrics = Array.isArray(production.dbMetrics) ? production.dbMetrics : Object.values(production.dbMetrics || {});
     const daily = production.dailyTrends || [];
-    const productionMT = Number(metrics.find(item => item.metric_key === 'coalGetting')?.value || 0);
-    const profitLoss = financial.sections?.profitLoss || [];
-    const line = id => profitLoss.find(item => item.id === id)?.value || 0;
+    const productionMT = Number(production.dbMetrics?.coalGetting?.value || metrics.find(item => item.metric_key === 'coalGetting')?.value || 0);
+    const line = id => Number(financial.incomeStatement?.[id] ?? financial.sections?.profitLoss?.find(item => item.id === id)?.value ?? 0);
     const stages = inventory.stages || [];
     const inventoryValue = stages.reduce((total, stage) => total + Number(stage.endingValueUSD || 0), 0);
     const kpis = [
         ['TOTAL ALL COST (GL)', money(cost.grandTotal.allCost), 'Costing to allocation, including Direct Expense (USD)', 'blue'],
         ['TOTAL PRODUCTION VOLUME', `${qty(productionMT)} MT`, 'Coal mined / weighbridge volume', 'val'],
         ['AVERAGE COST / MT', productionMT ? `${money(Number(cost.grandTotal.allCost) / productionMT)} / MT` : '—', 'Total operating cost / net MT', 'cost'],
-        ['TOTAL INVENTORY VALUE', money(inventoryValue), 'Includes all stock locations', 'success'],
-        ['GROSS PROFIT', money(line('grossProfit')), 'Coal sales less cost of sales', 'blue'],
+        ['TOTAL INVENTORY VALUE', money(inventoryValue), 'Provisional value — see quantity and cost sources', 'success'],
+        ['GROSS PROFIT', Number(financial.incomeStatement?.grossProfit || 0) === 0 ? 'USD -' : money(line('grossProfit')), 'Coal sales less cost of sales', 'blue'],
         ['OPERATING PROFIT / BEFORE INTEREST', money(line('profitBeforeInterest')), 'Operating profit for the period', 'blue'],
     ];
     const topDrivers = cost.rows.filter(row => !row.isParent).sort((a, b) => Number(b.allCost) - Number(a.allCost)).slice(0, 5).map(row => `<div class="driver-row"><span>${esc(row.name)}</span><b>${money(row.allCost)}</b></div>`).join('');
@@ -77,8 +76,8 @@ async function overview(period, mode) {
     const dailyChart = daily.length ? `<svg width="100%" height="${chartHeight}" viewBox="0 0 ${chartWidth} ${chartHeight}" role="img" aria-label="Daily production volume"><line x1="${padding}" y1="${chartHeight - padding}" x2="${chartWidth - padding}" y2="${chartHeight - padding}" stroke="#cbd5e1"/><line x1="${padding}" y1="${padding}" x2="${chartWidth - padding}" y2="${padding}" stroke="#e2e8f0" stroke-dasharray="4"/><text x="${padding - 5}" y="${padding + 10}" text-anchor="end" font-size="10" fill="#94a3b8">${qty(maxMT)} MT</text><text x="${padding - 5}" y="${chartHeight - padding}" text-anchor="end" font-size="10" fill="#94a3b8">0</text>${bars}</svg>` : '<p class="chart-empty">No daily production records for this period.</p>';
     $('#pageContent').innerHTML = `
         ${sectionHeader('Operations & Financial Overview', 'Microsoft Dynamics 365 General Ledger and Google Sheets weighbridge data')}
-        <div class="kpi-grid">${kpis.map(([label, value, sub, type]) => `<article class="kpi-card ${type}"><span class="kpi-title">${label}</span><strong class="kpi-value">${value}</strong><small class="kpi-sub">${sub}</small></article>`).join('')}</div>
-        ${card(`Production by Activity — Google Sheets DB ${badge('production_daily_sheets.json')}`, table(['Activity', 'Volume', 'Unit', 'Availability'], metrics.map(item => `<tr><td>${esc(item.label || item.metric_key)}</td><td class="num">${item.value == null ? '—' : qty(item.value)}</td><td>${esc(item.unit)}</td><td>${item.value == null ? `No data: ${(item.missingPeriods || []).join(', ')}` : 'Available'}</td></tr>`)))}
+        <div class="kpi-grid overview-kpi-grid">${kpis.map(([label, value, sub, type]) => `<article class="kpi-card ${type}"><span class="kpi-title">${label}</span><strong class="kpi-value">${value}</strong><small class="kpi-sub">${sub}</small></article>`).join('')}</div>
+        ${card(`Production by Activity — Google Sheets DB ${badge('production_daily_sheets.json')}`, `<p class="data-warning">Monthly figures use the DB sheet. Blank source cells are unavailable; YTD sums available months only. The daily chart below uses the Produksi sheet.</p>${table(['Activity', 'Volume', 'Unit', 'Availability'], metrics.map(item => `<tr><td>${esc(item.label || item.metric_key)}</td><td class="num">${item.value == null ? '—' : qty(item.value)}</td><td>${esc(item.unit)}</td><td>${item.value == null ? `No data: ${(item.missingPeriods || []).join(', ')}` : 'Available'}</td></tr>`))}`)}
         <div class="grid-2 overview-lower"><section class="card"><div class="card-title"><span>Cost Allocation: COGP &amp; Direct Expense</span>${badge('gl_data.json')}<small>USD</small></div><div class="allocation-grid"><article class="allocation-val"><b>DIRECT EXPENSE, GA &amp; SELLING</b><strong>${money(cost.grandTotal.totalExpense)}</strong><span>Direct Expense by Valuation to; Not Valuated is included in GA. Selling Expense has its own column.</span></article><article class="allocation-cost"><b>COGP</b><strong>${money(cost.grandTotal.totalCOGP)}</strong><span>From Costing to: Mining, 3 Coal Hauling routes, Washing Plant, BP PORT</span></article></div><b class="drivers-title">Top Cost Drivers</b><div>${topDrivers}</div></section><section class="card"><div class="card-title"><span>Daily Production Volume (MT)</span>${badge('production_daily_sheets.json')}<small>Google Sheets Data</small></div><p class="chart-caption">Daily recorded coal volume (MT):</p><div id="chart-daily-production">${dailyChart}</div><div class="chart-footer"><span>Source: Google Sheets or uploaded data</span><span>Update: Manual sync</span></div></section></div>`;
 }
 
