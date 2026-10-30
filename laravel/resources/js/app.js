@@ -37,9 +37,9 @@ async function overview(period, mode) {
         api(`/api/cost-matrix?period=${period}&mode=${mode}`),
         api(`/api/financial-statements?period=${period}&mode=${mode}`),
         api(`/api/inventory-valuation?period=${period}&mode=${mode}`),
-        api(`/api/production-summary?period=${period}`),
+        api(`/api/production-summary?period=${period}&mode=${mode}`),
     ]);
-    const metrics = production.dbMetrics || [];
+    const metrics = Array.isArray(production.dbMetrics) ? production.dbMetrics : Object.values(production.dbMetrics || {});
     const daily = production.dailyTrends || [];
     const productionMT = Number(metrics.find(item => item.metric_key === 'coalGetting')?.value || 0);
     const profitLoss = financial.sections?.profitLoss || [];

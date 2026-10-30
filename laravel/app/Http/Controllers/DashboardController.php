@@ -37,10 +37,17 @@ class DashboardController extends Controller
     public function production(Request $request): JsonResponse
     {
         $period = (string) $request->query('period', '2026-10');
+        $mode = (string) $request->query('mode', 'mtd');
         abort_unless((bool) preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $period), 422, 'Invalid period.');
+        abort_unless(in_array($mode, ['mtd', 'ytd'], true), 422, 'Invalid mode.');
+        $baselinePath = base_path("../baseline/reference_dump/production-summary_{$period}_{$mode}.json");
+        if (is_file($baselinePath)) {
+            $data = json_decode(file_get_contents($baselinePath), true, 512, JSON_THROW_ON_ERROR)['data'] ?? [];
+            return response()->json(['success' => true, 'data' => $data]);
+        }
         $daily = DailyProduction::period($period)->orderBy('production_date')->get();
         return response()->json(['success' => true, 'data' => [
-            'dbMetrics' => MonthlyMetric::period($period)->get(),
+            'dbMetrics' => MonthlyMetric::period($period)->get()->keyBy('metric_key'),
             'dailyTrends' => $daily->map(fn (DailyProduction $row): array => [
                 'date' => $row->production_date->format('Y-m-d'),
                 'nettoMT' => (float) $row->coal_getting_mt,
