@@ -54,6 +54,8 @@
         <button type="button" data-view="inventory">📦 Inventory Valuation (Moving Avg)</button>
         <button type="button" data-view="financial">📑 Financial Statements (FS)</button>
         <button type="button" data-view="integration">🔄 Integration &amp; Data Sources</button>
+        <button type="button" data-view="mapping">🧭 Allocation Mapping</button>
+        <button type="button" data-view="config">⚙️ Configuration</button>
     </nav>
     <main id="pageContent" class="content" aria-live="polite"></main>
     <footer>{{ $companyName }} • Coal Production Accounting &amp; Cost Dashboard · Data freeze 2026-10-30</footer>
