@@ -105,6 +105,7 @@ class DashboardController extends Controller
                 'activity' => $row['activity'] ?? null,
                 'component' => $row['component'] ?? null,
                 'amount' => $amount,
+                'months' => $months,
             ];
         }, $payload['rows'] ?? []);
 
@@ -116,6 +117,15 @@ class DashboardController extends Controller
             'remarks' => $payload['remarks'] ?? [],
             'glOverheadPeriods' => $payload['glOverheadPeriods'] ?? [],
         ]]);
+    }
+
+    public function saveDbCostRemark(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'id' => ['required', 'string', 'max:500'],
+            'remark' => ['required', 'string', 'max:2000'],
+        ]);
+        return response()->json(['success' => true, 'data' => $validated]);
     }
 
     public function variance(Request $request, CostMatrixService $service): JsonResponse

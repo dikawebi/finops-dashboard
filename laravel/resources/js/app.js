@@ -143,7 +143,86 @@ async function metric(period, mode) {
         <div class="cost-stage-grid">${stageCards}</div>
         ${card(`Coal Mining Cost by Stage ${badge('gl_data.json')} ${badge('production_daily_sheets.json')}`, table(['Mining Activity', 'From Valuation to (USD)', 'From Costing to (USD)', 'Total Cost (USD)', 'Operating Volume (MT)', 'Stage Cost / MT', 'Cost / MT Total Production'], rows))}
         ${monthlyPerformance(period, excel)}
-        ${card(`DB Cost Summary by Activity ${badge(dbSummary.dataSource)}`, table(['Entity', 'Activity', 'Component', 'Amount USD'], (dbSummary.rows || []).filter(row => Number(row.amount || 0) !== 0).map(row => `<tr><td>${esc(row.entity)}</td><td>${esc(row.activity)}</td><td class="center">${esc(row.component)}</td><td class="num">${money(row.amount)}</td></tr>`)), 'cost-analysis-card')}`;
+        ${dbSummaryMarkup(dbSummary, period)}`;
+    bindDbSummary(dbSummary);
+}
+
+const dbSummaryState = { start: '2026-01', end: '2026-10', view: 'all', detail: 'summary', entity: '' };
+
+function dbSummaryMarkup(summary, period) {
+    dbSummaryState.end = period;
+    const entities = [...new Set((summary.rows || []).map(row => row.entity).filter(Boolean))].sort();
+    return `<section class="table-card cost-analysis-card db-summary-card"><span class="cost-eyebrow">COST DETAIL</span><h3>DB Cost Summary by Activity</h3><p>Monthly USD amounts from the DB Summary. Select Entity Breakdown for details. Remarks are saved for each displayed group.</p><div class="section-actions db-summary-controls"><label>Start month <input type="month" id="db-cost-start" value="${esc(dbSummaryState.start)}"></label><label>End month <input type="month" id="db-cost-end" value="${esc(dbSummaryState.end)}"></label><label>View <select id="db-cost-view"><option value="all">All months</option><option value="compare">Start vs end</option></select></label><label>Detail <select id="db-cost-detail"><option value="summary">Activity Summary</option><option value="entity">Entity Breakdown</option></select></label><label id="db-cost-entity-label" hidden>Entity <select id="db-cost-entity"><option value="">All entities</option>${entities.map(entity => `<option value="${esc(entity)}">${esc(entity)}</option>`).join('')}</select></label><button id="db-cost-refresh" class="btn btn-outline" type="button">Refresh</button></div><p id="db-cost-status"></p><div class="table-responsive"><table class="table-accounting"><thead id="db-cost-head"></thead><tbody id="db-cost-body"></tbody></table></div></section>`;
+}
+
+function bindDbSummary(summary) {
+    const controls = ['db-cost-start', 'db-cost-end', 'db-cost-view', 'db-cost-detail', 'db-cost-entity'];
+    controls.forEach(id => document.getElementById(id)?.addEventListener('change', event => {
+        const key = id.replace('db-cost-', '');
+        if (key === 'start' || key === 'end') dbSummaryState[key] = event.target.value;
+        if (key === 'view' || key === 'detail' || key === 'entity') dbSummaryState[key] = event.target.value;
+        renderDbSummary(summary);
+    }));
+    document.getElementById('db-cost-refresh')?.addEventListener('click', () => renderDbSummary(summary));
+    renderDbSummary(summary);
+}
+
+function renderDbSummary(summary) {
+    const start = document.getElementById('db-cost-start')?.value || dbSummaryState.start;
+    const end = document.getElementById('db-cost-end')?.value || dbSummaryState.end;
+    const head = document.getElementById('db-cost-head');
+    const body = document.getElementById('db-cost-body');
+    const status = document.getElementById('db-cost-status');
+    if (!head || !body || !status) return;
+    if (!start || !end || start > end) { status.textContent = 'Choose a valid start and end month.'; head.innerHTML = ''; body.innerHTML = ''; return; }
+    const months = [];
+    let [year, month] = start.split('-').map(Number);
+    while (`${year}-${String(month).padStart(2, '0')}` <= end && months.length < 120) { months.push(`${year}-${String(month).padStart(2, '0')}`); if (++month === 13) { month = 1; year += 1; } }
+    const compare = dbSummaryState.view === 'compare';
+    const shown = compare && months.length > 1 ? [months[0], months[months.length - 1]] : months;
+    const breakdown = dbSummaryState.detail === 'entity';
+    const entity = breakdown ? (dbSummaryState.entity || '') : '';
+    const groups = new Map();
+    (summary.rows || []).forEach(row => {
+        if (entity && row.entity !== entity) return;
+        const id = breakdown ? JSON.stringify(['entity', row.entity, row.activity]) : JSON.stringify(['activity', row.activity]);
+        if (!groups.has(id)) groups.set(id, { id, entity: row.entity, activity: row.activity, items: [], months: {} });
+        groups.get(id).items.push(row);
+    });
+    const rows = [...groups.values()];
+    rows.forEach(row => months.forEach(monthKey => {
+        const values = row.items.map(item => item.months?.[monthKey]).filter(value => Number.isFinite(Number(value))).map(Number);
+        if (values.length) row.months[monthKey] = values.reduce((total, value) => total + value, 0);
+    }));
+    const monthLabel = value => { const [y, m] = value.split('-').map(Number); return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-US', { month: 'short', year: '2-digit', timeZone: 'UTC' }).replace(',', ''); };
+    head.innerHTML = `<tr>${breakdown ? '<th>Entity</th>' : ''}<th>Activity</th>${shown.map((monthKey, index) => `<th>${monthLabel(monthKey)} (USD)</th>${index ? '<th>Change %</th>' : ''}`).join('')}<th>Remark</th><th></th></tr>`;
+    body.innerHTML = rows.map((row, index) => {
+        const cells = shown.map((monthKey, i) => {
+            const value = row.months[monthKey];
+            const previous = i ? row.months[shown[i - 1]] : null;
+            const percent = Number.isFinite(value) && Number.isFinite(previous) && previous !== 0 ? (value - previous) / Math.abs(previous) * 100 : null;
+            const color = percent > 0 ? '#dc2626' : percent < 0 ? '#15803d' : '';
+            return `<td class="num">${Number.isFinite(value) ? Number(value).toLocaleString('en-US', { maximumFractionDigits: 0 }) : '—'}</td>${i ? `<td class="num"${color ? ` style="color:${color};font-weight:700"` : ''}>${percent === null ? '—' : `${detailMoney(percent)}%`}</td>` : ''}`;
+        }).join('');
+        const remark = summary.remarks?.[row.id] || '';
+        return `<tr>${breakdown ? `<td>${esc(row.entity)}</td>` : ''}<td>${esc(row.activity)}</td>${cells}<td><input type="text" maxlength="2000" data-db-remark="${index}" value="${esc(remark)}" aria-label="Remark"></td><td><button type="button" class="btn btn-outline" data-db-save="${index}">Save</button></td></tr>`;
+    }).join('');
+    status.textContent = rows.length ? `From October 2026, uploaded GL months use Direct Expense Mining and GA for BP overhead; Direct Expense Washing Plant and BP PORT are added to Washplant and Loading BLC. GL months: ${(summary.glOverheadPeriods || []).join(', ') || 'none'}. Change % compares displayed months; a zero or unavailable base is —.` : 'No DB Summary data. Use Sync Production Now in Integration & Data Sources.';
+    document.getElementById('db-cost-entity-label').hidden = !breakdown;
+    body.onclick = async event => {
+        const button = event.target.closest('[data-db-save]');
+        if (!button) return;
+        const index = Number(button.dataset.dbSave), row = rows[index], input = body.querySelector(`[data-db-remark="${index}"]`);
+        if (!row || !input) return;
+        button.disabled = true;
+        try {
+            const response = await fetch('/api/db-cost-summary/remark', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: row.id, remark: input.value }) });
+            if (!response.ok) throw new Error('Save failed');
+            summary.remarks = summary.remarks || {};
+            summary.remarks[row.id] = input.value;
+            button.textContent = 'Saved';
+        } catch (error) { button.textContent = 'Retry'; } finally { button.disabled = false; }
+    };
 }
 
 function monthlyPerformance(period, excel) {

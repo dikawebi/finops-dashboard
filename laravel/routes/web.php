@@ -28,6 +28,7 @@ Route::prefix('api')->group(function () {
     Route::get('/cost-per-mt', [DashboardController::class, 'costPerMt']);
     Route::get('/excel-cost-example', [DashboardController::class, 'excelCostExample']);
     Route::get('/db-cost-summary', [DashboardController::class, 'dbCostSummary']);
+    Route::post('/db-cost-summary/remark', [DashboardController::class, 'saveDbCostRemark'])->middleware(['auth', EnsurePeriodOpen::class]);
     Route::get('/cost-variance', [DashboardController::class, 'variance']);
     Route::get('/integration-status', [DashboardController::class, 'integration']);
 });
