@@ -7,7 +7,12 @@ const detailMoney = value => { const amount = Number(value); if (!Number.isFinit
 const qty = value => Number(value || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
 const esc = value => String(value ?? '—').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' })[char]);
 const companyName = document.body.dataset.companyName || 'FinOps Dashboard';
-const state = { view: new URLSearchParams(location.search).get('view') || 'overview', costSearch: '', costParentOnly: false, costHideZero: false, costCollapsed: {}, varianceSearch: '', varianceHideZero: true, varianceCategory: 'all', varianceLocation: 'allCost' };
+const urlState = new URLSearchParams(location.search);
+const state = { view: urlState.get('view') || 'overview', costSearch: '', costParentOnly: false, costHideZero: false, costCollapsed: {}, varianceSearch: '', varianceHideZero: true, varianceCategory: 'all', varianceLocation: 'allCost' };
+const initialPeriod = urlState.get('period');
+const initialMode = urlState.get('mode');
+if (/^\d{4}-\d{2}$/.test(initialPeriod || '')) $('#period').value = initialPeriod;
+if (['mtd', 'ytd'].includes(initialMode || '')) $('#mode').value = initialMode;
 const d365SyncStorageKey = 'finops.d365.sync.progress';
 let d365ProgressTimer = null;
 const api = async path => {
@@ -89,7 +94,7 @@ function mountD365ProgressMonitor() { if (d365ProgressTimer) clearInterval(d365P
 function updateNavigation(period, mode) {
     $('#periodText').textContent = period;
     $('#viewText').textContent = `${mode.toUpperCase()} — ${period}`;
-    document.querySelectorAll('.tabs a').forEach(tab => tab.classList.toggle('active', tab.dataset.view === state.view));
+    document.querySelectorAll('.tabs [data-view]').forEach(tab => tab.classList.toggle('active', tab.dataset.view === state.view));
     history.replaceState(null, '', `/?view=${state.view}&period=${period}&mode=${mode}`);
 }
 
@@ -617,7 +622,9 @@ async function render() {
     }
 }
 
-document.querySelectorAll('.tabs a').forEach(tab => tab.addEventListener('click', event => {
+document.querySelector('.tabs').addEventListener('click', event => {
+    const tab = event.target.closest('[data-view]');
+    if (!tab) return;
     event.preventDefault();
     state.view = tab.dataset.view;
     render();

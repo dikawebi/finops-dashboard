@@ -47,13 +47,13 @@
         <span id="viewText">MTD — 2026-10</span>
     </div>
     <nav class="tabs" aria-label="Dashboard navigation">
-        <a href="#" class="active" data-view="overview">📊 Executive Overview</a>
-        <a href="#" data-view="cost">📑 Report Cost (COGP)</a>
-        <a href="#" data-view="variance">📈 Cost Variance Analysis</a>
-        <a href="#" data-view="metric">⚖️ Cost per Metric Ton</a>
-        <a href="#" data-view="inventory">📦 Inventory Valuation (Moving Avg)</a>
-        <a href="#" data-view="financial">📑 Financial Statements (FS)</a>
-        <a href="#" data-view="integration">🔄 Integration &amp; Data Sources</a>
+        <button type="button" class="active" data-view="overview">📊 Executive Overview</button>
+        <button type="button" data-view="cost">📑 Report Cost (COGP)</button>
+        <button type="button" data-view="variance">📈 Cost Variance Analysis</button>
+        <button type="button" data-view="metric">⚖️ Cost per Metric Ton</button>
+        <button type="button" data-view="inventory">📦 Inventory Valuation (Moving Avg)</button>
+        <button type="button" data-view="financial">📑 Financial Statements (FS)</button>
+        <button type="button" data-view="integration">🔄 Integration &amp; Data Sources</button>
     </nav>
     <main id="pageContent" class="content" aria-live="polite"></main>
     <footer>{{ $companyName }} • Coal Production Accounting &amp; Cost Dashboard · Data freeze 2026-10-30</footer>
