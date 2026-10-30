@@ -133,7 +133,15 @@ async function variance(period, mode) {
 }
 
 async function metric(period, mode) {
-    const [data, dbSummary, excel] = await Promise.all([api(`/api/cost-per-mt?period=${period}&mode=${mode}`), api(`/api/db-cost-summary?period=${period}&mode=${mode}`), api('/api/excel-cost-example')]);
+    const previousPeriod = (() => { const date = new Date(`${period}-01T00:00:00Z`); date.setUTCMonth(date.getUTCMonth() - 1); return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`; })();
+    const productionPeriods = [period, previousPeriod].filter((value, index, values) => value >= '2026-10' && values.indexOf(value) === index);
+    const [data, dbSummary, excel, ...production] = await Promise.all([
+        api(`/api/cost-per-mt?period=${period}&mode=${mode}`),
+        api(`/api/db-cost-summary?period=${period}&mode=${mode}`),
+        api('/api/excel-cost-example'),
+        ...productionPeriods.map(value => api(`/api/production-summary?period=${value}&mode=mtd`)),
+    ]);
+    const productionByPeriod = Object.fromEntries(productionPeriods.map((value, index) => [value, production[index]]));
     const stageCards = data.stages.map(stage => `<article class="stage-card"><span>${esc(stage.stage)}</span><strong>${stage.costPerMT == null ? 'USD —' : `USD ${detailMoney(stage.costPerMT)}`}</strong><small>per stage MT (${qty(stage.metricTons)} MT)</small><em>Total Cost: ${money(stage.totalCost)} (USD)</em></article>`).join('');
     const rows = data.stages.map(stage => `<tr><td><strong>${esc(stage.stage)}</strong></td><td class="num">${reportAmount(stage.valuationCost)}</td><td class="num">${reportAmount(stage.operatingCost)}</td><td class="num">${reportAmount(stage.totalCost)}</td><td class="num">${qty(stage.metricTons)} MT</td><td class="num stage-rate">${stage.costPerMT == null ? 'USD —' : `USD ${detailMoney(stage.costPerMT)}`}</td><td class="num">${stage.costPerTotalMT == null ? 'USD —' : `USD ${detailMoney(stage.costPerTotalMT)}`}</td></tr>`);
     $('#pageContent').innerHTML = `
@@ -142,7 +150,7 @@ async function metric(period, mode) {
         <p class="source-row">${badge('gl_data.json')} ${badge('production_daily_sheets.json (DB)')}</p>
         <div class="cost-stage-grid">${stageCards}</div>
         ${card(`Coal Mining Cost by Stage ${badge('gl_data.json')} ${badge('production_daily_sheets.json')}`, table(['Mining Activity', 'From Valuation to (USD)', 'From Costing to (USD)', 'Total Cost (USD)', 'Operating Volume (MT)', 'Stage Cost / MT', 'Cost / MT Total Production'], rows))}
-        ${monthlyPerformance(period, excel)}
+        ${monthlyPerformance(period, excel, dbSummary, productionByPeriod)}
         ${dbSummaryMarkup(dbSummary, period)}`;
     bindDbSummary(dbSummary);
 }
@@ -225,8 +233,8 @@ function renderDbSummary(summary) {
     };
 }
 
-function monthlyPerformance(period, excel) {
-    const abcMonthly = excel?.abcMonthly || [];
+function monthlyPerformance(period, excel, dbSummary, productionByPeriod = {}) {
+    const abcMonthly = (excel?.abcMonthly || []).map(row => ({ ...row }));
     const cogpMonthly = excel?.cogpMonthly || [];
     const date = new Date(`${period}-01T00:00:00Z`);
     const previousDate = new Date(date);
@@ -254,6 +262,40 @@ function monthlyPerformance(period, excel) {
         const currentRate = rate(item), previousRate = rate(old), change = currentRate !== null && previousRate !== null ? currentRate - previousRate : null;
         return [currentRate, previousRate, change, change !== null && previousRate !== 0 ? change / Math.abs(previousRate) : null];
     };
+    const volumeKeys = { 'Topsoil': 'topsoil', 'Mud': 'mud', 'Coal Getting': 'coalGetting', 'Coal Hauling Overdistance': 'coalGetting', 'Coal Loading at ROM to Port': 'loadingBuaPort', 'Coal Loading at ROM to WP': 'loadingBuaWp', 'Coal Loading at WP to Port': 'loadingWpPort', 'Coal Hauling ROM BUA to Port': 'haulingBuaPort', 'Coal Hauling ROM BUA to WP': 'haulingBuaWp', 'Coal Hauling WP to Port': 'haulingWpPort', Washplant: 'washCoal', 'Loading BLC': 'portLoading', 'ISP Rent': 'portToIsp', 'Transhipmet BP Port To Taboneo': 'portToTaboneo', 'Transhipmet BP Port To ISP': 'portToIsp', 'Transhipmet ISP to Taboneo': 'ispToTaboneo', 'Overhead BUA': 'coalGetting', 'OVH JKT & PC': 'coalGetting' };
+    const applyDashboard = targetPeriod => {
+        if (targetPeriod < '2026-10') return;
+        const targetDate = new Date(`${targetPeriod}-01T00:00:00Z`);
+        const targetMonth = targetDate.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+        const summaryRows = (dbSummary?.rows || []).filter(row => Number.isFinite(Number(row.months?.[targetPeriod])));
+        const metrics = productionByPeriod[targetPeriod]?.dbMetrics || {};
+        const grouped = new Map();
+        summaryRows.forEach(row => {
+            const key = JSON.stringify([row.activity, row.entity]);
+            if (!grouped.has(key)) grouped.set(key, { activity: row.activity, entity: row.entity, cost: 0 });
+            grouped.get(key).cost += Number(row.months[targetPeriod]);
+        });
+        const activities = new Map();
+        grouped.forEach(item => {
+            const key = JSON.stringify([item.activity, item.entity]);
+            const existing = abcMonthly.find(row => row.month === targetMonth && row.activity === item.activity && row.entity === item.entity);
+            if (existing) { existing.cost = item.cost; existing.qty = 0; }
+            else abcMonthly.push({ month: targetMonth, activity: item.activity, entity: item.entity, qty: 0, cost: item.cost });
+            const total = activities.get(item.activity) || { cost: 0, entities: 0 };
+            total.cost += item.cost; total.entities += 1; activities.set(item.activity, total);
+            void key;
+        });
+        activities.forEach((total, activity) => {
+            const metricKey = volumeKeys[activity];
+            const metric = metrics[metricKey];
+            const qtyValue = metric?.value == null ? null : Number(metric.value);
+            const activityQty = activity === 'OB Removal' ? Number(metrics.blasting?.value) + Number(metrics.freedig?.value) : qtyValue;
+            if (total.entities !== 1 || !Number.isFinite(activityQty)) return;
+            abcMonthly.filter(row => row.month === targetMonth && row.activity === activity).forEach(row => { row.qty = activityQty; });
+        });
+    };
+    applyDashboard(period);
+    if (previousPeriod >= '2026-10') applyDashboard(previousPeriod);
     const formatCell = (value, percent = false, whole = false) => {
         if (value == null || !Number.isFinite(Number(value))) return '—';
         if (whole) return Number(value).toLocaleString('en-US', { maximumFractionDigits: 0 });
@@ -278,7 +320,7 @@ function monthlyPerformance(period, excel) {
         const percent = change !== null && Number(previousValue) !== 0 ? change / Math.abs(Number(previousValue)) : null;
         return `<tr><td>${esc(row.label)}</td><td class="num">${formatCell(currentValue)}</td><td class="num">${formatCell(previousValue)}</td><td class="num ${change > 0 ? 'negative' : change < 0 ? 'positive' : ''}">${formatCell(change)}</td><td class="num ${percent > 0 ? 'negative' : percent < 0 ? 'positive' : ''}">${formatCell(percent, true)}</td></tr>`;
     });
-    const status = excel?.abcMonthly && excel?.cogpMonthly ? `${monthLabel(date)} vs ${monthLabel(previousDate)}. Activity cost uses the synced spreadsheet. Red = increase, green = decrease.` : 'Monthly data unavailable. Use Sync Production Now to load the spreadsheet.';
+    const status = excel?.abcMonthly && excel?.cogpMonthly ? `${monthLabel(date)} vs ${monthLabel(previousDate)}. Activity cost from October 2026 uses Cost Summary by Activity and dashboard production volumes; earlier activity costs and COGP use the synced spreadsheet. Red = increase, green = decrease.` : 'Monthly data unavailable. Use Sync Production Now to load the spreadsheet.';
     return `<section class="table-card cost-analysis-card monthly-performance"><div class="cost-analysis-heading"><div><span class="cost-eyebrow">MONTHLY PERFORMANCE</span><h3>Monthly Cost Comparison</h3><p>Compare activity costs with the previous month.</p></div><label class="cost-period-control">Comparison month <input type="month" value="${esc(period)}" disabled></label></div><p id="excel-example-status">${esc(status)}</p><h4 class="cost-subheading">COGP Comparison <span>Production cost per metric ton</span></h4>${table(['Location', 'Current USD/MT', 'Previous USD/MT', 'Change USD/MT', 'Change %'], cogpRows)}<h4 class="cost-subheading">Activity-Based Cost <span>Volume, cost and monthly movement</span></h4>${table(['Activity', 'Qty', 'Cost USD', 'Current USD/Unit', 'Previous USD/Unit', 'Change USD/Unit', 'Change %', 'Remarks'], movementRows)}<h4 class="cost-subheading">Activity-Based Cost by Counterpart <span>Breakdown by entity</span></h4>${table(['Activity', 'Counterpart', 'Current USD/Unit', 'Previous USD/Unit', 'Change USD/Unit', 'Change %', 'Remarks'], counterpartRows)}</section>`;
 }
 
