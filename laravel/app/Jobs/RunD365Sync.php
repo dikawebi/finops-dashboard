@@ -11,11 +11,11 @@ class RunD365Sync implements ShouldQueue
     use Queueable;
     public int $tries = 1;
     public int $timeout = 900;
-    public function __construct(public readonly string $entityKey = 'all', public readonly ?string $dateFrom = null, public readonly ?string $dateTo = null) {}
+    public function __construct(public readonly string $entityKey = 'all', public readonly ?string $dateFrom = null, public readonly ?string $dateTo = null, public readonly bool $forceFull = false) {}
     public function handle(D365SyncService $sync): void
     {
         if (!$sync->client()->enabled()) return;
-        if ($this->entityKey === 'all') { $sync->syncAll(null, $this->dateFrom, $this->dateTo); return; }
-        if ($entity = $sync->entityByKey($this->entityKey)) $sync->syncEntity($entity, null, $this->dateFrom, $this->dateTo);
+        if ($this->entityKey === 'all') { $sync->syncAll(null, $this->dateFrom, $this->dateTo, $this->forceFull); return; }
+        if ($entity = $sync->entityByKey($this->entityKey)) $sync->syncEntity($entity, null, $this->dateFrom, $this->dateTo, $this->forceFull);
     }
 }

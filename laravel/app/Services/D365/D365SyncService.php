@@ -23,13 +23,19 @@ class D365SyncService
     public function client(): D365ODataClient { return new D365ODataClient(config('services.d365', [])); }
     public function entityByKey(string $key): ?array { return collect(self::ENTITIES)->firstWhere('key', $key); }
     public function transactionEntityKeys(): array { return ['gl_entries', 'gl_journal_entries', 'ledger_journal_lines', 'ledger_entry_journals', 'inventory_trans']; }
-    public function clearTransactionStaging(): void
+    public function resetTransactionData(): void
     {
         $entities = $this->transactionEntityKeys();
         DB::transaction(function () use ($entities): void {
             DB::table('d365_raw_records')->whereIn('entity_key', $entities)->delete();
             DB::table('d365_typed_records')->whereIn('entity_key', $entities)->delete();
             DB::table('gl_entries')->where('source_type', 'd365')->delete();
+        });
+    }
+    public function clearTransactionStaging(): void
+    {
+        $this->resetTransactionData();
+        DB::transaction(function (): void {
             DB::table('jobs')->where('payload', 'like', '%RunD365Sync%')->delete();
         });
     }
@@ -42,7 +48,7 @@ class D365SyncService
         pclose(popen($command, 'r'));
     }
 
-    public function syncEntity(array $entity, ?int $limit = null, ?string $dateFrom = null, ?string $dateTo = null): array
+    public function syncEntity(array $entity, ?int $limit = null, ?string $dateFrom = null, ?string $dateTo = null, bool $forceFull = false): array
     {
         $logId = DB::table('d365_sync_logs')->insertGetId(['entity_key' => $entity['key'], 'entity_name' => $entity['entity'], 'status' => 'running', 'created_at' => now(), 'updated_at' => now()]);
         $fetched = $inserted = $updated = $pages = 0;
@@ -54,7 +60,7 @@ class D365SyncService
                 DB::table('d365_typed_records')->where('entity_key', $entity['key'])->delete();
             }
             $client = $this->client();
-            foreach ($this->filtersForEntity($entity, $dateFrom, $dateTo) as $filter) {
+            foreach ($this->filtersForEntity($entity, $dateFrom, $dateTo, $forceFull) as $filter) {
                 foreach ($client->streamEntity($entity['entity'], null, $filter) as $source) {
                     if ($this->stopRequested()) throw new D365Exception('Sync dihentikan oleh user.');
                     if ($limit !== null && $fetched >= $limit) break 2;
@@ -83,19 +89,19 @@ class D365SyncService
         }
     }
 
-    public function syncAll(?int $limit = null, ?string $dateFrom = null, ?string $dateTo = null): array { $order = ['main_accounts', 'dimension_values', 'vendors', 'customers', 'gl_journal_entries', 'gl_entries', 'ledger_journal_lines', 'ledger_entry_journals', 'inventory_trans']; $results = []; foreach ($order as $key) { if ($this->stopRequested()) break; $results[] = $this->syncEntity($this->entityByKey($key), $limit, $dateFrom, $dateTo); } return $results; }
+    public function syncAll(?int $limit = null, ?string $dateFrom = null, ?string $dateTo = null, bool $forceFull = false): array { $order = ['main_accounts', 'dimension_values', 'vendors', 'customers', 'gl_journal_entries', 'gl_entries', 'ledger_journal_lines', 'ledger_entry_journals', 'inventory_trans']; $results = []; foreach ($order as $key) { if ($this->stopRequested()) break; $results[] = $this->syncEntity($this->entityByKey($key), $limit, $dateFrom, $dateTo, $forceFull); } return $results; }
     public function requestStop(): void { Cache::put('d365_sync_stop', true, now()->addHour()); }
     public function clearStop(): void { Cache::forget('d365_sync_stop'); }
     public function stopRequested(): bool { return (bool) Cache::get('d365_sync_stop', false); }
     public function latestStatus(): array { return collect(self::ENTITIES)->map(function (array $entity): array { $log = DB::table('d365_sync_logs')->where('entity_key', $entity['key'])->latest('id')->first(); return $entity + ['last' => $log, 'staging_count' => DB::table('d365_raw_records')->where('entity_key', $entity['key'])->count(), 'typed_count' => DB::table('d365_typed_records')->where('entity_key', $entity['key'])->count()]; })->all(); }
 
-    private function filter(array $entity, ?string $dateFrom, ?string $dateTo): ?string
+    private function filter(array $entity, ?string $dateFrom, ?string $dateTo, bool $forceFull = false): ?string
     {
         $parts = [];
         $companyField = $entity['company_field'];
         if ($companyField && filled($entity['exclude_company'] ?? null)) $parts[] = $companyField." ne '".str_replace("'", "''", $entity['exclude_company'])."'";
         elseif ($companyField && filled(config('services.d365.company'))) $parts[] = $companyField." eq '".str_replace("'", "''", config('services.d365.company'))."'";
-        if ($entity['mode'] === 'incremental' && ($entity['source_field'] ?? null)) {
+        if (! $forceFull && $entity['mode'] === 'incremental' && ($entity['source_field'] ?? null)) {
             $cursor = DB::table('d365_sync_logs')->where('entity_key', $entity['key'])->where('status', 'success')->whereNotNull('max_source_key')->latest('id')->value('max_source_key');
             if ($cursor !== null && ctype_digit((string) $cursor)) $parts[] = $entity['source_field'].' gt '.(int) $cursor;
         }
@@ -103,18 +109,18 @@ class D365SyncService
         if ($entity['date_field'] && $dateTo) $parts[] = $entity['date_field']." le ".date('Y-m-d', strtotime($dateTo));
         return $parts ? implode(' and ', $parts) : null;
     }
-    private function filtersForEntity(array $entity, ?string $dateFrom, ?string $dateTo): array
+    private function filtersForEntity(array $entity, ?string $dateFrom, ?string $dateTo, bool $forceFull = false): array
     {
-        if (!$dateFrom && !$dateTo) return [$this->filter($entity, null, null)];
+        if (!$dateFrom && !$dateTo) return [$this->filter($entity, null, null, $forceFull)];
         if ($entity['key'] === 'gl_entries') {
             $keys = DB::table('d365_typed_records')->where('entity_key', 'gl_journal_entries')->when($dateFrom, fn ($query) => $query->whereDate('accounting_date', '>=', $dateFrom))->when($dateTo, fn ($query) => $query->whereDate('accounting_date', '<=', $dateTo))->pluck('source_key')->filter()->map(fn ($key): string => (string) $key)->unique()->values();
-            return $keys->chunk(50)->map(fn ($chunk): string => $this->appendFilter($this->filter($entity, null, null), $chunk->map(fn (string $key): string => 'GeneralJournalEntry eq '.$key)->implode(' or ')))->all();
+            return $keys->isEmpty() ? [$this->filter($entity, $dateFrom, $dateTo, $forceFull)] : $keys->chunk(50)->map(fn ($chunk): string => $this->appendFilter($this->filter($entity, null, null, $forceFull), $chunk->map(fn (string $key): string => 'GeneralJournalEntry eq '.$key)->implode(' or ')))->all();
         }
         if ($entity['key'] === 'ledger_entry_journals') {
             $keys = DB::table('d365_typed_records')->where('entity_key', 'ledger_journal_lines')->when($dateFrom, fn ($query) => $query->whereDate('accounting_date', '>=', $dateFrom))->when($dateTo, fn ($query) => $query->whereDate('accounting_date', '<=', $dateTo))->pluck('journal_number')->filter()->map(fn ($key): string => (string) $key)->unique()->values();
-            return $keys->chunk(50)->map(fn ($chunk): string => $this->appendFilter($this->filter($entity, null, null), $chunk->map(fn (string $key): string => "JournalNumber eq '".str_replace("'", "''", $key)."'")->implode(' or ')))->all();
+            return $keys->chunk(50)->map(fn ($chunk): string => $this->appendFilter($this->filter($entity, null, null, $forceFull), $chunk->map(fn (string $key): string => "JournalNumber eq '".str_replace("'", "''", $key)."'")->implode(' or ')))->all();
         }
-        return [$this->filter($entity, $dateFrom, $dateTo)];
+        return [$this->filter($entity, $dateFrom, $dateTo, $forceFull)];
     }
     private function appendFilter(?string $base, string $parent): string { return $base ? $base.' and ('.$parent.')' : '('.$parent.')'; }
     private function sourceKey(array $row): string { return (string) ($row['SourceKey'] ?? $row['sourceKey'] ?? sha1(json_encode($row))); }

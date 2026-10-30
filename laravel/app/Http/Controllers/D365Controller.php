@@ -21,7 +21,7 @@ class D365Controller extends Controller
 
     public function sync(Request $request): array
     {
-        $data = $request->validate(['entity' => ['nullable', 'string'], 'date_from' => ['nullable', 'date'], 'date_to' => ['nullable', 'date', 'after_or_equal:date_from']]);
+        $data = $request->validate(['entity' => ['nullable', 'string'], 'date_from' => ['nullable', 'date'], 'date_to' => ['nullable', 'date', 'after_or_equal:date_from'], 'force_full' => ['nullable', 'boolean']]);
         $entity = $data['entity'] ?? 'all';
         abort_unless($entity === 'all' || $this->sync->entityByKey($entity), 422, 'Entity tidak dikenal.');
         $lock = Cache::lock('d365-sync-dispatch', 10);
@@ -30,13 +30,15 @@ class D365Controller extends Controller
             $hasRunningLog = DB::table('d365_sync_logs')->where('status', 'running')->exists();
             $hasQueuedJob = DB::table('jobs')->where('queue', 'default')->where('payload', 'like', '%RunD365Sync%')->exists();
             if ($hasRunningLog || $hasQueuedJob) return ['queued' => false, 'already_running' => true, 'message' => 'A D365 sync is already running or queued.'];
+            $forceFull = (bool) ($data['force_full'] ?? false);
+            if ($forceFull) $this->sync->resetTransactionData();
             $this->sync->clearStop();
             $this->sync->ensureQueueWorker();
-            RunD365Sync::dispatch($entity, $data['date_from'] ?? null, $data['date_to'] ?? null);
+            RunD365Sync::dispatch($entity, $data['date_from'] ?? null, $data['date_to'] ?? null, $forceFull);
         } finally {
             $lock->release();
         }
-        return ['queued' => true, 'entity' => $entity];
+        return ['queued' => true, 'entity' => $entity, 'force_full' => (bool) ($data['force_full'] ?? false)];
     }
 
     public function stopSync(): array
