@@ -440,6 +440,29 @@ async function integration() {
     $('#viewGlData').addEventListener('click', () => viewGlData($('#period').value));
 }
 
+async function configuration() {
+    const data = await api('/api/config');
+    const label = key => key.replace(/([A-Z])/g, ' $1').replace(/^./, value => value.toUpperCase());
+    const sanitize = (value, key = '') => {
+        if (/secret|password|token/i.test(key)) return 'Configured securely';
+        if (Array.isArray(value)) return value.map(item => sanitize(item));
+        if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([childKey, childValue]) => [childKey, sanitize(childValue, childKey)]));
+        return value;
+    };
+    const display = (key, value) => {
+        if (value === null || value === undefined || value === '') return '—';
+        if (typeof value === 'object') return `<pre class="config-json">${esc(JSON.stringify(sanitize(value, key), null, 2))}</pre>`;
+        if (/secret|password|token/i.test(key)) return '<span class="config-redacted">Configured securely</span>';
+        if (typeof value === 'boolean') return value ? '<span class="status online">Enabled</span>' : '<span class="status manual">Disabled</span>';
+        return esc(value);
+    };
+    const sections = Object.entries(data || {}).map(([section, values]) => {
+        const rows = Object.entries(values && typeof values === 'object' && !Array.isArray(values) ? values : { value: values }).map(([key, value]) => `<tr><th>${esc(label(key))}</th><td>${display(key, value)}</td></tr>`).join('');
+        return `<section class="table-card config-card"><div class="card-title">${esc(label(section))}</div><div class="table-responsive"><table class="table-accounting config-table"><tbody>${rows || '<tr><td colspan="2">No configuration available.</td></tr>'}</tbody></table></div></section>`;
+    }).join('');
+    $('#pageContent').innerHTML = `${sectionHeader('Configuration', 'System, connector, inventory, and period settings used by the dashboard.', `<span class="config-source">Source: /api/config</span>`)}<p class="financial-notice">Configuration is currently read-only. Sensitive values are masked in this view.</p><div class="config-grid">${sections || '<div class="table-card error-card">No configuration available.</div>'}</div>`;
+}
+
 async function viewGlData(period) {
     const data = await api(`/api/gl-data?period=${period}`);
     const rows = (data.rows || []).map(row => `<tr><td>${esc(row.entry_date)}</td><td>${esc(row.journal_number)}</td><td>${esc(row.main_account)}</td><td>${esc(row.account_name)}</td><td>${esc(row.source_location || row.valuation_to)}</td><td>${esc(row.costing_to)}</td><td class="num">${money(row.amount_reporting)}</td></tr>`);
@@ -459,6 +482,7 @@ async function render() {
         else if (state.view === 'metric') await metric(period, mode);
         else if (state.view === 'inventory') await inventory(period, mode);
         else if (state.view === 'financial') await financial(period, mode);
+        else if (state.view === 'config') await configuration();
         else await integration();
     } catch (error) {
         console.error(error);
