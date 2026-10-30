@@ -8,6 +8,8 @@ const qty = value => Number(value || 0).toLocaleString('en-US', { maximumFractio
 const esc = value => String(value ?? '—').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' })[char]);
 const companyName = document.body.dataset.companyName || 'FinOps Dashboard';
 const state = { view: new URLSearchParams(location.search).get('view') || 'overview', costSearch: '', costParentOnly: false, costHideZero: false, costCollapsed: {}, varianceSearch: '', varianceHideZero: true, varianceCategory: 'all', varianceLocation: 'allCost' };
+const d365SyncStorageKey = 'finops.d365.sync.progress';
+let d365ProgressTimer = null;
 const api = async path => {
     const response = await fetch(path);
     if (!response.ok) throw new Error(`Request failed: ${response.status}`);
@@ -37,6 +39,37 @@ const downloadExcel = (filename, headers, rows) => {
     link.click();
     URL.revokeObjectURL(link.href);
 };
+
+function readD365SyncState() { try { return JSON.parse(localStorage.getItem(d365SyncStorageKey) || 'null'); } catch { return null; } }
+function writeD365SyncState(value) { localStorage.setItem(d365SyncStorageKey, JSON.stringify(value)); }
+function clearD365ProgressPanel() { document.querySelector('#d365ProgressPanel')?.remove(); if (d365ProgressTimer) { clearInterval(d365ProgressTimer); d365ProgressTimer = null; } }
+function renderD365ProgressPanel(state, entities) {
+    let panel = $('#d365ProgressPanel');
+    if (!panel) { panel = document.createElement('section'); panel.id = 'd365ProgressPanel'; panel.className = 'd365-progress-panel'; document.body.appendChild(panel); }
+    const baseline = state.baseline || {};
+    const changed = entities.filter(item => (item.last?.updated_at || null) !== (baseline[item.key] || null));
+    const running = changed.filter(item => item.last?.status === 'running');
+    const completed = changed.filter(item => ['success', 'failed'].includes(item.last?.status));
+    const finished = changed.length === entities.length && running.length === 0;
+    const failed = changed.filter(item => item.last?.status === 'failed');
+    const percent = entities.length ? Math.round((completed.length / entities.length) * 100) : 0;
+    panel.innerHTML = `<div class="d365-progress-heading"><div><strong>D365 sync progress</strong><span>${esc(state.period || 'Selected month')} · ${finished ? (failed.length ? 'Finished with errors' : 'Finished') : 'Running'}</span></div>${finished ? '<button id="closeD365Progress" class="btn btn-outline" type="button">Close</button>' : '<span class="d365-progress-live">Live</span>'}</div><div class="d365-progress-track"><i style="width:${percent}%"></i></div><p class="d365-progress-summary">${completed.length} of ${entities.length} entities complete${running.length ? ` · Current: ${esc(running[0].label)}` : ''}</p><div class="d365-progress-list">${entities.map(item => { const log = item.last; const current = changed.some(row => row.key === item.key); return `<div><span>${esc(item.label)}</span><b class="status ${log?.status === 'success' ? 'online' : log?.status === 'failed' ? 'manual' : log?.status === 'running' && current ? 'online' : 'manual'}">${esc(current ? (log?.status || 'pending') : 'waiting')}</b></div>`; }).join('')}</div>`;
+    if (finished) { panel.classList.add('is-finished'); $('#closeD365Progress').addEventListener('click', () => { localStorage.removeItem(d365SyncStorageKey); clearD365ProgressPanel(); }); }
+    return finished;
+}
+async function refreshD365Progress() {
+    const syncState = readD365SyncState();
+    if (!syncState) { clearD365ProgressPanel(); return; }
+    try {
+        const response = await fetch('/api/d365/progress', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`Progress request failed: ${response.status}`);
+        const payload = await response.json();
+        const entities = payload.data?.entities || payload.entities || [];
+        const finished = renderD365ProgressPanel(syncState, entities);
+        if (finished && !syncState.finished) { syncState.finished = true; writeD365SyncState(syncState); }
+    } catch (error) { console.error(error); }
+}
+function mountD365ProgressMonitor() { if (d365ProgressTimer) clearInterval(d365ProgressTimer); if (!readD365SyncState()) { clearD365ProgressPanel(); return; } refreshD365Progress(); d365ProgressTimer = setInterval(refreshD365Progress, 3000); }
 
 function updateNavigation(period, mode) {
     $('#periodText').textContent = period;
@@ -447,6 +480,8 @@ async function integration() {
         const [year, month] = period.split('-').map(Number);
         const dateFrom = `${period}-01`;
         const dateTo = new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
+        writeD365SyncState({ period, dateFrom, dateTo, baseline: Object.fromEntries((d365.entities || []).map(item => [item.key, item.last?.updated_at || null])), finished: false });
+        mountD365ProgressMonitor();
         try {
             const response = await fetch('/api/d365/sync', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }, body: JSON.stringify({ entity: 'all', date_from: dateFrom, date_to: dateTo }) });
             if (!response.ok) throw new Error(`Sync request failed: ${response.status}`);
@@ -456,6 +491,7 @@ async function integration() {
             console.error(error);
         } finally { event.currentTarget.disabled = false; }
     });
+    mountD365ProgressMonitor();
 }
 
 async function configuration() {
