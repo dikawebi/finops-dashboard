@@ -63,7 +63,7 @@ async function overview(period, mode) {
         ['GROSS PROFIT', Number(financial.incomeStatement?.grossProfit || 0) === 0 ? 'USD -' : money(line('grossProfit')), 'Coal sales less cost of sales', 'blue'],
         ['OPERATING PROFIT / BEFORE INTEREST', money(line('profitBeforeInterest')), 'Operating profit for the period', 'blue'],
     ];
-    const topDrivers = cost.rows.filter(row => !row.isParent).sort((a, b) => Number(b.allCost) - Number(a.allCost)).slice(0, 5).map(row => `<div class="driver-row"><span>${esc(row.name)}</span><b>${money(row.allCost)}</b></div>`).join('');
+    const topDrivers = cost.rows.filter(row => !row.isParent).sort((a, b) => Number(b.allCost) - Number(a.allCost)).slice(0, 8).map(row => { const percentage = Number(cost.grandTotal.allCost) ? Number(row.allCost) / Number(cost.grandTotal.allCost) * 100 : 0; return `<div class="driver-row"><div><span>${esc(row.name)}</span><i style="width:${Math.max(1, percentage)}%"></i></div><b>${money(row.allCost)} (${percentage.toFixed(0)}%)</b></div>`; }).join('');
     const maxMT = Math.max(...daily.map(item => Number(item.nettoMT) || 0), 10);
     const chartWidth = 560, chartHeight = 200, padding = 30;
     const barWidth = Math.max(5, Math.floor((chartWidth - padding * 2) / Math.max(daily.length, 1)) - 4);

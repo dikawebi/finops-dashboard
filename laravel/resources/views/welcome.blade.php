@@ -12,8 +12,26 @@
         .content { max-width: 1550px; margin: 0 auto; }
         .overview-kpi-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
         .data-warning { margin: 0; padding: 12px 16px; background: #fff8e8; border-bottom: 1px solid #f1d28b; color: #8a5a16; font-size: 12px; }
+        .grid-2 { display: grid; grid-template-columns: 1.05fr .95fr; gap: 18px; }
+        .card { background: #fff; border: 1px solid var(--line); border-radius: 9px; box-shadow: 0 2px 5px #dbe4ef40; overflow: hidden; padding: 16px; }
+        .card .card-title { padding: 0 0 12px; border-bottom: 1px solid var(--line); }
+        .allocation-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 14px 0 20px; }
+        .allocation-grid article { border: 1px solid; border-radius: 7px; padding: 14px; min-height: 84px; }
+        .allocation-val { border-color: #08a6c4; background: #e9fbfd; color: #075c73; }
+        .allocation-cost { border-color: #e2a01e; background: #fff8e8; color: #8a3d0b; }
+        .allocation-grid b { display: block; font-size: 11px; letter-spacing: .03em; }
+        .allocation-grid strong { display: block; margin: 8px 0; font-size: 20px; }
+        .allocation-grid span { display: block; font-size: 11px; line-height: 1.45; }
+        .drivers-title { display: block; margin-bottom: 10px; font-size: 12px; }
+        .driver-row { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 12px; margin: 9px 0; font-size: 11px; }
+        .driver-row > div { min-width: 0; }
+        .driver-row span { display: block; margin-bottom: 5px; }
+        .driver-row i { display: block; height: 7px; border-radius: 8px; background: #203e8d; box-shadow: 0 7px 0 #eef2f8; }
+        .driver-row b { white-space: nowrap; }
+        .chart-footer { display: flex; justify-content: space-between; gap: 12px; margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
         @media (max-width: 1050px) { .overview-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-        @media (max-width: 640px) { .overview-kpi-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 1050px) { .grid-2 { grid-template-columns: 1fr; } }
+        @media (max-width: 640px) { .overview-kpi-grid, .allocation-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body data-company-name="{{ e($companyName) }}">
