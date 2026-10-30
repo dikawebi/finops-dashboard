@@ -7,7 +7,7 @@ This checklist records the remaining differences between the Laravel dashboard a
 ## Executive Overview
 
 - Implemented: KPI cards, allocation cards, Top Cost Drivers, production DB table, daily SVG chart, source notes, and missing-data messaging.
-- Remaining: compare spacing, dimensions, and chart sizing at matching desktop/mobile viewports.
+- Remaining: compare spacing, dimensions, and chart sizing at matching desktop/mobile viewports; production chart structure and no-data handling now match the reference.
 
 ## Report Cost (COGP)
 
@@ -28,7 +28,7 @@ This checklist records the remaining differences between the Laravel dashboard a
 ## Inventory Valuation (Moving Avg)
 
 - Implemented: SVG donut, location legend, location cards, 14-column movement ledger, hauling-route summary, BUA monthly history, stockpile flow cards, and closing-balance history.
-- Remaining: compare exact segment order, card spacing, and table dimensions against a browser screenshot.
+- Remaining: compare exact segment order, card spacing, and table dimensions against a browser screenshot; donut fallback labels and legend sizing now match the reference.
 
 ## Financial Statements (FS)
 
