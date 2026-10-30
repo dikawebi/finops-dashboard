@@ -12,7 +12,7 @@ Dokumen ini menjadi checklist kerja setelah data freeze 2026-10-30. Angka dashbo
 | P3.2 | Smoke command | Selesai | `dashboard:cost-matrix` terdaftar |
 | P3.3 | Financial Statements dan Inventory Valuation | Implemented | Baseline MTD/YTD tersedia melalui service dan API; visual parity masih berjalan |
 | P3.4 | Regression terhadap baseline | Selesai | 80 baseline Cost Matrix, Cost/MT, Financial Statements, dan Inventory lulus; `dashboard:regression --suite=all` |
-| P4 | Controller, endpoint, dan frontend Laravel | Implemented (parity pending) | Read-only endpoint dan frontend utama tersedia; beberapa kontrol/integrasi masih deferred |
+| P4 | Controller, endpoint, dan frontend Laravel | Implemented (parity pending) | Dashboard API, DB Cost Summary, remarks, GL preview, configuration API, dan D365 sync/staging tersedia; visual parity dan release QA masih berjalan |
 
 ## Development steps
 
@@ -91,11 +91,12 @@ Dokumen ini menjadi checklist kerja setelah data freeze 2026-10-30. Angka dashbo
 Urutan kerja:
 
 1. Bandingkan tujuh tab dengan referensi pada viewport desktop dan mobile.
-2. Verifikasi inventory route/history, production chart, serta empty-state behavior.
-3. Rekonsiliasi selisih Balance Sheet, mapping COA, volume fallback, inventory provisional, accrual, dan reversal dengan Accounting.
-4. Aktifkan persistence remark setelah authorization/CSRF tersedia (ditunda sesuai scope proyek).
-5. Jalankan `php artisan dashboard:regression --suite=all` setelah setiap perubahan engine.
-6. Catat mismatch yang bersifat data/asumsi terpisah dari bug engine.
+2. Verifikasi inventory donut/route/history, production chart, dan empty-state behavior.
+3. Aktifkan kontrol UI yang backend-nya sudah tersedia: Cost Matrix filter, Variance filter, DB Cost Summary, dan remarks.
+4. Rekonsiliasi selisih Balance Sheet, mapping COA, volume fallback, inventory provisional, accrual, dan reversal dengan Accounting.
+5. Aktifkan persistence remark dan seluruh mutation UI setelah authorization/CSRF tersedia (ditunda sesuai scope proyek).
+6. Jalankan `php artisan dashboard:regression --suite=all` setelah setiap perubahan engine.
+7. Catat mismatch yang bersifat data/asumsi terpisah dari bug engine.
 
 ### Status setelah P3.4 lulus
 
@@ -103,7 +104,15 @@ Urutan kerja:
 2. Cost/MT, DB Cost Summary, dan Production Summary sudah memiliki endpoint baseline-backed.
 3. Regression command sudah mencakup empat domain dashboard.
 4. Pekerjaan tersisa berfokus pada visual parity, integrasi data, dan release QA.
-5. Filter location pada Cost Variance, export Excel-compatible, dan preview read-only GL sudah tersedia.
+5. Filter location pada Cost Variance, export Excel-compatible, preview read-only GL, DB Cost Summary, configuration API, dan D365 staging preview sudah tersedia di backend; UI parity dan authorization masih tersisa.
+
+### Audit status 2026-10-30
+
+- Test suite: 7 tests / 34 assertions passed.
+- Regression: cost matrix, cost per MT, financial statements, and inventory valuation baselines passed for all frozen periods and modes.
+- Frontend build: Vite production build passed.
+- D365: entity discovery, ordered sync, stop/progress, staging, allocation preview/import, and mapping management routes are implemented.
+- Remaining release blockers: visual parity verification, business reconciliation, browser screenshot QA, and authorization for mutation routes.
 
 ## Definition of done per fase
 

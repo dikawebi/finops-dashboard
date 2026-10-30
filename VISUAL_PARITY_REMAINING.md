@@ -2,7 +2,7 @@
 
 Reference: `D:\apps\mining-accounting-dashboard\public\index.html` and `public\styles.css`.
 
-This checklist records the remaining differences between the Laravel dashboard and the reference. Authorization is intentionally deferred. Multipart import and configuration work are also deferred per the project direction.
+This checklist records the remaining differences between the Laravel dashboard and the reference. Authorization is intentionally deferred. Multipart GL import and external configuration activation are deferred per the project direction; configuration and D365 staging APIs already exist.
 
 ## Executive Overview
 
@@ -14,21 +14,21 @@ This checklist records the remaining differences between the Laravel dashboard a
 ## Report Cost (COGP)
 
 - The grouped, two-row COGP/Direct Expense header and grand-total footer are present, but column labels and each cell mapping still need a field-by-field comparison with the reference matrix.
-- Implement working account search, Show All Accounts, parent-only, and hide-zero controls.
+- Implement working account search, Show All Accounts, parent-only, and hide-zero controls against the existing Cost Matrix response.
 - Match the reference account hierarchy, check values, source notes, route warnings, table count, and sticky total behavior.
 - Multipart GL import, export, and delete actions are outside this visual-parity pass; import/configuration remain deferred.
 
 ## Cost Variance Analysis
 
 - Implement the reference location/category filter, account search, and hide-zero behavior.
-- Add the displayed variance remark and row action behavior once its persistence workflow is implemented; current inputs are placeholders.
+- Connect the existing variance remark response/persistence workflow to the matching reference row controls; current inputs are placeholders.
 - Match the previous/current month headings, variance colors, totals/footer, table spacing, and empty-state behavior.
 
 ## Cost per Metric Ton
 
 - Match stage cards and the detailed table columns to the reference, including valuation cost, costing cost, total cost, operating volume, stage cost/MT, and total production cost/MT.
 - Recreate the monthly comparison tables for location COGP, activity-based cost, and counterpart breakdown using source data only.
-- Recreate DB Cost Summary by Activity controls and table when the corresponding API data is available; do not synthesize missing comparison values.
+- Recreate DB Cost Summary by Activity controls and table using the existing `/api/db-cost-summary` response; do not synthesize missing comparison values.
 
 ## Inventory Valuation (Moving Avg)
 
@@ -54,3 +54,9 @@ This checklist records the remaining differences between the Laravel dashboard a
 - Compare all seven tabs with the reference at matching desktop and mobile viewport sizes.
 - Check tab navigation, selected period/mode behavior, overflow, empty data, and number formatting.
 - Recheck actual browser screenshots when local-origin browser access is available; source-code comparison alone does not establish pixel parity.
+
+## Release verification completed
+
+- `php artisan test`: 7 tests and 34 assertions passed.
+- `php artisan dashboard:regression --suite=all`: all frozen Cost Matrix, Cost/MT, Financial Statements, and Inventory baselines passed.
+- `npm run build`: production Vite build passed.
