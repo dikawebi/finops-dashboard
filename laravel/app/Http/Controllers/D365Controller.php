@@ -42,7 +42,7 @@ class D365Controller extends Controller
     {
         return ['entities' => collect($this->sync->latestStatus())->map(function (array $item): array {
             $last = $item['last'];
-            return ['key' => $item['key'], 'label' => $item['label'], 'status' => $last?->status ?? 'pending', 'fetched' => (int) ($last?->fetched ?? 0), 'progress' => (int) ($last?->progress_percent ?? 0), 'message' => $last?->message, 'staging_count' => $item['staging_count'], 'updated_at' => $last?->updated_at];
+            return ['key' => $item['key'], 'label' => $item['label'], 'status' => $last?->status ?? 'pending', 'fetched' => (int) ($last?->fetched ?? 0), 'inserted' => (int) ($last?->inserted ?? 0), 'updated' => (int) ($last?->updated ?? 0), 'progress' => (int) ($last?->progress_percent ?? 0), 'message' => $last?->message, 'staging_count' => $item['staging_count'], 'updated_at' => $last?->updated_at];
         })->values()];
     }
 
