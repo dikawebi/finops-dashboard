@@ -31,6 +31,7 @@ class FinancialStatementService
 
             return [
                 'currency' => $data['currency'] ?? 'USD',
+                'amountScale' => $data['amountScale'] ?? 1,
                 'period' => $period,
                 'mode' => $mode,
                 'dataSource' => 'financial-baseline',
