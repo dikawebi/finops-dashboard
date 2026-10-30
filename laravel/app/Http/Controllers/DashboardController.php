@@ -113,26 +113,22 @@ class DashboardController extends Controller
         $variance = [];
         $remarks = CostVarianceRemark::period($period)->get()->keyBy('account_code');
         $priorRows = collect($prior['rows'])->keyBy('code');
-        $location = trim((string) $request->query('location', ''));
-        $locationMap = [];
-        foreach (GlEntry::where('period', $period)->get(['main_account', 'valuation_to']) as $entry) {
-            $name = trim((string) $entry->valuation_to);
-            if ($name !== '') $locationMap[(string) $entry->main_account][$name] = true;
-        }
+        $location = trim((string) $request->query('location', 'allCost'));
+        $varianceFields = ['allCost', 'costMining', 'costHaulingBUAToWP', 'costHaulingBUAToPort', 'costHaulingWPToPort', 'costWP', 'costPort', 'valMining', 'valHauling', 'valWP', 'valPort', 'directGA', 'sellingExpense'];
+        abort_unless(in_array($location, $varianceFields, true), 422, 'Invalid variance category.');
         foreach ($current['rows'] as $row) {
-            $rowLocations = $locationMap[(string) $row['code']] ?? [];
-            if ($location !== '' && !isset($rowLocations[$location])) continue;
             $old = $priorRows->get($row['code']);
-            $base = (float) ($old['allCost'] ?? 0);
-            $delta = (float) $row['allCost'] - $base;
+            $base = (float) ($old[$location] ?? 0);
+            $currentValue = (float) ($row[$location] ?? 0);
+            $delta = $currentValue - $base;
             $cogpFields = ['costMining', 'costHaulingBUAToWP', 'costHaulingBUAToPort', 'costHaulingWPToPort', 'costWP', 'costPort'];
             $directFields = ['directGA', 'sellingExpense'];
             $sumFields = static fn (array $source, array $fields): float => array_sum(array_map(static fn (string $field): float => (float) ($source[$field] ?? 0), $fields));
             $currentCategories = ['cogp' => $sumFields($row, $cogpFields), 'direct' => $sumFields($row, $directFields)];
             $previousCategories = ['cogp' => $sumFields($old ?? [], $cogpFields), 'direct' => $sumFields($old ?? [], $directFields)];
-            $variance[] = ['code' => $row['code'], 'name' => $row['name'], 'current' => (float) $row['allCost'], 'previous' => $base, 'change' => $delta, 'changePct' => $base == 0.0 ? null : $delta / abs($base) * 100, 'categories' => ['current' => $currentCategories, 'previous' => $previousCategories], 'remark' => $remarks->get($row['code'])?->remark, 'isParent' => $row['isParent']];
+            $variance[] = ['code' => $row['code'], 'name' => $row['name'], 'current' => $currentValue, 'previous' => $base, 'change' => $delta, 'changePct' => $base == 0.0 ? null : $delta / abs($base) * 100, 'categories' => ['current' => $currentCategories, 'previous' => $previousCategories], 'remark' => $remarks->get($row['code'])?->remark, 'isParent' => $row['isParent']];
         }
-        $locationOptions = collect($locationMap)->flatMap(fn (array $values) => array_keys($values))->unique()->sort()->values();
+        $locationOptions = $varianceFields;
         return response()->json(['success' => true, 'data' => ['period' => $period, 'previousPeriod' => $previous, 'current' => $current, 'previous' => $prior, 'rows' => $variance, 'locations' => $locationOptions]]);
     }
 
