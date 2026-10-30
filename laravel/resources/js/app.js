@@ -110,8 +110,8 @@ async function variance(period, mode) {
     const data = await api(`/api/cost-variance?period=${period}&mode=${mode}&location=${encodeURIComponent(state.varianceLocation)}`);
     const search = state.varianceSearch.trim().toLowerCase();
     const categoryValue = row => row.categories?.current?.[state.varianceCategory] ?? row.current;
-    const visibleRows = data.rows.filter(row => !row.isParent && (!search || `${row.code} ${row.name}`.toLowerCase().includes(search)) && (!state.varianceHideZero || Number(row.change || 0) !== 0) && (state.varianceCategory === 'all' || Number(categoryValue(row) || 0) !== 0));
-    const rows = visibleRows.map(row => `<tr><td>${esc(row.code)}</td><td>${esc(row.name)}</td><td class="num">${money(row.previous)}</td><td class="num">${money(row.current)}</td><td class="num ${row.change > 0 ? 'negative' : 'positive'}">${money(row.change)}</td><td class="num">${row.changePct == null ? '—' : `${Number(row.changePct).toFixed(2)}%`}</td><td><input class="remark-input" value="${esc(row.remark || '')}" placeholder="No remark" disabled></td></tr>`);
+    const visibleRows = data.rows.filter(row => (!search || `${row.code} ${row.name}`.toLowerCase().includes(search)) && (!state.varianceHideZero || Number(row.change || 0) !== 0) && (state.varianceCategory === 'all' || Number(categoryValue(row) || 0) !== 0));
+    const rows = visibleRows.map(row => `<tr class="${row.isParent ? 'parent-row' : ''}"><td>${esc(row.code)}</td><td>${esc(row.name)}</td><td class="num">${reportAmount(row.previous)}</td><td class="num">${reportAmount(row.current)}</td><td class="num ${row.change > 0 ? 'negative' : 'positive'}">${reportAmount(row.change)}</td><td class="num">${row.changePct == null ? '—' : `${Number(row.changePct).toFixed(2)}%`}</td><td><input class="remark-input" value="${esc(row.remark || '')}" placeholder="No remark" disabled></td></tr>`);
     /*
     $('#pageContent').innerHTML = `
         ${sectionHeader('Cost Variance Analysis', 'Compare monthly cost by account and location; record explanations for each variance.', `<button id="varianceExcel" class="btn btn-outline" type="button">📊 Export Excel</button>`)}
@@ -122,7 +122,7 @@ async function variance(period, mode) {
     $('#pageContent').innerHTML = `${sectionHeader('Cost Variance Analysis', 'Compare monthly cost by account and location; record explanations for each variance.', `<button id="varianceExcel" class="btn btn-outline" type="button">📊 Export Excel</button>`)}${card(controls, varianceTable)}`;
     $('#varianceSearch').addEventListener('input', event => { state.varianceSearch = event.target.value; variance(period, mode); });
     $('#varianceHideZero').addEventListener('change', event => { state.varianceHideZero = event.target.checked; variance(period, mode); });
-    $('#varianceCategory').addEventListener('change', event => { state.varianceCategory = event.target.value; variance(period, mode); });
+    $('#varianceCategory')?.addEventListener('change', event => { state.varianceCategory = event.target.value; variance(period, mode); });
     $('#varianceLocation').addEventListener('change', event => { state.varianceLocation = event.target.value; variance(period, mode); });
     $('#varianceExcel').addEventListener('click', () => downloadExcel(`cost-variance-${period}-${mode}.xls`, ['Account', 'Account Name', 'Previous month', 'Current month', 'Variance USD', 'Variance %', 'Remark'], visibleRows.map(row => [row.code, row.name, row.previous, row.current, row.change, row.changePct == null ? '' : row.changePct, row.remark || ''])));
 }
