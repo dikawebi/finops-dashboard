@@ -26,7 +26,8 @@
         .driver-row { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 12px; margin: 9px 0; font-size: 11px; }
         .driver-row > div { min-width: 0; }
         .driver-row span { display: block; margin-bottom: 5px; }
-        .driver-row i { display: block; height: 7px; border-radius: 8px; background: #203e8d; box-shadow: 0 7px 0 #eef2f8; }
+        .driver-track { height: 7px; border-radius: 8px; background: #eef2f8; overflow: hidden; }
+        .driver-row i { display: block; height: 7px; border-radius: 8px; background: #203e8d; }
         .driver-row b { white-space: nowrap; }
         .chart-footer { display: flex; justify-content: space-between; gap: 12px; margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
         @media (max-width: 1050px) { .overview-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

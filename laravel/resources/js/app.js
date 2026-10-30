@@ -45,11 +45,12 @@ function updateNavigation(period, mode) {
 }
 
 async function overview(period, mode) {
-    const [cost, financial, inventory, production] = await Promise.all([
+    const [cost, financial, inventory, production, costPerMt] = await Promise.all([
         api(`/api/cost-matrix?period=${period}&mode=${mode}`),
         api(`/api/financial-statements?period=${period}&mode=${mode}`),
         api(`/api/inventory-valuation?period=${period}&mode=${mode}`),
         api(`/api/production-summary?period=${period}&mode=${mode}`),
+        api(`/api/cost-per-mt?period=${period}&mode=${mode}`),
     ]);
     const metrics = Array.isArray(production.dbMetrics) ? production.dbMetrics : Object.values(production.dbMetrics || {});
     const daily = production.dailyTrends || [];
@@ -65,7 +66,7 @@ async function overview(period, mode) {
         ['GROSS PROFIT', Number(financial.incomeStatement?.grossProfit || 0) === 0 ? 'USD -' : money(line('grossProfit')), 'Coal sales less cost of sales', 'blue'],
         ['OPERATING PROFIT / BEFORE INTEREST', money(line('profitBeforeInterest')), 'Operating profit for the period', 'blue'],
     ];
-    const topDrivers = cost.rows.filter(row => !row.isParent).sort((a, b) => Number(b.allCost) - Number(a.allCost)).slice(0, 8).map(row => { const percentage = Number(cost.grandTotal.allCost) ? Number(row.allCost) / Number(cost.grandTotal.allCost) * 100 : 0; return `<div class="driver-row"><div><span>${esc(row.name)}</span><i style="width:${Math.max(1, percentage)}%"></i></div><b>${money(row.allCost)} (${percentage.toFixed(0)}%)</b></div>`; }).join('');
+    const topDrivers = (costPerMt.costByAccountGroup || []).slice().sort((a, b) => Number(b.amount) - Number(a.amount)).slice(0, 8).map(item => { const percentage = Number(cost.grandTotal.allCost) ? Number(item.amount) / Number(cost.grandTotal.allCost) * 100 : 0; return `<div class="driver-row"><div><span>${esc(item.group)}</span><div class="driver-track"><i style="width:${Math.max(1, percentage)}%"></i></div></div><b>${money(item.amount)} (${percentage.toFixed(0)}%)</b></div>`; }).join('');
     const maxMT = Math.max(...daily.map(item => Number(item.nettoMT) || 0), 10);
     const chartWidth = 560, chartHeight = 200, padding = 30;
     const barWidth = Math.max(5, Math.floor((chartWidth - padding * 2) / Math.max(daily.length, 1)) - 4);
