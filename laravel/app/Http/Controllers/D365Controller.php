@@ -68,10 +68,7 @@ class D365Controller extends Controller
         $data = $request->validate(['entity' => ['nullable', 'string'], 'date_from' => ['nullable', 'date'], 'date_to' => ['nullable', 'date', 'after_or_equal:date_from']]);
         $entity = $data['entity'] ?? 'gl_entries';
         abort_unless($entity === 'gl_entries', 422, 'Hanya GL staging yang dapat diimport ke dashboard utama.');
-        $query = DB::table('d365_typed_records')->where('entity_key', $entity);
-        if (!empty($data['date_from'])) $query->whereDate('accounting_date', '>=', $data['date_from']);
-        if (!empty($data['date_to'])) $query->whereDate('accounting_date', '<=', $data['date_to']);
-        $rows = $query->get();
+        $rows = $this->allocation->stagingRows($entity, $data['date_from'] ?? null, $data['date_to'] ?? null);
         $batch = GlImportBatch::create(['filename' => 'd365-staging-import.json', 'source' => 'd365', 'row_count' => $rows->count(), 'months_covered' => $rows->pluck('accounting_date')->filter()->map(fn ($date): string => substr((string) $date, 0, 7))->unique()->values()->all(), 'note' => 'Explicit import from D365 staging', 'imported_at' => now()]);
         $mapped = 0; $unmapped = 0;
         foreach ($rows->chunk(200) as $chunk) {

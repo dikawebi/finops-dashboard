@@ -2,6 +2,7 @@
 
 namespace App\Services\D365;
 
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class D365AllocationService
@@ -50,10 +51,7 @@ class D365AllocationService
 
     public function preview(?string $entity = null, ?string $dateFrom = null, ?string $dateTo = null): array
     {
-        $query = DB::table('d365_typed_records')->where('entity_key', $entity ?: 'gl_entries');
-        if ($dateFrom) $query->whereDate('accounting_date', '>=', $dateFrom);
-        if ($dateTo) $query->whereDate('accounting_date', '<=', $dateTo);
-        $rows = $query->get();
+        $rows = $this->stagingRows($entity ?: 'gl_entries', $dateFrom, $dateTo);
         $mapped = $unmapped = 0;
         $total = 0.0;
         foreach ($rows as $row) {
@@ -63,5 +61,34 @@ class D365AllocationService
             $total += (float) ($row->amount_reporting ?? $row->amount_accounting ?? 0);
         }
         return ['entity' => $entity ?: 'gl_entries', 'rows' => $rows->count(), 'mapped' => $mapped, 'unmapped' => $unmapped, 'total_reporting' => $total];
+    }
+
+    public function stagingRows(string $entity, ?string $dateFrom = null, ?string $dateTo = null): Collection
+    {
+        $query = DB::table('d365_typed_records')->where('entity_key', $entity);
+        if ($entity !== 'gl_entries') {
+            if ($dateFrom) $query->whereDate('accounting_date', '>=', $dateFrom);
+            if ($dateTo) $query->whereDate('accounting_date', '<=', $dateTo);
+            return $query->get();
+        }
+
+        if (!$dateFrom && !$dateTo) return $query->get();
+
+        $headerKeys = DB::table('d365_typed_records')
+            ->where('entity_key', 'gl_journal_entries')
+            ->when($dateFrom, fn ($builder) => $builder->whereDate('accounting_date', '>=', $dateFrom))
+            ->when($dateTo, fn ($builder) => $builder->whereDate('accounting_date', '<=', $dateTo))
+            ->pluck('source_key')
+            ->map(fn ($key): string => (string) $key)
+            ->filter()
+            ->flip();
+
+        if ($headerKeys->isEmpty()) return collect();
+
+        return $query->get()->filter(function ($row) use ($headerKeys): bool {
+            $payload = json_decode((string) $row->payload, true) ?: [];
+            $parentKey = $payload['GeneralJournalEntry'] ?? $payload['generalJournalEntry'] ?? null;
+            return $parentKey !== null && $headerKeys->has((string) $parentKey);
+        })->values();
     }
 }
