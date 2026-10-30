@@ -30,7 +30,8 @@ async function overview(period, mode) {
         api(`/api/inventory-valuation?period=${period}`),
         api(`/api/production-summary?period=${period}`),
     ]);
-    const metrics = Array.isArray(production) ? production : production.data || [];
+    const metrics = production.dbMetrics || [];
+    const daily = production.dailyTrends || [];
     const productionMT = Number(metrics.find(item => item.metric_key === 'coalGetting')?.value || 0);
     const profitLoss = financial.sections?.profitLoss || [];
     const line = id => profitLoss.find(item => item.id === id)?.value || 0;
@@ -44,12 +45,22 @@ async function overview(period, mode) {
         ['GROSS PROFIT', money(line('grossProfit')), 'Coal sales less cost of sales', 'blue'],
         ['OPERATING PROFIT / BEFORE INTEREST', money(line('profitBeforeInterest')), 'Operating profit for the period', 'blue'],
     ];
-    const bars = metrics.slice(0, 8).map((item, index) => `<div class="bar-row"><span>${esc(item.label || item.metric_key)}</span><i style="width:${Math.max(8, 100 - index * 11)}%"></i><b>${qty(item.value)}</b></div>`).join('');
+    const topDrivers = cost.rows.filter(row => !row.isParent).sort((a, b) => Number(b.allCost) - Number(a.allCost)).slice(0, 5).map(row => `<div class="driver-row"><span>${esc(row.name)}</span><b>${money(row.allCost)}</b></div>`).join('');
+    const maxMT = Math.max(...daily.map(item => Number(item.nettoMT) || 0), 10);
+    const chartWidth = 560, chartHeight = 200, padding = 30;
+    const barWidth = Math.max(5, Math.floor((chartWidth - padding * 2) / Math.max(daily.length, 1)) - 4);
+    const bars = daily.map((item, index) => {
+        const x = padding + index * (barWidth + 4);
+        const height = Math.round((Number(item.nettoMT || 0) / maxMT) * (chartHeight - padding * 2));
+        const day = item.date.slice(-2);
+        return `<g><rect x="${x}" y="${chartHeight - padding - height}" width="${barWidth}" height="${height}" fill="#0891b2" rx="3"><title>${esc(item.date)}: ${qty(item.nettoMT)} MT</title></rect>${index % 2 === 0 ? `<text x="${x + barWidth / 2}" y="${chartHeight - 10}" text-anchor="middle" font-size="10" fill="#64748b">${day}</text>` : ''}</g>`;
+    }).join('');
+    const dailyChart = daily.length ? `<svg width="100%" height="${chartHeight}" viewBox="0 0 ${chartWidth} ${chartHeight}" role="img" aria-label="Daily production volume"><line x1="${padding}" y1="${chartHeight - padding}" x2="${chartWidth - padding}" y2="${chartHeight - padding}" stroke="#cbd5e1"/><line x1="${padding}" y1="${padding}" x2="${chartWidth - padding}" y2="${padding}" stroke="#e2e8f0" stroke-dasharray="4"/><text x="${padding - 5}" y="${padding + 10}" text-anchor="end" font-size="10" fill="#94a3b8">${qty(maxMT)} MT</text><text x="${padding - 5}" y="${chartHeight - padding}" text-anchor="end" font-size="10" fill="#94a3b8">0</text>${bars}</svg>` : '<p class="chart-empty">No daily production records for this period.</p>';
     $('#pageContent').innerHTML = `
         ${sectionHeader('Operations & Financial Overview', 'Microsoft Dynamics 365 General Ledger and Google Sheets weighbridge data')}
         <div class="kpi-grid">${kpis.map(([label, value, sub, type]) => `<article class="kpi-card ${type}"><span class="kpi-title">${label}</span><strong class="kpi-value">${value}</strong><small class="kpi-sub">${sub}</small></article>`).join('')}</div>
-        ${card(`Production by Activity — Google Sheets DB ${badge('production_daily_sheets.json')}`, table(['Activity', 'Volume', 'Unit', 'Availability'], metrics.map(item => `<tr><td>${esc(item.label || item.metric_key)}</td><td class="num">${qty(item.value)}</td><td>${esc(item.unit)}</td><td><span class="status online">Available</span></td></tr>`)))}
-        <div class="overview-lower"><section class="chart-card"><div class="card-title">Daily Production Volume (MT)</div><p class="chart-caption">Operational activity snapshot from the selected period.</p><div class="bars">${bars}</div></section><section class="chart-card"><div class="card-title">Data Sources</div><div class="source-list"><p><b>●</b> D365 General Ledger <span>Online</span></p><p><b>●</b> Google Sheets DB <span>Manual Sync</span></p><p><b>●</b> Frozen Baseline <span>Verified</span></p></div></section></div>`;
+        ${card(`Production by Activity — Google Sheets DB ${badge('production_daily_sheets.json')}`, table(['Activity', 'Volume', 'Unit', 'Availability'], metrics.map(item => `<tr><td>${esc(item.label || item.metric_key)}</td><td class="num">${item.value == null ? '—' : qty(item.value)}</td><td>${esc(item.unit)}</td><td>${item.value == null ? `No data: ${(item.missingPeriods || []).join(', ')}` : 'Available'}</td></tr>`)))}
+        <div class="grid-2 overview-lower"><section class="card"><div class="card-title"><span>Cost Allocation: COGP &amp; Direct Expense</span>${badge('gl_data.json')}<small>USD</small></div><div class="allocation-grid"><article class="allocation-val"><b>DIRECT EXPENSE, GA &amp; SELLING</b><strong>${money(cost.grandTotal.totalExpense)}</strong><span>Direct Expense by Valuation to; Not Valuated is included in GA. Selling Expense has its own column.</span></article><article class="allocation-cost"><b>COGP</b><strong>${money(cost.grandTotal.totalCOGP)}</strong><span>From Costing to: Mining, 3 Coal Hauling routes, Washing Plant, BP PORT</span></article></div><b class="drivers-title">Top Cost Drivers</b><div>${topDrivers}</div></section><section class="card"><div class="card-title"><span>Daily Production Volume (MT)</span>${badge('production_daily_sheets.json')}<small>Google Sheets Data</small></div><p class="chart-caption">Daily recorded coal volume (MT):</p><div id="chart-daily-production">${dailyChart}</div><div class="chart-footer"><span>Source: Google Sheets or uploaded data</span><span>Update: Manual sync</span></div></section></div>`;
 }
 
 async function cost(period, mode) {
@@ -87,7 +98,17 @@ async function inventory(period) {
     const totalQty = stages.reduce((total, stage) => total + Number(stage.endingQtyMT || 0), 0);
     const totalValue = stages.reduce((total, stage) => total + Number(stage.endingValueUSD || 0), 0);
     const cards = stages.map(stage => `<article class="inventory-stage"><h3>${esc(stage.name)}</h3><p><span>Closing Qty</span><b>${qty(stage.endingQtyMT)} MT</b></p><p><span>Closing Value</span><b>${money(stage.endingValueUSD)}</b></p><p><span>Moving Average</span><b>${money(stage.endingRateUSD)} / MT</b></p></article>`).join('');
-    const rows = stages.map(stage => `<tr><td>${esc(stage.name)}</td><td class="num">${qty(stage.beginningQtyMT)}</td><td class="num">${money(stage.beginningValueUSD)}</td><td class="num">${qty(stage.inflowQtyMT)}</td><td class="num">${money(stage.inflowTotalValueUSD)}</td><td class="num">${money(stage.addedCostUSD)}</td><td class="num">${qty(stage.outflowQtyMT)}</td><td class="num">${money(stage.outflowValueUSD)}</td><td class="num">${qty(stage.endingQtyMT)}</td><td class="num">${money(stage.endingValueUSD)}</td><td class="num">${money(stage.endingRateUSD)}</td></tr>`);
+    const colors = ['#2563eb', '#0891b2', '#7c3aed', '#eab308', '#0f766e', '#f97316', '#64748b', '#b45309'];
+    const totalIncludedQty = stages.filter(stage => stage.includedInQuantityTotal !== false).reduce((sum, stage) => sum + Number(stage.endingQtyMT || 0), 0);
+    let offset = 0;
+    const circumference = 2 * Math.PI * 108;
+    const segments = stages.filter(stage => stage.includedInQuantityTotal !== false && Number(stage.endingQtyMT) > 0).map((stage, index) => {
+        const length = Number(stage.endingQtyMT) / totalIncludedQty * circumference;
+        const segment = `<circle cx="140" cy="140" r="108" fill="none" stroke="${colors[index % colors.length]}" stroke-width="32" stroke-dasharray="${length} ${circumference - length}" stroke-dashoffset="${-offset}" transform="rotate(-90 140 140)"><title>${esc(stage.name)} ${qty(stage.endingQtyMT)} MT</title></circle>`;
+        offset += length;
+        return segment;
+    }).join('');
+    const donut = `<div class="inventory-donut-layout"><svg viewBox="0 0 280 280" class="inventory-donut" role="img" aria-label="Coal stock composition ${esc(period)}"><circle cx="140" cy="140" r="108" fill="none" stroke="#e2e8f0" stroke-width="32"/>${segments}<text x="140" y="123" text-anchor="middle" fill="#64748b" font-size="12">Total volume</text><text x="140" y="153" text-anchor="middle" fill="#0f172a" font-size="22" font-weight="700">${qty(totalIncludedQty)}</text><text x="140" y="174" text-anchor="middle" fill="#64748b" font-size="12">MT</text></svg><div class="inventory-chart-legend">${stages.map((stage, index) => `<div><i style="background:${colors[index % colors.length]}"></i><span>${esc(stage.name)}</span><b>${money(stage.endingRateUSD)} / MT</b><strong>${qty(stage.endingQtyMT)}</strong></div>`).join('')}</div></div>`;
     $('#pageContent').innerHTML = `
         ${sectionHeader('Monthly Inventory Valuation', 'Eight locations • Qty MT • Value USD • Monthly weighted average per stock.', `<label>Month <input type="month" value="${period}" disabled></label>${unavailable('First Period Opening Balance')}`)}
         <p class="inventory-notice">Inventory valuation uses the frozen workbook movement order and the selected month closing balance.</p>

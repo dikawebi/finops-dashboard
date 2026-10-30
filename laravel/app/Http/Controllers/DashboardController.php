@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\MonthlyMetric;
+use App\Models\DailyProduction;
 use App\Services\CostMatrixService;
 use App\Services\FinancialStatementService;
 use App\Services\InventoryValuationService;
@@ -35,7 +36,15 @@ class DashboardController extends Controller
     {
         $period = (string) $request->query('period', '2026-10');
         abort_unless((bool) preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $period), 422, 'Invalid period.');
-        return response()->json(['success' => true, 'data' => MonthlyMetric::period($period)->get()]);
+        $daily = DailyProduction::period($period)->orderBy('production_date')->get();
+        return response()->json(['success' => true, 'data' => [
+            'dbMetrics' => MonthlyMetric::period($period)->get(),
+            'dailyTrends' => $daily->map(fn (DailyProduction $row): array => [
+                'date' => $row->production_date->format('Y-m-d'),
+                'nettoMT' => (float) $row->coal_getting_mt,
+                'count' => 0,
+            ])->values(),
+        ]]);
     }
 
     public function integration(): JsonResponse
