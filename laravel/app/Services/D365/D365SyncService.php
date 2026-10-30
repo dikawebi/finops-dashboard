@@ -12,7 +12,7 @@ class D365SyncService
         ['key' => 'gl_entries', 'label' => 'GL Account Entries', 'entity' => 'GeneralJournalAccountEntryBiEntities', 'mode' => 'incremental', 'source_field' => 'SourceKey', 'date_field' => null, 'company_field' => null],
         ['key' => 'gl_journal_entries', 'label' => 'GL Journal Entries', 'entity' => 'GeneralJournalEntryBiEntities', 'mode' => 'incremental', 'source_field' => 'SourceKey', 'date_field' => 'AccountingDate', 'company_field' => 'SubledgerVoucherDataAreaId'],
         ['key' => 'main_accounts', 'label' => 'Main Accounts', 'entity' => 'MainAccountBiEntities', 'mode' => 'snapshot', 'source_field' => 'SourceKey', 'date_field' => null, 'company_field' => null],
-        ['key' => 'dimension_values', 'label' => 'Financial Dimension Values', 'entity' => 'FinancialDimensionValues', 'mode' => 'snapshot', 'source_field' => 'SourceKey', 'date_field' => null, 'company_field' => 'LegalEntityId'],
+        ['key' => 'dimension_values', 'label' => 'Financial Dimension Values', 'entity' => 'FinancialDimensionValues', 'mode' => 'snapshot', 'source_field' => 'SourceKey', 'date_field' => null, 'company_field' => 'LegalEntityId', 'exclude_company' => 'ArcSteel'],
         ['key' => 'ledger_journal_lines', 'label' => 'Ledger Journal Lines', 'entity' => 'LedgerJournalTransBiEntities', 'mode' => 'incremental', 'source_field' => 'SourceKey', 'date_field' => 'DocumentDate', 'company_field' => 'dataAreaId'],
         ['key' => 'ledger_entry_journals', 'label' => 'Ledger Entry Journals', 'entity' => 'LedgerEntryJournalBiEntities', 'mode' => 'incremental', 'source_field' => 'SourceKey', 'date_field' => null, 'company_field' => null],
         ['key' => 'vendors', 'label' => 'Vendors', 'entity' => 'VendorsV2', 'mode' => 'snapshot', 'source_field' => 'SourceKey', 'date_field' => null, 'company_field' => 'dataAreaId'],
@@ -72,7 +72,8 @@ class D365SyncService
     {
         $parts = [];
         $companyField = $entity['company_field'];
-        if ($companyField && filled(config('services.d365.company'))) $parts[] = $companyField." eq '".str_replace("'", "''", config('services.d365.company'))."'";
+        if ($companyField && filled($entity['exclude_company'] ?? null)) $parts[] = $companyField." ne '".str_replace("'", "''", $entity['exclude_company'])."'";
+        elseif ($companyField && filled(config('services.d365.company'))) $parts[] = $companyField." eq '".str_replace("'", "''", config('services.d365.company'))."'";
         if ($entity['mode'] === 'incremental' && ($entity['source_field'] ?? null)) {
             $cursor = DB::table('d365_sync_logs')->where('entity_key', $entity['key'])->where('status', 'success')->whereNotNull('max_source_key')->latest('id')->value('max_source_key');
             if ($cursor !== null && ctype_digit((string) $cursor)) $parts[] = $entity['source_field'].' gt '.(int) $cursor;
