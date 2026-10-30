@@ -10,9 +10,9 @@ Dokumen ini menjadi checklist kerja setelah data freeze 2026-10-30. Angka dashbo
 | P2 | Data layer dan frozen snapshot loader | Selesai | `dashboard:load-data`, `dashboard:verify` |
 | P3.1 | Report Cost calculation engine | Berjalan | `CostMatrixService`, `dashboard:cost-matrix` |
 | P3.2 | Smoke command | Selesai | `dashboard:cost-matrix` terdaftar |
-| P3.3 | Financial Statements dan Inventory Valuation | Belum mulai | Menunggu Cost Matrix stabil |
-| P3.4 | Regression terhadap baseline | Selesai | 20 baseline cost-matrix lulus; `dashboard:regression` |
-| P4 | Controller, endpoint, dan frontend Laravel | Belum mulai | Endpoint belum dibuat |
+| P3.3 | Financial Statements dan Inventory Valuation | Implemented | Baseline MTD/YTD tersedia melalui service dan API; visual parity masih berjalan |
+| P3.4 | Regression terhadap baseline | Selesai | 80 baseline Cost Matrix, Cost/MT, Financial Statements, dan Inventory lulus; `dashboard:regression --suite=all` |
+| P4 | Controller, endpoint, dan frontend Laravel | Implemented (parity pending) | Read-only endpoint dan frontend utama tersedia; beberapa kontrol/integrasi masih deferred |
 
 ## Development steps
 
@@ -86,23 +86,22 @@ Dokumen ini menjadi checklist kerja setelah data freeze 2026-10-30. Angka dashbo
 
 ## Next development plan
 
-### Task berikutnya: selesaikan P3.4 Cost Matrix regression
+### Task berikutnya: selesaikan visual parity dan data-source QA
 
 Urutan kerja:
 
-1. Perbaiki klasifikasi `costGA` agar `costing_to`, `valuation_to`, dan akun 7/8/9 mengikuti baseline.
-2. Bandingkan leaf account terlebih dahulu, kemudian parent dan grand total.
-3. Tambahkan test terisolasi untuk akun `5000056` dan kategori `not valuated`.
-4. Jalankan MTD Oktober, YTD Oktober, lalu seluruh periode baseline.
+1. Bandingkan tujuh tab dengan referensi pada viewport desktop dan mobile.
+2. Selesaikan filter location, persistence remark, dan export Excel.
+3. Verifikasi inventory route/history, production chart, serta empty-state behavior.
+4. Jalankan `php artisan dashboard:regression --suite=all` setelah setiap perubahan engine.
 5. Catat mismatch yang bersifat data/asumsi terpisah dari bug engine.
 
-### Setelah P3.4 lulus: mulai P3.3
+### Status setelah P3.4 lulus
 
-1. Inventarisasi struktur `financial_baseline.json` dan `inventory_model.json`.
-2. Tulis service financial statement dengan output contract yang sama dengan baseline.
-3. Tulis service inventory valuation dengan test movement order.
-4. Tambahkan dua command smoke dan regression.
-5. Baru setelah itu masuk P4 controller/API.
+1. Financial statement dan inventory service sudah membaca baseline resmi.
+2. Cost/MT, DB Cost Summary, dan Production Summary sudah memiliki endpoint baseline-backed.
+3. Regression command sudah mencakup empat domain dashboard.
+4. Pekerjaan tersisa berfokus pada visual parity, integrasi data, dan release QA.
 
 ## Definition of done per fase
 

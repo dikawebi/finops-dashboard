@@ -9,11 +9,11 @@ Dokumen acuan: `reference/docs/FDD_LARAVEL_SYSTEM.md` (Bahasa Indonesia, sumber 
 |---|---|---|
 | `reference/docs/` | FDD (ID+EN), rencana teknis, FORMULA_DASHBOARD.md (rumus resmi), IT_HANDOVER.md, screenshot acuan branding | ✅ |
 | `data_snapshot/` | Backup ZIP + extracted frozen JSON (tgl 2026-10-30) — sumber initial data load | ✅ |
-| `baseline/reference_dump/` | **Baseline figures** — output API operasional utk periode 2026-01..2026-10 (MTD+YTD); standar angka verifikasi & test PHPUnit | 🔄 (sedang di-dump) |
+| `baseline/reference_dump/` | **Baseline figures** — output API operasional utk periode 2026-01..2026-10 (MTD+YTD); standar angka verifikasi & regression | ✅ |
 | `baseline/dump_baseline.js` | Script pemerah baseline (bisa dijalankan ulang setelah data freeze refresh) | ✅ |
 | `laravel/` | Project Laravel 11.57.1 + MySQL `finops_dashboard`, 14 tabel, 14 model, P2 data layer | ✅ (P1–P2 selesai) |
 | `prompt_kit/` | Konteks & instruksi siap-pakai untuk setiap fase coding dengan AI | ✅ (P1–P2) |
-| `test/` | Script verifikasi diff (Laravel vs baseline figures) | ❌ belum |
+| `laravel/tests/` | PHPUnit feature/unit tests; regression baseline dijalankan melalui `dashboard:regression --suite=all` | ✅ |
 
 ## Fire akses environment
 
