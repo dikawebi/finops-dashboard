@@ -628,7 +628,7 @@ document.querySelector('.tabs').addEventListener('click', event => {
     event.preventDefault();
     state.view = tab.dataset.view;
     render();
-}));
+});
 $('#period').addEventListener('change', render);
 $('#mode').addEventListener('change', render);
 render();
