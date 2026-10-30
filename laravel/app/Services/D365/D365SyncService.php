@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 class D365SyncService
 {
     public const ENTITIES = [
-        ['key' => 'gl_entries', 'label' => 'GL Account Entries', 'entity' => 'GeneralJournalAccountEntryBiEntities', 'mode' => 'incremental', 'source_field' => 'SourceKey', 'date_field' => null, 'company_field' => 'SubledgerVoucherDataAreaId'],
+        ['key' => 'gl_entries', 'label' => 'GL Account Entries', 'entity' => 'GeneralJournalAccountEntryBiEntities', 'mode' => 'incremental', 'source_field' => 'SourceKey', 'date_field' => null, 'company_field' => null],
         ['key' => 'gl_journal_entries', 'label' => 'GL Journal Entries', 'entity' => 'GeneralJournalEntryBiEntities', 'mode' => 'incremental', 'source_field' => 'SourceKey', 'date_field' => 'AccountingDate', 'company_field' => 'SubledgerVoucherDataAreaId'],
         ['key' => 'main_accounts', 'label' => 'Main Accounts', 'entity' => 'MainAccountBiEntities', 'mode' => 'snapshot', 'source_field' => 'SourceKey', 'date_field' => null, 'company_field' => null],
         ['key' => 'dimension_values', 'label' => 'Financial Dimension Values', 'entity' => 'FinancialDimensionValues', 'mode' => 'snapshot', 'source_field' => 'SourceKey', 'date_field' => null, 'company_field' => 'LegalEntityId'],
