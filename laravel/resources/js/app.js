@@ -158,7 +158,23 @@ async function inventory(period, mode) {
 
 async function financial(period, mode) {
     const data = await api(`/api/financial-statements?period=${period}&mode=${mode}`);
-    const statement = (title, lines) => card(title, table(['Description', 'Amount USD'], (lines || []).map(line => `<tr class="${line.kind === 'heading' ? 'statement-heading' : line.kind === 'total' ? 'statement-total' : ''}"><td>${esc(line.label || line.id)}</td><td class="num">${money(line.value)}</td></tr>`)), 'financial-card');
+    const report = data.report || {};
+    const periods = report.periods || Object.keys(report.profitLoss?.[0]?.months || {});
+    const formatStatementAmount = value => value == null ? '—' : Number(value).toLocaleString('en-US', { maximumFractionDigits: 0, minimumFractionDigits: 0 }).replace(/^-/, '(') + (Number(value) < 0 ? ')' : '');
+    const reportTable = lines => {
+        const headers = ['Description', 'YTD 25', 'YTD 26', ...periods];
+        const rows = (lines || []).map(line => {
+            const classes = [line.kind === 'heading' ? 'financial-subtotal' : '', line.kind === 'total' ? 'financial-final' : ''].filter(Boolean).join(' ');
+            const cells = [
+                `<td>${esc(line.label || line.id)}</td>`,
+                `<td class="num financial-ytd">${formatStatementAmount(line.comparative)}</td>`,
+                `<td class="num financial-ytd">${formatStatementAmount(line.ytd)}</td>`,
+                ...periods.map(month => `<td class="num ${month === period ? 'selected-period' : ''}">${formatStatementAmount(line.months?.[month])}</td>`),
+            ];
+            return `<tr class="${classes}">${cells.join('')}</tr>`;
+        });
+        return `<div class="table-responsive"><table class="table-accounting financial-report-table"><thead><tr>${headers.map((header, index) => `<th class="${index === 0 ? 'financial-label' : index < 3 ? 'financial-ytd' : header === period ? 'selected-period' : ''}">${esc(header)}</th>`).join('')}</tr></thead><tbody>${rows.length ? rows.join('') : `<tr><td colspan="${headers.length}">No data available.</td></tr>`}</tbody></table></div>`;
+    };
     const income = data.incomeStatement || {};
     const reconciliation = data.inventoryReconciliation || {};
     const diagnostics = data.diagnostics || {};
@@ -167,7 +183,8 @@ async function financial(period, mode) {
         ${sectionHeader('Financial Statements', 'Profit & Loss, balance sheet, and financial baseline reconciliation.', `<label>Month <input type="month" value="${period}" disabled></label>`)}
         <p class="source-row">${badge('financial_baseline.json')} ${badge('gl_data.json')}</p>
         <div class="kpi-grid"><article class="kpi-card blue"><span class="kpi-title">TOTAL REVENUE</span><strong class="kpi-value">${money(income.revenue?.totalRevenue)}</strong><small class="kpi-sub">${esc(period)} ${esc(mode).toUpperCase()}</small></article><article class="kpi-card cost"><span class="kpi-title">EBITDA</span><strong class="kpi-value">${money(income.operatingProfitEBITDA)}</strong><small class="kpi-sub">Operating profit before tax</small></article><article class="kpi-card success"><span class="kpi-title">NET PROFIT AFTER TAX</span><strong class="kpi-value">${money(income.netProfitAfterTax)}</strong><small class="kpi-sub">Baseline financial statement</small></article></div>
-        <div class="financial-grid">${statement('Profit & Loss Statement', data.sections?.profitLoss)}${statement('Balance Sheet', data.sections?.balanceSheet)}</div>
+        ${card(`PT Borneo Prima — Profit & Loss Statement (USD)`, reportTable(report.profitLoss || data.sections?.profitLoss), 'financial-reference-card')}
+        ${card(`PT Borneo Prima — Balance Sheet (USD)`, reportTable(report.balanceSheet || data.sections?.balanceSheet), 'financial-reference-card')}
         ${card('Balances by Account', table(['Account', 'Name', 'Mapping', 'Base USD', 'GL Movement USD', 'Closing USD'], accountRows), 'financial-accounts-card')}
         ${card('Financial Statement Diagnostics', `<div class="diagnostic-grid"><p><span>Data source</span><b>${esc(data.dataSource)}</b></p><p><span>Period</span><b>${esc(data.period)} ${esc(data.mode).toUpperCase()}</b></p><p><span>Balance difference</span><b>${money(diagnostics.balanceDifferenceUSD)}</b></p><p><span>Unmapped accounts</span><b>${qty((diagnostics.unmappedAccounts || []).length)}</b></p><p><span>Inventory book value</span><b>${money(reconciliation.bookInventoryUSD)}</b></p><p><span>Coal inventory value</span><b>${money(reconciliation.coalInventoryUSD)}</b></p><p><span>Cash flow</span><b>${data.cashFlowEnabled ? 'Enabled' : 'Not available'}</b></p></div>`)}`;
 }
