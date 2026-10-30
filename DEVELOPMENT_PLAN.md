@@ -112,6 +112,7 @@ Urutan kerja:
 - Regression: cost matrix, cost per MT, financial statements, and inventory valuation baselines passed for all frozen periods and modes.
 - Frontend build: Vite production build passed.
 - D365: entity discovery, ordered sync, stop/progress, staging, allocation preview/import, and mapping management routes are implemented.
+- API reconciliation 2026-10 MTD: Cost/MT and Inventory match the frozen baseline; Financial Statements retain the expected USD 3,001 diagnostic difference from unmapped account 2320041.
 - Remaining release blockers: visual parity verification, business reconciliation, browser screenshot QA, and authorization for mutation routes.
 
 ## Definition of done per fase
