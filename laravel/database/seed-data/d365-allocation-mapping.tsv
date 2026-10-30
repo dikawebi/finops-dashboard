@@ -1,0 +1,296 @@
+4001	Business Development	4001001	Business Development	6001	JAKARTA	Not Valuated	Direct Expense
+4001	Business Development	4001001	Business Development	6002	PURUK CAHU	Not Valuated	Direct Expense
+4001	Business Development	4001001	Business Development	6003	BUA NORTH G	Mining	Direct Expense
+4001	Business Development	4001001	Business Development	6004	BUA TAKALOT	Mining	Direct Expense
+4001	Business Development	4001001	Business Development	6005	WASH PLANT	Washing Plant	Direct Expense
+4001	Business Development	4001001	Business Development	6006	HAULING ROAD	Coal Hauling	Direct Expense
+4001	Business Development	4001001	Business Development	6007	ISP ROAD	Not Valuated	Direct Expense
+4001	Business Development	4001001	Business Development	6008	ISP ANUGRAH GREENS	Not Valuated	Direct Expense
+4001	Business Development	4001001	Business Development	6009	LATAP STONE BLENDING AREA	BP PORT	Direct Expense
+4001	Business Development	4001001	Business Development	6010	BP PORT	BP PORT	Direct Expense
+4001	Business Development	4001001	Business Development	6011	ISP	Not Valuated	Direct Expense
+4001	Business Development	4001001	Business Development	6012	COAL ON BARGE	BP PORT	Direct Expense
+4001	Business Development	4001001	Business Development	6013	DOAN ARUNG	BP PORT	Direct Expense
+4001	Business Development	4001001	Business Development	6014	QUARY LAT 1	BP PORT	Direct Expense
+4001	Business Development	4001001	Business Development	6015	QUARY LAT 2	BP PORT	Direct Expense
+4001	Business Development	4001001	Business Development	6016	QUARY STONE 1	BP PORT	Direct Expense
+4001	Business Development	4001001	Business Development	6017	QUARY STONE 2	BP PORT	Direct Expense
+4001	Business Development	4001001	Business Development	6018	MAGAZINE	Mining	Direct Expense
+4001	Business Development	4001001	Business Development	6019	BUA	Mining	Direct Expense
+4001	Business Development	4001001	Business Development	6020	LAAS	Mining	Direct Expense
+4001	Business Development	4001001	Business Development	6021	KM 66	Coal Hauling	Direct Expense
+4001	Business Development	4001001	Business Development	6022	ISP KUNZ	Not Valuated	Direct Expense
+4001	Business Development	4001001	Business Development	6023	ISP BAT	Not Valuated	Direct Expense
+4081	Transhipment	4081005	Anchorage Activity	6010	BP PORT	BP PORT	Selling Expense
+4081	Transhipment	4081005	Anchorage Activity	6011	ISP	Not Valuated	Selling Expense
+4081	Transhipment	4081005	Anchorage Activity	6022	ISP KUNZ	Not Valuated	Selling Expense
+4081	Transhipment	4081005	Anchorage Activity	6023	ISP BAT	Not Valuated	Selling Expense
+4081	Transhipment	4081006	Stevedoring Activity	6010	BP PORT	BP PORT	Selling Expense
+4081	Transhipment	4081006	Stevedoring Activity	6011	ISP	Not Valuated	Selling Expense
+4081	Transhipment	4081006	Stevedoring Activity	6022	ISP KUNZ	Not Valuated	Selling Expense
+4081	Transhipment	4081006	Stevedoring Activity	6023	ISP BAT	Not Valuated	Selling Expense
+4091	Mother Vessel Loading	4091007	Anchorage Activity	6010	BP PORT	BP PORT	Selling Expense
+4091	Mother Vessel Loading	4091007	Anchorage Activity	6011	ISP	Not Valuated	Selling Expense
+4091	Mother Vessel Loading	4091007	Anchorage Activity	6022	ISP KUNZ	Not Valuated	Selling Expense
+4091	Mother Vessel Loading	4091007	Anchorage Activity	6023	ISP BAT	Not Valuated	Selling Expense
+4101	Repair & Maintanance Activity	4101001	Scheduled Maintanance	6001	JAKARTA	Not Valuated	Direct Expense
+4101	Repair & Maintanance Activity	4101001	Scheduled Maintanance	6002	PURUK CAHU	Not Valuated	Direct Expense
+4101	Repair & Maintanance Activity	4101001	Scheduled Maintanance	6003	BUA NORTH G	Mining	Direct Expense
+4101	Repair & Maintanance Activity	4101001	Scheduled Maintanance	6004	BUA TAKALOT	Mining	Direct Expense
+4101	Repair & Maintanance Activity	4101001	Scheduled Maintanance	6005	WASH PLANT	Washing Plant	Direct Expense
+4101	Repair & Maintanance Activity	4101001	Scheduled Maintanance	6006	HAULING ROAD	Coal Hauling	Direct Expense
+4101	Repair & Maintanance Activity	4101001	Scheduled Maintanance	6007	ISP ROAD	Not Valuated	Direct Expense
+4101	Repair & Maintanance Activity	4101001	Scheduled Maintanance	6008	ISP ANUGRAH GREENS	Not Valuated	Direct Expense
+4101	Repair & Maintanance Activity	4101001	Scheduled Maintanance	6009	LATAP STONE BLENDING AREA	BP PORT	Direct Expense
+4101	Repair & Maintanance Activity	4101001	Scheduled Maintanance	6010	BP PORT	BP PORT	Direct Expense
+4101	Repair & Maintanance Activity	4101001	Scheduled Maintanance	6011	ISP	Not Valuated	Direct Expense
+4101	Repair & Maintanance Activity	4101001	Scheduled Maintanance	6012	COAL ON BARGE	BP PORT	Direct Expense
+4101	Repair & Maintanance Activity	4101001	Scheduled Maintanance	6013	DOAN ARUNG	BP PORT	Direct Expense
+4101	Repair & Maintanance Activity	4101001	Scheduled Maintanance	6014	QUARY LAT 1	BP PORT	Direct Expense
+4101	Repair & Maintanance Activity	4101001	Scheduled Maintanance	6015	QUARY LAT 2	BP PORT	Direct Expense
+4101	Repair & Maintanance Activity	4101001	Scheduled Maintanance	6016	QUARY STONE 1	BP PORT	Direct Expense
+4101	Repair & Maintanance Activity	4101001	Scheduled Maintanance	6017	QUARY STONE 2	BP PORT	Direct Expense
+4101	Repair & Maintanance Activity	4101001	Scheduled Maintanance	6018	MAGAZINE	Mining	Direct Expense
+4101	Repair & Maintanance Activity	4101001	Scheduled Maintanance	6019	BUA	Mining	Direct Expense
+4101	Repair & Maintanance Activity	4101001	Scheduled Maintanance	6020	LAAS	Mining	Direct Expense
+4101	Repair & Maintanance Activity	4101001	Scheduled Maintanance	6021	KM 66	Coal Hauling	Direct Expense
+4101	Repair & Maintanance Activity	4101001	Scheduled Maintanance	6022	ISP KUNZ	Not Valuated	Direct Expense
+4101	Repair & Maintanance Activity	4101001	Scheduled Maintanance	6023	ISP BAT	Not Valuated	Direct Expense
+4101	Repair & Maintanance Activity	4101002	Unscheduled Maintenance	6001	JAKARTA	Not Valuated	Direct Expense
+4101	Repair & Maintanance Activity	4101002	Unscheduled Maintenance	6002	PURUK CAHU	Not Valuated	Direct Expense
+4101	Repair & Maintanance Activity	4101002	Unscheduled Maintenance	6003	BUA NORTH G	Mining	Direct Expense
+4101	Repair & Maintanance Activity	4101002	Unscheduled Maintenance	6004	BUA TAKALOT	Mining	Direct Expense
+4101	Repair & Maintanance Activity	4101002	Unscheduled Maintenance	6005	WASH PLANT	Washing Plant	Direct Expense
+4101	Repair & Maintanance Activity	4101002	Unscheduled Maintenance	6006	HAULING ROAD	Coal Hauling	Direct Expense
+4101	Repair & Maintanance Activity	4101002	Unscheduled Maintenance	6007	ISP ROAD	Not Valuated	Direct Expense
+4101	Repair & Maintanance Activity	4101002	Unscheduled Maintenance	6008	ISP ANUGRAH GREENS	Not Valuated	Direct Expense
+4101	Repair & Maintanance Activity	4101002	Unscheduled Maintenance	6009	LATAP STONE BLENDING AREA	BP PORT	Direct Expense
+4101	Repair & Maintanance Activity	4101002	Unscheduled Maintenance	6010	BP PORT	BP PORT	Direct Expense
+4101	Repair & Maintanance Activity	4101002	Unscheduled Maintenance	6011	ISP	Not Valuated	Direct Expense
+4101	Repair & Maintanance Activity	4101002	Unscheduled Maintenance	6012	COAL ON BARGE	BP PORT	Direct Expense
+4101	Repair & Maintanance Activity	4101002	Unscheduled Maintenance	6013	DOAN ARUNG	BP PORT	Direct Expense
+4101	Repair & Maintanance Activity	4101002	Unscheduled Maintenance	6014	QUARY LAT 1	BP PORT	Direct Expense
+4101	Repair & Maintanance Activity	4101002	Unscheduled Maintenance	6015	QUARY LAT 2	BP PORT	Direct Expense
+4101	Repair & Maintanance Activity	4101002	Unscheduled Maintenance	6016	QUARY STONE 1	BP PORT	Direct Expense
+4101	Repair & Maintanance Activity	4101002	Unscheduled Maintenance	6017	QUARY STONE 2	BP PORT	Direct Expense
+4101	Repair & Maintanance Activity	4101002	Unscheduled Maintenance	6018	MAGAZINE	Mining	Direct Expense
+4101	Repair & Maintanance Activity	4101002	Unscheduled Maintenance	6019	BUA	Mining	Direct Expense
+4101	Repair & Maintanance Activity	4101002	Unscheduled Maintenance	6020	LAAS	Mining	Direct Expense
+4101	Repair & Maintanance Activity	4101002	Unscheduled Maintenance	6021	KM 66	Coal Hauling	Direct Expense
+4101	Repair & Maintanance Activity	4101002	Unscheduled Maintenance	6022	ISP KUNZ	Not Valuated	Direct Expense
+4101	Repair & Maintanance Activity	4101002	Unscheduled Maintenance	6023	ISP BAT	Not Valuated	Direct Expense
+4101	Repair & Maintanance Activity	4101003	Warranty Enforcement	6001	JAKARTA	Not Valuated	Direct Expense
+4101	Repair & Maintanance Activity	4101003	Warranty Enforcement	6002	PURUK CAHU	Not Valuated	Direct Expense
+4101	Repair & Maintanance Activity	4101003	Warranty Enforcement	6003	BUA NORTH G	Mining	Direct Expense
+4101	Repair & Maintanance Activity	4101003	Warranty Enforcement	6004	BUA TAKALOT	Mining	Direct Expense
+4101	Repair & Maintanance Activity	4101003	Warranty Enforcement	6005	WASH PLANT	Washing Plant	Direct Expense
+4101	Repair & Maintanance Activity	4101003	Warranty Enforcement	6006	HAULING ROAD	Coal Hauling	Direct Expense
+4101	Repair & Maintanance Activity	4101003	Warranty Enforcement	6007	ISP ROAD	Not Valuated	Direct Expense
+4101	Repair & Maintanance Activity	4101003	Warranty Enforcement	6008	ISP ANUGRAH GREENS	Not Valuated	Direct Expense
+4101	Repair & Maintanance Activity	4101003	Warranty Enforcement	6009	LATAP STONE BLENDING AREA	BP PORT	Direct Expense
+4101	Repair & Maintanance Activity	4101003	Warranty Enforcement	6010	BP PORT	BP PORT	Direct Expense
+4101	Repair & Maintanance Activity	4101003	Warranty Enforcement	6011	ISP	Not Valuated	Direct Expense
+4101	Repair & Maintanance Activity	4101003	Warranty Enforcement	6012	COAL ON BARGE	BP PORT	Direct Expense
+4101	Repair & Maintanance Activity	4101003	Warranty Enforcement	6013	DOAN ARUNG	BP PORT	Direct Expense
+4101	Repair & Maintanance Activity	4101003	Warranty Enforcement	6014	QUARY LAT 1	BP PORT	Direct Expense
+4101	Repair & Maintanance Activity	4101003	Warranty Enforcement	6015	QUARY LAT 2	BP PORT	Direct Expense
+4101	Repair & Maintanance Activity	4101003	Warranty Enforcement	6016	QUARY STONE 1	BP PORT	Direct Expense
+4101	Repair & Maintanance Activity	4101003	Warranty Enforcement	6017	QUARY STONE 2	BP PORT	Direct Expense
+4101	Repair & Maintanance Activity	4101003	Warranty Enforcement	6018	MAGAZINE	Mining	Direct Expense
+4101	Repair & Maintanance Activity	4101003	Warranty Enforcement	6019	BUA	Mining	Direct Expense
+4101	Repair & Maintanance Activity	4101003	Warranty Enforcement	6020	LAAS	Mining	Direct Expense
+4101	Repair & Maintanance Activity	4101003	Warranty Enforcement	6021	KM 66	Coal Hauling	Direct Expense
+4101	Repair & Maintanance Activity	4101003	Warranty Enforcement	6022	ISP KUNZ	Not Valuated	Direct Expense
+4101	Repair & Maintanance Activity	4101003	Warranty Enforcement	6023	ISP BAT	Not Valuated	Direct Expense
+4111	General Process	4111001	Support Office & Administration	6001	JAKARTA	Not Valuated	Direct Expense
+4111	General Process	4111001	Support Office & Administration	6002	PURUK CAHU	Not Valuated	Direct Expense
+4111	General Process	4111001	Support Office & Administration	6003	BUA NORTH G	Mining	Direct Expense
+4111	General Process	4111001	Support Office & Administration	6004	BUA TAKALOT	Mining	Direct Expense
+4111	General Process	4111001	Support Office & Administration	6005	WASH PLANT	Washing Plant	Direct Expense
+4111	General Process	4111001	Support Office & Administration	6006	HAULING ROAD	Coal Hauling	Direct Expense
+4111	General Process	4111001	Support Office & Administration	6007	ISP ROAD	Not Valuated	Direct Expense
+4111	General Process	4111001	Support Office & Administration	6008	ISP ANUGRAH GREENS	Not Valuated	Direct Expense
+4111	General Process	4111001	Support Office & Administration	6009	LATAP STONE BLENDING AREA	BP PORT	Direct Expense
+4111	General Process	4111001	Support Office & Administration	6010	BP PORT	BP PORT	Direct Expense
+4111	General Process	4111001	Support Office & Administration	6011	ISP	Not Valuated	Direct Expense
+4111	General Process	4111001	Support Office & Administration	6012	COAL ON BARGE	BP PORT	Direct Expense
+4111	General Process	4111001	Support Office & Administration	6013	DOAN ARUNG	BP PORT	Direct Expense
+4111	General Process	4111001	Support Office & Administration	6014	QUARY LAT 1	BP PORT	Direct Expense
+4111	General Process	4111001	Support Office & Administration	6015	QUARY LAT 2	BP PORT	Direct Expense
+4111	General Process	4111001	Support Office & Administration	6016	QUARY STONE 1	BP PORT	Direct Expense
+4111	General Process	4111001	Support Office & Administration	6017	QUARY STONE 2	BP PORT	Direct Expense
+4111	General Process	4111001	Support Office & Administration	6018	MAGAZINE	Mining	Direct Expense
+4111	General Process	4111001	Support Office & Administration	6019	BUA	Mining	Direct Expense
+4111	General Process	4111001	Support Office & Administration	6020	LAAS	Mining	Direct Expense
+4111	General Process	4111001	Support Office & Administration	6021	KM 66	Coal Hauling	Direct Expense
+4111	General Process	4111001	Support Office & Administration	6022	ISP KUNZ	Not Valuated	Direct Expense
+4111	General Process	4111001	Support Office & Administration	6023	ISP BAT	Not Valuated	Direct Expense
+4111	General Process	4111003	Support	6001	JAKARTA	Not Valuated	Direct Expense
+4111	General Process	4111003	Support	6002	PURUK CAHU	Not Valuated	Direct Expense
+4111	General Process	4111003	Support	6003	BUA NORTH G	Mining	Direct Expense
+4111	General Process	4111003	Support	6004	BUA TAKALOT	Mining	Direct Expense
+4111	General Process	4111003	Support	6005	WASH PLANT	Washing Plant	Direct Expense
+4111	General Process	4111003	Support	6006	HAULING ROAD	Coal Hauling	Direct Expense
+4111	General Process	4111003	Support	6007	ISP ROAD	Not Valuated	Direct Expense
+4111	General Process	4111003	Support	6008	ISP ANUGRAH GREENS	Not Valuated	Direct Expense
+4111	General Process	4111003	Support	6009	LATAP STONE BLENDING AREA	BP PORT	Direct Expense
+4111	General Process	4111003	Support	6010	BP PORT	BP PORT	Direct Expense
+4111	General Process	4111003	Support	6011	ISP	Not Valuated	Direct Expense
+4111	General Process	4111003	Support	6012	COAL ON BARGE	BP PORT	Direct Expense
+4111	General Process	4111003	Support	6013	DOAN ARUNG	BP PORT	Direct Expense
+4111	General Process	4111003	Support	6014	QUARY LAT 1	BP PORT	Direct Expense
+4111	General Process	4111003	Support	6015	QUARY LAT 2	BP PORT	Direct Expense
+4111	General Process	4111003	Support	6016	QUARY STONE 1	BP PORT	Direct Expense
+4111	General Process	4111003	Support	6017	QUARY STONE 2	BP PORT	Direct Expense
+4111	General Process	4111003	Support	6018	MAGAZINE	Mining	Direct Expense
+4111	General Process	4111003	Support	6019	BUA	Mining	Direct Expense
+4111	General Process	4111003	Support	6020	LAAS	Mining	Direct Expense
+4111	General Process	4111003	Support	6021	KM 66	Coal Hauling	Direct Expense
+4111	General Process	4111003	Support	6022	ISP KUNZ	Not Valuated	Direct Expense
+4111	General Process	4111003	Support	6023	ISP BAT	Not Valuated	Direct Expense
+4111	General Process	4111004	Safety & Security	6001	JAKARTA	Not Valuated	Direct Expense
+4111	General Process	4111004	Safety & Security	6002	PURUK CAHU	Not Valuated	Direct Expense
+4111	General Process	4111004	Safety & Security	6003	BUA NORTH G	Mining	Direct Expense
+4111	General Process	4111004	Safety & Security	6004	BUA TAKALOT	Mining	Direct Expense
+4111	General Process	4111004	Safety & Security	6005	WASH PLANT	Washing Plant	Direct Expense
+4111	General Process	4111004	Safety & Security	6006	HAULING ROAD	Coal Hauling	Direct Expense
+4111	General Process	4111004	Safety & Security	6007	ISP ROAD	Not Valuated	Direct Expense
+4111	General Process	4111004	Safety & Security	6008	ISP ANUGRAH GREENS	Not Valuated	Direct Expense
+4111	General Process	4111004	Safety & Security	6009	LATAP STONE BLENDING AREA	BP PORT	Direct Expense
+4111	General Process	4111004	Safety & Security	6010	BP PORT	BP PORT	Direct Expense
+4111	General Process	4111004	Safety & Security	6011	ISP	Not Valuated	Direct Expense
+4111	General Process	4111004	Safety & Security	6012	COAL ON BARGE	BP PORT	Direct Expense
+4111	General Process	4111004	Safety & Security	6013	DOAN ARUNG	BP PORT	Direct Expense
+4111	General Process	4111004	Safety & Security	6014	QUARY LAT 1	BP PORT	Direct Expense
+4111	General Process	4111004	Safety & Security	6015	QUARY LAT 2	BP PORT	Direct Expense
+4111	General Process	4111004	Safety & Security	6016	QUARY STONE 1	BP PORT	Direct Expense
+4111	General Process	4111004	Safety & Security	6017	QUARY STONE 2	BP PORT	Direct Expense
+4111	General Process	4111004	Safety & Security	6018	MAGAZINE	Mining	Direct Expense
+4111	General Process	4111004	Safety & Security	6019	BUA	Mining	Direct Expense
+4111	General Process	4111004	Safety & Security	6020	LAAS	Mining	Direct Expense
+4111	General Process	4111004	Safety & Security	6021	KM 66	Coal Hauling	Direct Expense
+4111	General Process	4111004	Safety & Security	6022	ISP KUNZ	Not Valuated	Direct Expense
+4111	General Process	4111004	Safety & Security	6023	ISP BAT	Not Valuated	Direct Expense
+4111	General Process	4111002	Medical	6001	JAKARTA	Not Valuated	Direct Expense
+4111	General Process	4111002	Medical	6002	PURUK CAHU	Not Valuated	Direct Expense
+4111	General Process	4111002	Medical	6003	BUA NORTH G	Mining	Direct Expense
+4111	General Process	4111002	Medical	6004	BUA TAKALOT	Mining	Direct Expense
+4111	General Process	4111002	Medical	6005	WASH PLANT	Washing Plant	Direct Expense
+4111	General Process	4111002	Medical	6006	HAULING ROAD	Coal Hauling	Direct Expense
+4111	General Process	4111002	Medical	6007	ISP ROAD	Not Valuated	Direct Expense
+4111	General Process	4111002	Medical	6008	ISP ANUGRAH GREENS	Not Valuated	Direct Expense
+4111	General Process	4111002	Medical	6009	LATAP STONE BLENDING AREA	BP PORT	Direct Expense
+4111	General Process	4111002	Medical	6010	BP PORT	BP PORT	Direct Expense
+4111	General Process	4111002	Medical	6011	ISP	Not Valuated	Direct Expense
+4111	General Process	4111002	Medical	6012	COAL ON BARGE	BP PORT	Direct Expense
+4111	General Process	4111002	Medical	6013	DOAN ARUNG	BP PORT	Direct Expense
+4111	General Process	4111002	Medical	6014	QUARY LAT 1	BP PORT	Direct Expense
+4111	General Process	4111002	Medical	6015	QUARY LAT 2	BP PORT	Direct Expense
+4111	General Process	4111002	Medical	6016	QUARY STONE 1	BP PORT	Direct Expense
+4111	General Process	4111002	Medical	6017	QUARY STONE 2	BP PORT	Direct Expense
+4111	General Process	4111002	Medical	6018	MAGAZINE	Mining	Direct Expense
+4111	General Process	4111002	Medical	6019	BUA	Mining	Direct Expense
+4111	General Process	4111002	Medical	6020	LAAS	Mining	Direct Expense
+4111	General Process	4111002	Medical	6021	KM 66	Coal Hauling	Direct Expense
+4111	General Process	4111002	Medical	6022	ISP KUNZ	Not Valuated	Direct Expense
+4111	General Process	4111002	Medical	6023	ISP BAT	Not Valuated	Direct Expense
+4111	General Process	4051005	Environmental Compliance	6001	JAKARTA	Not Valuated	Direct Expense
+4111	General Process	4051005	Environmental Compliance	6002	PURUK CAHU	Not Valuated	Direct Expense
+4111	General Process	4051005	Environmental Compliance	6003	BUA NORTH G	Mining	Direct Expense
+4111	General Process	4051005	Environmental Compliance	6004	BUA TAKALOT	Mining	Direct Expense
+4111	General Process	4051005	Environmental Compliance	6005	WASH PLANT	Washing Plant	Direct Expense
+4111	General Process	4051005	Environmental Compliance	6006	HAULING ROAD	Coal Hauling	Direct Expense
+4111	General Process	4051005	Environmental Compliance	6007	ISP ROAD	Not Valuated	Direct Expense
+4111	General Process	4051005	Environmental Compliance	6008	ISP ANUGRAH GREENS	Not Valuated	Direct Expense
+4111	General Process	4051005	Environmental Compliance	6009	LATAP STONE BLENDING AREA	BP PORT	Direct Expense
+4111	General Process	4051005	Environmental Compliance	6010	BP PORT	BP PORT	Direct Expense
+4111	General Process	4051005	Environmental Compliance	6011	ISP	Not Valuated	Direct Expense
+4111	General Process	4051005	Environmental Compliance	6012	COAL ON BARGE	BP PORT	Direct Expense
+4111	General Process	4051005	Environmental Compliance	6013	DOAN ARUNG	BP PORT	Direct Expense
+4111	General Process	4051005	Environmental Compliance	6014	QUARY LAT 1	BP PORT	Direct Expense
+4111	General Process	4051005	Environmental Compliance	6015	QUARY LAT 2	BP PORT	Direct Expense
+4111	General Process	4051005	Environmental Compliance	6016	QUARY STONE 1	BP PORT	Direct Expense
+4111	General Process	4051005	Environmental Compliance	6017	QUARY STONE 2	BP PORT	Direct Expense
+4111	General Process	4051005	Environmental Compliance	6018	MAGAZINE	Mining	Direct Expense
+4111	General Process	4051005	Environmental Compliance	6019	BUA	Mining	Direct Expense
+4111	General Process	4051005	Environmental Compliance	6020	LAAS	Mining	Direct Expense
+4111	General Process	4051005	Environmental Compliance	6021	KM 66	Coal Hauling	Direct Expense
+4111	General Process	4051005	Environmental Compliance	6022	ISP KUNZ	Not Valuated	Direct Expense
+4111	General Process	4051005	Environmental Compliance	6023	ISP BAT	Not Valuated	Direct Expense
+4011	Technical Services	4011001	Exploration and Geology	6019	BUA	Mining	Direct Expense
+4011	Technical Services	4011002	Lab & Coal Quality (Exploration)	6019	BUA	Mining	Direct Expense
+4011	Technical Services	4011003	Land Acquisition	6019	BUA	Mining	Direct Expense
+4011	Technical Services	4011004	Drilling Exploration	6019	BUA	Mining	Direct Expense
+4011	Technical Services	4011005	Mine Planning	6019	BUA	Mining	Direct Expense
+4011	Technical Services	4011006	D&B Operation	6019	BUA	Mining	Direct Expense
+4011	Technical Services	4011007	Transport for Contractor	6019	BUA	Mining	Direct Expense
+4011	Technical Services	4011008	Exploration by Contractors	6019	BUA	Mining	Direct Expense
+4011	Technical Services	4011009	Exploration by BP	6019	BUA	Mining	Direct Expense
+4021	Mining	4021001	Land Preparation & Clearing	6019	BUA	Mining	Mining
+4021	Mining	4021002	Loading OB with Own Equipment	6019	BUA	Mining	Mining
+4021	Mining	4021003	Hauling OB with Own Equipment	6019	BUA	Mining	Mining
+4021	Mining	4021004	OB Removal by Third Party	6019	BUA	Mining	Mining
+4021	Mining	4021005	Drilling for Mining	6019	BUA	Mining	Mining
+4021	Mining	4021006	Explosive and Blasting	6019	BUA	Mining	Mining
+4021	Mining	4021007	Coal Getting with Own Equipment	6019	BUA	Mining	Mining
+4021	Mining	4021008	Coal Getting by Third Party	6019	BUA	Mining	Mining
+4021	Mining	4021009	Coal Hauling Pit to Stockpile	6019	BUA	Mining	Mining
+4021	Mining	4021010	Stockpile Management	6019	BUA	Mining	Mining
+4021	Mining	4021011	Road Maintenance - Mining Area	6019	BUA	Mining	Mining
+4021	Mining	4021012	Ripping / Dozing / Rock breaking	6019	BUA	Mining	Mining
+4021	Mining	4021013	Dewatering	6019	BUA	Mining	Mining
+4021	Mining	4021014	Rehandling OB	6019	BUA	Mining	Mining
+4021	Mining	4021015	Hauling OB	6019	BUA	Mining	Mining
+4031	Coal Washing	4031001	Washing Plant Operations	6005	WASH PLANT	Washing Plant	Washing Plant
+4031	Coal Washing	4031002	Crusher Management	6005	WASH PLANT	Washing Plant	Washing Plant
+4031	Coal Washing	4031003	Chemical Management	6005	WASH PLANT	Washing Plant	Washing Plant
+4031	Coal Washing	4031004	Quality Control and Testing	6005	WASH PLANT	Washing Plant	Washing Plant
+4031	Coal Washing	4031005	Effluent Management	6005	WASH PLANT	Washing Plant	Washing Plant
+4031	Coal Washing	4031006	Repairs and Maintenance	6005	WASH PLANT	Washing Plant	Washing Plant
+4041	Coal Hauling	4041001	ROM 1 to Washing Plant- Own Equipment	6005	WASH PLANT	Washing Plant	Coal Hauling BUA to WP
+4041	Coal Hauling	4041002	ROM 1 to Washing Plant- Contractor	6005	WASH PLANT	Washing Plant	Coal Hauling BUA to WP
+4041	Coal Hauling	4041003	ROM 2 to Washing Plant- Own Equipment	6005	WASH PLANT	Washing Plant	Coal Hauling BUA to WP
+4041	Coal Hauling	4041004	ROM 2 to Washing Plant- Contractor	6005	WASH PLANT	Washing Plant	Coal Hauling BUA to WP
+4041	Coal Hauling	4041005	ROM 1 to ISP Road- Own Equipment	6006	HAULING ROAD	Coal Hauling	Coal Hauling Bua to Port
+4041	Coal Hauling	4041006	ROM 1 to ISP Road- Contractor	6006	HAULING ROAD	Coal Hauling	Coal Hauling Bua to Port
+4041	Coal Hauling	4041007	ROM 2 to ISP Road- Own Equipment	6006	HAULING ROAD	Coal Hauling	Coal Hauling Bua to Port
+4041	Coal Hauling	4041008	ROM 2 to ISP Road- Contractor	6006	HAULING ROAD	Coal Hauling	Coal Hauling Bua to Port
+4041	Coal Hauling	4041009	ROM 1 to Port Stockpile- Own Equipment	6006	HAULING ROAD	Port	Coal Hauling Bua to Port
+4041	Coal Hauling	4041010	ROM 1 to Port Stockpile- Contractor	6006	HAULING ROAD	Port	Coal Hauling Bua to Port
+4041	Coal Hauling	4041011	ROM 2 to Port Stockpile- Own Equipment	6006	HAULING ROAD	Port	Coal Hauling Bua to Port
+4041	Coal Hauling	4041012	ROM 2 to Port Stockpile- Contractor	6006	HAULING ROAD	Port	Coal Hauling Bua to Port
+4041	Coal Hauling	4041013	ISP Road to Port Stockpile- Own Equipment	6006	HAULING ROAD	Coal Hauling	Coal Hauling Bua to Port
+4041	Coal Hauling	4041014	ISP Road to Port Stockpile- Contractor	6006	HAULING ROAD	Coal Hauling	Coal Hauling Bua to Port
+4041	Coal Hauling	4041015	Wash Plant to Port Stockpile - Own Equipment	6006	HAULING ROAD	Port	Coal Hauling WP to Port
+4041	Coal Hauling	4041016	Wash Plant to Port Stockpile - Contractor Equipment	6006	HAULING ROAD	Port	Coal Hauling WP to Port
+4041	Coal Hauling	4041017	Maintenance - Road Hauling - Upper Section	6006	HAULING ROAD	Coal Hauling	Coal Hauling BUA to WP
+4041	Coal Hauling	4041018	Maintenance - Road Hauling - Lower Section	6006	HAULING ROAD	Coal Hauling	Coal Hauling Bua to Port
+4041	Coal Hauling	4041019	Road Maintenance - Road Hauling	6006	HAULING ROAD	Coal Hauling	Coal Hauling Bua to Port
+4041	Coal Hauling	4041020	Road Maintenance - Support Unit	6006	HAULING ROAD	Coal Hauling	Coal Hauling Bua to Port
+4051	Coal Stock Pile Management - ISP Road	4051001	Stockpile Tracking and Monitoring	6006	HAULING ROAD	Coal Hauling	Coal Hauling Bua to Port
+4051	Coal Stock Pile Management - ISP Road	4051002	Quality Control and Testing	6006	HAULING ROAD	Coal Hauling	Coal Hauling Bua to Port
+4051	Coal Stock Pile Management - ISP Road	4051003	Inventory Management	6006	HAULING ROAD	Coal Hauling	Coal Hauling Bua to Port
+4051	Coal Stock Pile Management - ISP Road	4051004	Stockpile Allocation and Movement	6006	HAULING ROAD	Coal Hauling	Coal Hauling Bua to Port
+4051	Coal Stock Pile Management - ISP Road	4051006	Reclaiming and Loading	6006	HAULING ROAD	Coal Hauling	Coal Hauling Bua to Port
+4061	Coal Stock Pile Management & Barge Loading - BP Port	4061001	Port Stock (Stockpile Management)	6010	BP PORT	BP PORT	Direct Expense
+4061	Coal Stock Pile Management & Barge Loading - BP Port	4061002	Quality Control & Testing Activity	6010	BP PORT	BP PORT	Direct Expense
+4061	Coal Stock Pile Management & Barge Loading - BP Port	4061003	Coal Crushing	6010	BP PORT	BP PORT	Direct Expense
+4061	Coal Stock Pile Management & Barge Loading - BP Port	4061004	Barge Loader (Loading)	6010	BP PORT	BP PORT	BP Port
+4071	Coal Barging	4071001	Quality Control and Testing	6010	BP PORT	BP PORT	Direct Expense
+4071	Coal Barging	4071002	Loading and Unloading Tracking	6010	BP PORT	BP PORT	Direct Expense
+4071	Coal Barging	4071003	Freight and Logistics Management	6010	BP PORT	BP PORT	Direct Expense
+4071	Coal Barging	4071004	Environmental Compliance	6010	BP PORT	BP PORT	Direct Expense
+4071	Coal Barging	4071005	Maintenance and Repairs	6010	BP PORT	BP PORT	Direct Expense
+4071	Coal Barging	4071006	Barging BP Port to ISP MGM	6011	ISP MGM	Not Valuated	Selling Expense
+4071	Coal Barging	4071007	ISP MGM Stockpile Management	6011	ISP MGM	Not Valuated	Selling Expense
+4071	Coal Barging	4071009	ISP KUNZ Stockpile Management	6022	ISP KUNZ	Not Valuated	Selling Expense
+4071	Coal Barging	4071008	Support office - Admin/external Relations	6010	BP PORT	BP PORT	Selling Expense
+4071	Coal Barging	4071008	Support office - Admin/external Relations	6011	ISP MGM	Not Valuated	Selling Expense
+4071	Coal Barging	4071008	Support office - Admin/external Relations	6022	ISP KUNZ	Not Valuated	Selling Expense
+4081	Transhipment	4081001	BP Port to Anchorage	6010	BP PORT	BP PORT	Selling Expense
+4081	Transhipment	4081002	BP Port to Customer	6010	BP PORT	BP PORT	Selling Expense
+4081	Transhipment	4081003	MGM to Anchorage	6011	ISP MGM	Not Valuated	Selling Expense
+4081	Transhipment	4081004	MGM to Customer	6011	ISP MGM	Not Valuated	Selling Expense
+4081	Transhipment	4081007	KUNZ to Anchorage	6022	ISP KUNZ	Not Valuated	Selling Expense
+4081	Transhipment	4081008	KUNZ to Customer	6023	ISP BAT	Not Valuated	Selling Expense
+

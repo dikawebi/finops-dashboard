@@ -77,11 +77,25 @@ class D365Controller extends Controller
 
     public function storeMapping(Request $request): array
     {
-        $data = $request->validate(['account_code' => ['nullable', 'string', 'max:64'], 'account_prefix' => ['nullable', 'string', 'max:64'], 'activity' => ['nullable', 'string', 'max:120'], 'location' => ['nullable', 'string', 'max:120'], 'department' => ['nullable', 'string', 'max:120'], 'group_activity' => ['nullable', 'string', 'max:120'], 'valuation_to' => ['required', 'string', 'max:120'], 'costing_to' => ['required', 'string', 'max:120'], 'label' => ['nullable', 'string', 'max:255'], 'priority' => ['required', 'integer', 'min:0', 'max:10000'], 'is_active' => ['nullable', 'boolean']]);
+        $data = $request->validate($this->mappingRules());
         $id = DB::table('d365_allocation_mappings')->insertGetId($data + ['is_active' => $request->boolean('is_active', true), 'created_at' => now(), 'updated_at' => now()]);
         return ['id' => $id];
     }
 
-    public function updateMapping(Request $request, int $id): array { $data = $request->validate(['account_code' => ['nullable', 'string', 'max:64'], 'account_prefix' => ['nullable', 'string', 'max:64'], 'activity' => ['nullable', 'string', 'max:120'], 'location' => ['nullable', 'string', 'max:120'], 'department' => ['nullable', 'string', 'max:120'], 'group_activity' => ['nullable', 'string', 'max:120'], 'valuation_to' => ['required', 'string', 'max:120'], 'costing_to' => ['required', 'string', 'max:120'], 'label' => ['nullable', 'string', 'max:255'], 'priority' => ['required', 'integer', 'min:0', 'max:10000'], 'is_active' => ['nullable', 'boolean']]); DB::table('d365_allocation_mappings')->where('id', $id)->update($data + ['is_active' => $request->boolean('is_active'), 'updated_at' => now()]); return ['updated' => true]; }
+    public function updateMapping(Request $request, int $id): array { $data = $request->validate($this->mappingRules()); DB::table('d365_allocation_mappings')->where('id', $id)->update($data + ['is_active' => $request->boolean('is_active'), 'updated_at' => now()]); return ['updated' => true]; }
     public function deleteMapping(int $id): array { DB::table('d365_allocation_mappings')->where('id', $id)->delete(); return ['deleted' => true]; }
+
+    private function mappingRules(): array
+    {
+        return [
+            'account_code' => ['nullable', 'string', 'max:64'], 'account_prefix' => ['nullable', 'string', 'max:64'],
+            'group_activity_code' => ['nullable', 'string', 'max:64'], 'group_activity_name' => ['nullable', 'string', 'max:160'],
+            'activity_code' => ['nullable', 'string', 'max:64'], 'activity_name' => ['nullable', 'string', 'max:160'],
+            'location_code' => ['nullable', 'string', 'max:64'], 'location_name' => ['nullable', 'string', 'max:160'],
+            'activity' => ['nullable', 'string', 'max:120'], 'location' => ['nullable', 'string', 'max:120'],
+            'department' => ['nullable', 'string', 'max:120'], 'group_activity' => ['nullable', 'string', 'max:120'],
+            'valuation_to' => ['required', 'string', 'max:120'], 'costing_to' => ['required', 'string', 'max:120'],
+            'label' => ['nullable', 'string', 'max:255'], 'priority' => ['required', 'integer', 'min:0', 'max:10000'], 'is_active' => ['nullable', 'boolean'],
+        ];
+    }
 }
