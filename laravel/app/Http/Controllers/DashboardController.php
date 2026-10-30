@@ -60,7 +60,9 @@ class DashboardController extends Controller
 
     public function integration(): JsonResponse
     {
-        return response()->json(['success' => true, 'data' => ['d365' => ['status' => 'online', 'mode' => 'local snapshot'], 'googleSheets' => ['status' => 'manual-sync', 'mode' => 'local snapshot'], 'dataFreeze' => '2026-10-30', 'database' => ['glEntries' => \App\Models\GlEntry::count(), 'monthlyMetrics' => \App\Models\MonthlyMetric::count()]]]);
+        $d365 = config('services.d365');
+        $d365Configured = (bool) ($d365['enabled'] ?? false) && filled($d365['environment_url'] ?? null) && filled($d365['tenant_id'] ?? null) && filled($d365['client_id'] ?? null) && filled($d365['client_secret'] ?? null);
+        return response()->json(['success' => true, 'data' => ['d365' => ['status' => $d365Configured ? 'configured' : 'not-configured', 'mode' => $d365Configured ? 'environment config' : 'local snapshot', 'environmentUrl' => $d365['environment_url'] ?? null, 'entityName' => $d365['entity_name'] ?? null, 'autoSync' => (bool) ($d365['auto_sync'] ?? false)], 'googleSheets' => ['status' => 'manual-sync', 'mode' => 'local snapshot'], 'dataFreeze' => '2026-10-30', 'database' => ['glEntries' => \App\Models\GlEntry::count(), 'monthlyMetrics' => \App\Models\MonthlyMetric::count()]]]);
     }
 
     public function costPerMt(Request $request, CostPerMtService $service): JsonResponse
