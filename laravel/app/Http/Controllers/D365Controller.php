@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\RunD365Sync;
-use App\Models\GlImportBatch;
 use App\Services\D365\D365AllocationService;
 use App\Services\D365\D365SyncService;
 use Illuminate\Http\Request;
@@ -95,20 +94,7 @@ class D365Controller extends Controller
         $data = $request->validate(['entity' => ['nullable', 'string'], 'date_from' => ['nullable', 'date'], 'date_to' => ['nullable', 'date', 'after_or_equal:date_from']]);
         $entity = $data['entity'] ?? 'gl_entries';
         abort_unless($entity === 'gl_entries', 422, 'Hanya GL staging yang dapat diimport ke dashboard utama.');
-        $rows = $this->allocation->stagingRows($entity, $data['date_from'] ?? null, $data['date_to'] ?? null);
-        $batch = GlImportBatch::create(['filename' => 'd365-staging-import.json', 'source' => 'd365', 'row_count' => $rows->count(), 'months_covered' => $rows->pluck('accounting_date')->filter()->map(fn ($date): string => substr((string) $date, 0, 7))->unique()->values()->all(), 'note' => 'Explicit import from D365 staging', 'imported_at' => now()]);
-        $mapped = 0; $unmapped = 0;
-        foreach ($rows->chunk(200) as $chunk) {
-            $entries = $chunk->map(function ($row) use (&$mapped, &$unmapped, $batch): array {
-                $dimensions = json_decode((string) $row->dimensions, true) ?: [];
-                $allocation = $this->allocation->resolve(['account_code' => $row->account_code, 'dimensions' => $dimensions]);
-                $allocation['mapping_status'] === 'mapped' ? $mapped++ : $unmapped++;
-                $amount = $row->amount_accounting ?? $row->amount_reporting ?? 0;
-                return ['batch_id' => $batch->id, 'journal_number' => $row->journal_number ?: $row->source_key, 'voucher' => $row->voucher, 'entry_date' => $row->accounting_date, 'year_closed' => 'No', 'account_name' => $row->account_name, 'description' => $row->description, 'currency' => $row->currency, 'fuel_quantity' => $row->quantity ?? 0, 'amount_txn' => $row->amount_transaction, 'amount_idr' => $amount, 'amount' => $row->amount_accounting, 'amount_reporting' => $row->amount_reporting ?? $amount, 'posting_type' => null, 'posting_layer' => null, 'vendor_account' => null, 'customer_account' => null, 'invoice_no' => null, 'main_account' => $row->account_code, 'activity' => $dimensions['ACTIVITY'] ?? null, 'cash_flow' => $dimensions['CASH_FLOW'] ?? null, 'department' => $dimensions['DEPARTMENT'] ?? null, 'group_activity' => $dimensions['GROUP_ACTIVITY'] ?? null, 'location' => $dimensions['LOCATION'] ?? null, 'project' => $dimensions['PROJECT'] ?? null, 'project_name' => null, 'cost_center' => $dimensions['COST_CENTER'] ?? null, 'valuation_to' => $allocation['valuation_to'], 'costing_to' => $allocation['costing_to'], 'po_dt_number' => null, 'gjae_id' => null, 'created_datetime' => null, 'period' => $row->accounting_date ? substr((string) $row->accounting_date, 0, 7) : 'unknown', 'source_type' => 'd365', 'source_key' => $row->source_key, 'd365_entity' => 'gl_entries', 'mapping_status' => $allocation['mapping_status'], 'created_at' => now(), 'updated_at' => now()];
-            })->all();
-            DB::table('gl_entries')->upsert($entries, ['source_type', 'source_key'], array_values(array_diff(array_keys($entries[0] ?? []), ['id', 'source_type', 'source_key', 'created_at'])));
-        }
-        return ['batch' => $batch, 'rows' => $rows->count(), 'mapped' => $mapped, 'unmapped' => $unmapped];
+        return $this->allocation->importStaging($data['date_from'] ?? null, $data['date_to'] ?? null);
     }
 
     public function mappings(): array { return ['rows' => DB::table('d365_allocation_mappings')->orderByDesc('priority')->orderBy('id')->get()]; }
