@@ -65,6 +65,22 @@ class D365Controller extends Controller
         if ($request->filled('date_from')) $query->whereDate('accounting_date', '>=', $request->date_from);
         if ($request->filled('date_to')) $query->whereDate('accounting_date', '<=', $request->date_to);
         $rows = $query->paginate(50)->withQueryString();
+        if ($request->boolean('full')) {
+            $rows->getCollection()->transform(function ($row): array {
+                $payload = json_decode((string) $row->payload, true) ?: [];
+                return [
+                    'id' => $row->id,
+                    'entity_key' => $row->entity_key,
+                    'source_key' => $row->source_key,
+                    'company' => $row->company,
+                    'account_code' => $row->account_code,
+                    'journal_number' => $row->journal_number,
+                    'voucher' => $row->voucher,
+                    'accounting_date' => $row->accounting_date,
+                    'payload' => $payload,
+                ];
+            });
+        }
         return ['entity' => $entity, 'rows' => $rows];
     }
 
