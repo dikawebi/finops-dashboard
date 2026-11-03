@@ -52,10 +52,26 @@ class OperationsController extends Controller
             ->orderBy('entry_date')
             ->orderBy('id')
             ->paginate($perPage, ['*'], 'page', $page);
+        $rows = collect($paginator->items());
+        $accountKeys = $rows->pluck('main_account')->filter()->map(fn ($value): string => (string) $value)->unique()->values();
+        $mainAccounts = DB::table('d365_typed_records')
+            ->where('entity_key', 'main_accounts')
+            ->whereIn('source_key', $accountKeys->all())
+            ->get(['source_key', 'account_code', 'account_name'])
+            ->keyBy(fn ($row): string => (string) $row->source_key);
+        $rows = $rows->map(function ($row) use ($mainAccounts) {
+            $sourceKey = (string) ($row->main_account ?? '');
+            $lookup = $mainAccounts->get($sourceKey);
+            $row->main_account_source_key = $sourceKey ?: null;
+            $row->main_account = $lookup?->account_code ?: $row->main_account;
+            $row->main_account_lookup_name = $lookup?->account_name;
+            return $row;
+        });
+        $columns = array_merge(Schema::getColumnListing('gl_entries'), ['main_account_source_key', 'main_account_lookup_name']);
         return response()->json(['success'=>true,'data'=>[
             'period'=>$period,
-            'columns'=>Schema::getColumnListing('gl_entries'),
-            'rows'=>$paginator->items(),
+            'columns'=>$columns,
+            'rows'=>$rows->values(),
             'pagination'=>[
                 'current_page'=>$paginator->currentPage(),
                 'last_page'=>$paginator->lastPage(),
