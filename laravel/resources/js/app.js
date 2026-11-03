@@ -625,11 +625,18 @@ async function viewD365Staging(entity, label, page = 1) {
     $('#stagingNext')?.addEventListener('click', () => viewD365Staging(entity, label, page + 1));
 }
 
-async function viewGlData(period) {
-    const data = await api(`/api/gl-data?period=${period}`);
-    const rows = (data.rows || []).map(row => `<tr><td>${esc(row.entry_date)}</td><td>${esc(row.journal_number)}</td><td>${esc(row.main_account)}</td><td>${esc(row.account_name)}</td><td>${esc(row.source_location || row.valuation_to)}</td><td>${esc(row.costing_to)}</td><td class="num">${money(row.amount_reporting)}</td></tr>`);
-    $('#pageContent').innerHTML = `${sectionHeader('D365 GL Data — Local Snapshot', `Read-only preview of ${data.limit} latest rows for ${period}.`, '<button id="backIntegration" class="btn btn-outline" type="button">← Back</button>')}${card(`${badge('gl_entries')} ${data.rows.length} rows`, table(['Date', 'Journal', 'Account', 'Account Name', 'Location', 'Costing To', 'Amount USD'], rows, 'gl-preview-table'))}`;
+async function viewGlData(period, page = 1) {
+    const data = await api(`/api/gl-data?period=${encodeURIComponent(period)}&page=${page}&per_page=100`);
+    const columns = data.columns || Object.keys(data.rows?.[0] || {});
+    const labels = columns.map(column => column.replace(/_/g, ' ').replace(/\b\w/g, character => character.toUpperCase()));
+    const numericColumns = new Set(['amount', 'amount_txn', 'amount_idr', 'amount_reporting', 'fuel_quantity']);
+    const rows = (data.rows || []).map(row => `<tr>${columns.map(column => `<td class="${numericColumns.has(column) ? 'num' : ''}">${numericColumns.has(column) ? detailMoney(row[column]) : esc(row[column])}</td>`).join('')}</tr>`);
+    const pagination = data.pagination || {};
+    const pager = `<div class="staging-pager"><span>Page ${pagination.current_page || page} of ${pagination.last_page || 1} · ${qty(pagination.total || data.rows?.length || 0)} rows</span><div>${pagination.current_page > 1 ? '<button id="glPrev" class="btn btn-outline" type="button">Previous</button>' : ''}${pagination.current_page < pagination.last_page ? '<button id="glNext" class="btn btn-outline" type="button">Next</button>' : ''}</div></div>`;
+    $('#pageContent').innerHTML = `${sectionHeader('D365 GL Data — Local Snapshot', `Read-only preview of all GL fields for ${period}.`, '<button id="backIntegration" class="btn btn-outline" type="button">← Back</button>')}${card(`${badge('gl_entries')} ${qty(pagination.total || 0)} rows`, `<div class="table-responsive staging-full-table"><table class="table-accounting gl-preview-table"><thead><tr>${labels.map(label => `<th>${esc(label)}</th>`).join('')}</tr></thead><tbody>${rows.length ? rows.join('') : `<tr><td colspan="${columns.length || 1}">No data available.</td></tr>`}</tbody></table></div>${pager}`)}`;
     $('#backIntegration').addEventListener('click', integration);
+    $('#glPrev')?.addEventListener('click', () => viewGlData(period, page - 1));
+    $('#glNext')?.addEventListener('click', () => viewGlData(period, page + 1));
 }
 
 async function render() {

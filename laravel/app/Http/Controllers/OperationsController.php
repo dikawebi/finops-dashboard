@@ -8,6 +8,7 @@ use App\Models\SystemConfig;
 use App\Services\GlImportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 class OperationsController extends Controller
 {
     public function accounts() { return response()->json(['success'=>true,'data'=>CostAccount::orderBy('account_code')->get()]); }
@@ -44,10 +45,24 @@ class OperationsController extends Controller
     {
         $period = (string) $request->query('period', '2026-10');
         abort_unless((bool) preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $period), 422, 'Invalid period.');
-        $rows = GlEntry::query()->where('period', $period)->orderBy('entry_date')->orderBy('id')->limit(500)->get([
-            'id','entry_date','journal_number','voucher','main_account','account_name','description','valuation_to','costing_to','amount_reporting','currency'
-        ]);
-        return response()->json(['success'=>true,'data'=>['period'=>$period,'limit'=>500,'rows'=>$rows]]);
+        $perPage = min(max((int) $request->query('per_page', 100), 1), 500);
+        $page = max((int) $request->query('page', 1), 1);
+        $paginator = GlEntry::query()
+            ->where('period', $period)
+            ->orderBy('entry_date')
+            ->orderBy('id')
+            ->paginate($perPage, ['*'], 'page', $page);
+        return response()->json(['success'=>true,'data'=>[
+            'period'=>$period,
+            'columns'=>Schema::getColumnListing('gl_entries'),
+            'rows'=>$paginator->items(),
+            'pagination'=>[
+                'current_page'=>$paginator->currentPage(),
+                'last_page'=>$paginator->lastPage(),
+                'per_page'=>$paginator->perPage(),
+                'total'=>$paginator->total(),
+            ],
+        ]]);
     }
     public function uploadGl(Request $request, GlImportService $importer)
     {
