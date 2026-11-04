@@ -6,6 +6,7 @@ const reportAmount = value => { const amount = Number(value || 0); if (Math.abs(
 const detailMoney = value => { const amount = Number(value); if (!Number.isFinite(amount)) return '—'; const formatted = Math.abs(amount).toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 }); return amount < 0 ? `(${formatted})` : formatted; };
 const qty = value => Number(value || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
 const formatDate = value => { const match = String(value ?? '').slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/); if (!match) return value ?? '—'; const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']; return `${match[3]} ${months[Number(match[2]) - 1] || match[2]} ${match[1]}`; };
+const setGlReviewLoading = visible => { let overlay = document.querySelector('#glReviewLoading'); if (visible && !overlay) { overlay = document.createElement('div'); overlay.id = 'glReviewLoading'; overlay.className = 'gl-review-loading'; overlay.innerHTML = '<div class="gl-review-loading-card"><i></i><strong>Loading GL transactions</strong><span>Preparing all rows. Please wait…</span></div>'; document.body.appendChild(overlay); } if (!visible) overlay?.remove(); };
 const esc = value => String(value ?? '—').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' })[char]);
 const companyName = document.body.dataset.companyName || 'FinOps Dashboard';
 const urlState = new URLSearchParams(location.search);
@@ -177,7 +178,10 @@ async function cost(period, mode) {
 async function glTransactionReview(period, page = 1) {
     const filters = state.glReview;
     const params = new URLSearchParams({ period, page, per_page: filters.rowsPerPage, search: filters.search, date_from: filters.dateFrom, date_to: filters.dateTo, mapping_status: filters.mappingStatus, ...filters.headerFilters, account: filters.headerFilters.account || filters.account, valuation_to: filters.headerFilters.valuation_to || filters.valuationTo, costing_to: filters.headerFilters.costing_to || filters.costingTo });
-    const data = await api(`/api/gl-transaction-review?${params.toString()}`);
+    const loadingAll = filters.rowsPerPage === 'all';
+    if (loadingAll) setGlReviewLoading(true);
+    let data;
+    try { data = await api(`/api/gl-transaction-review?${params.toString()}`); } finally { if (loadingAll) setGlReviewLoading(false); }
     const summary = data.summary || {};
     const pagination = data.pagination || {};
     const formatReviewNumber = value => value === null || value === undefined || value === '' ? '—' : Number(value).toLocaleString('en-US', { maximumFractionDigits: 2 });
