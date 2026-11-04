@@ -118,7 +118,10 @@ class OperationsController extends Controller
     {
         if ($request->filled('date_from')) $query->whereDate('entry_date', '>=', $request->query('date_from'));
         if ($request->filled('date_to')) $query->whereDate('entry_date', '<=', $request->query('date_to'));
-        if ($request->filled('account')) $query->where(function ($builder) use ($request): void { $builder->where('main_account', 'like', '%'.$request->query('account').'%')->orWhere('account_name', 'like', '%'.$request->query('account').'%'); });
+        if ($request->filled('account')) $query->where('main_account', 'like', '%'.$request->query('account').'%');
+        foreach (['account_name', 'voucher', 'journal_number', 'description', 'costing_to', 'valuation_to', 'currency'] as $field) {
+            if ($request->filled($field)) $query->where($field, 'like', '%'.$request->query($field).'%');
+        }
         if ($request->filled('mapping_status') && $request->query('mapping_status') !== 'all') {
             if ($request->query('mapping_status') === 'unmapped') $query->where(function ($builder): void { $builder->where('mapping_status', 'unmapped')->orWhereNull('mapping_status'); });
             else $query->where('mapping_status', $request->query('mapping_status'));
