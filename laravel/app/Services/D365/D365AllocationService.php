@@ -116,6 +116,19 @@ class D365AllocationService
         ];
     }
 
+    public function resolveGlEntry(object $entry): array
+    {
+        return $this->resolve([
+            'account_code' => $entry->main_account,
+            'dimensions' => [
+                'GROUP_ACTIVITY' => $entry->group_activity,
+                'ACTIVITY' => $entry->activity,
+                'LOCATION' => $entry->location,
+                'DEPARTMENT' => $entry->department,
+            ],
+        ]);
+    }
+
     public function preview(?string $entity = null, ?string $dateFrom = null, ?string $dateTo = null): array
     {
         $rows = $this->stagingRows($entity ?: 'gl_entries', $dateFrom, $dateTo);

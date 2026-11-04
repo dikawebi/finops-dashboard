@@ -5,11 +5,14 @@ namespace App\Services;
 use App\Models\CostAccount;
 use App\Models\DbCostSummary;
 use App\Models\GlEntry;
+use App\Services\D365\D365AllocationService;
 
 /** Implements the Report Cost allocation rules from FORMULA_DASHBOARD.md §2. */
 class CostMatrixService
 {
     private const FIELDS = ['allCost','cek','valMining','valHauling','valWP','valPort','valNotValuated','totalValuation','costMining','costHauling','costHaulingBUAToWP','costHaulingBUAToPort','costHaulingWPToPort','unallocatedHauling','costWP','costPort','costGA','costSelling','totalCosting','totalCOGP','directGA','sellingExpense','totalExpense'];
+
+    public function __construct(private readonly D365AllocationService $allocation) {}
 
     public function build(string $period, string $mode = 'mtd'): array
     {
@@ -28,6 +31,11 @@ class CostMatrixService
         foreach ($entries as $entry) {
             $code = (string) $entry->main_account;
             if (!isset($rows[$code])) continue;
+            if ($entry->source_type === 'd365') {
+                $mapping = $this->allocation->resolveGlEntry($entry);
+                $entry->valuation_to = $mapping['valuation_to'];
+                $entry->costing_to = $mapping['costing_to'];
+            }
             // Mutate a local row and write it back explicitly. This avoids PHP's
             // array-dimension reference semantics dropping changes in this loop.
             $row = $rows[$code];
