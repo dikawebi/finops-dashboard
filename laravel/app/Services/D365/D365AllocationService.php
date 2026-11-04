@@ -9,10 +9,25 @@ use Illuminate\Support\Facades\DB;
 class D365AllocationService
 {
     private ?Collection $activeRules = null;
+    private ?Collection $mainAccounts = null;
 
     private function activeRules(): Collection
     {
         return $this->activeRules ??= DB::table('d365_allocation_mappings')->where('is_active', true)->get();
+    }
+
+    private function mainAccount(?string $sourceKey): ?object
+    {
+        $key = trim((string) $sourceKey);
+        if ($key === '') return null;
+        $this->mainAccounts ??= DB::table('d365_typed_records')
+            ->where('entity_key', 'main_accounts')
+            ->get(['source_key', 'account_code', 'account_name'])
+            ->flatMap(function ($account): array {
+                $value = ['account_code' => (string) $account->account_code, 'account_name' => (string) $account->account_name];
+                return ['source:'.(string) $account->source_key => (object) $value, 'code:'.(string) $account->account_code => (object) $value];
+            });
+        return $this->mainAccounts->get('source:'.$key) ?: $this->mainAccounts->get('code:'.$key);
     }
 
     public function resolve(array $row): array
@@ -38,6 +53,8 @@ class D365AllocationService
                 if ($expected !== '' && strcasecmp($expected, trim((string) ($dimensions[strtoupper($field)] ?? $row[$field] ?? ''))) !== 0) return false;
             }
             $account = trim((string) ($row['account_code'] ?? ''));
+            $accountMaster = $this->mainAccount($account);
+            $account = $accountMaster?->account_code ?: $account;
             if (filled($rule->account_code) && (string) $rule->account_code !== $account) return false;
             if (filled($rule->account_prefix) && !str_starts_with($account, (string) $rule->account_prefix)) return false;
             return true;
@@ -67,7 +84,8 @@ class D365AllocationService
         $total = 0.0;
         foreach ($rows as $row) {
             $dimensions = json_decode((string) $row->dimensions, true) ?: [];
-            $result = $this->resolve(['account_code' => $row->account_code, 'dimensions' => $dimensions]);
+            $account = $this->mainAccount($row->account_code);
+            $result = $this->resolve(['account_code' => $account?->account_code ?: $row->account_code, 'dimensions' => $dimensions]);
             $result['mapping_status'] === 'mapped' ? $mapped++ : $unmapped++;
             $total += (float) ($row->amount_reporting ?? $row->amount_accounting ?? 0);
         }
@@ -120,7 +138,9 @@ class D365AllocationService
         foreach ($rows->chunk(200) as $chunk) {
             $entries = $chunk->map(function ($row) use (&$mapped, &$unmapped, $batch, $headerDates, $months): array {
                 $dimensions = json_decode((string) $row->dimensions, true) ?: [];
-                $allocation = $this->resolve(['account_code' => $row->account_code, 'dimensions' => $dimensions]);
+                $account = $this->mainAccount($row->account_code);
+                $accountCode = $account?->account_code ?: $row->account_code;
+                $allocation = $this->resolve(['account_code' => $accountCode, 'dimensions' => $dimensions]);
                 $allocation['mapping_status'] === 'mapped' ? $mapped++ : $unmapped++;
                 $payload = json_decode((string) $row->payload, true) ?: [];
                 $parentKey = (string) ($payload['GeneralJournalEntry'] ?? $payload['generalJournalEntry'] ?? '');
@@ -128,7 +148,7 @@ class D365AllocationService
                 $period = $entryDate ? substr((string) $entryDate, 0, 7) : 'unknown';
                 if ($period !== 'unknown') $months->push($period);
                 $amount = $row->amount_accounting ?? $row->amount_reporting ?? 0;
-                return ['batch_id' => $batch->id, 'journal_number' => $row->journal_number ?: $row->source_key, 'voucher' => $row->voucher, 'entry_date' => $entryDate, 'year_closed' => 'No', 'account_name' => $row->account_name, 'description' => $row->description, 'currency' => $row->currency, 'fuel_quantity' => $row->quantity ?? 0, 'amount_txn' => $row->amount_transaction, 'amount_idr' => $amount, 'amount' => $row->amount_accounting, 'amount_reporting' => $row->amount_reporting ?? $amount, 'posting_type' => null, 'posting_layer' => null, 'vendor_account' => null, 'customer_account' => null, 'invoice_no' => null, 'main_account' => $row->account_code, 'activity' => $dimensions['ACTIVITY'] ?? null, 'cash_flow' => $dimensions['CASH_FLOW'] ?? null, 'department' => $dimensions['DEPARTMENT'] ?? null, 'group_activity' => $dimensions['GROUP_ACTIVITY'] ?? null, 'location' => $dimensions['LOCATION'] ?? null, 'project' => $dimensions['PROJECT'] ?? null, 'project_name' => null, 'cost_center' => $dimensions['COST_CENTER'] ?? null, 'valuation_to' => $allocation['valuation_to'], 'costing_to' => $allocation['costing_to'], 'po_dt_number' => null, 'gjae_id' => null, 'created_datetime' => null, 'period' => $period, 'source_type' => 'd365', 'source_key' => $row->source_key, 'd365_entity' => 'gl_entries', 'mapping_status' => $allocation['mapping_status'], 'created_at' => now(), 'updated_at' => now()];
+                return ['batch_id' => $batch->id, 'journal_number' => $row->journal_number ?: $row->source_key, 'voucher' => $row->voucher, 'entry_date' => $entryDate, 'year_closed' => 'No', 'account_name' => $account?->account_name ?: $row->account_name, 'description' => $row->description, 'currency' => $row->currency, 'fuel_quantity' => $row->quantity ?? 0, 'amount_txn' => $row->amount_transaction, 'amount_idr' => $amount, 'amount' => $row->amount_accounting, 'amount_reporting' => $row->amount_reporting ?? $amount, 'posting_type' => null, 'posting_layer' => null, 'vendor_account' => null, 'customer_account' => null, 'invoice_no' => null, 'main_account' => $accountCode, 'activity' => $dimensions['ACTIVITY'] ?? null, 'cash_flow' => $dimensions['CASH_FLOW'] ?? null, 'department' => $dimensions['DEPARTMENT'] ?? null, 'group_activity' => $dimensions['GROUP_ACTIVITY'] ?? null, 'location' => $dimensions['LOCATION'] ?? null, 'project' => $dimensions['PROJECT'] ?? null, 'project_name' => null, 'cost_center' => $dimensions['COST_CENTER'] ?? null, 'valuation_to' => $allocation['valuation_to'], 'costing_to' => $allocation['costing_to'], 'po_dt_number' => null, 'gjae_id' => null, 'created_datetime' => null, 'period' => $period, 'source_type' => 'd365', 'source_key' => $row->source_key, 'd365_entity' => 'gl_entries', 'mapping_status' => $allocation['mapping_status'], 'created_at' => now(), 'updated_at' => now()];
             })->values()->all();
             if ($entries) DB::table('gl_entries')->upsert($entries, ['source_type', 'source_key'], array_values(array_diff(array_keys($entries[0]), ['id', 'source_type', 'source_key', 'created_at'])));
         }
