@@ -99,6 +99,43 @@ class D365Controller extends Controller
 
     public function mappings(): array { return ['rows' => DB::table('d365_allocation_mappings')->orderByDesc('priority')->orderBy('id')->get()]; }
 
+    public function accountHierarchy(): array
+    {
+        $accounts = DB::table('d365_typed_records')
+            ->where('entity_key', 'main_accounts')
+            ->get(['source_key', 'account_code', 'account_name', 'payload']);
+        $sourceToCode = $accounts->mapWithKeys(fn ($account): array => ['source:'.(string) $account->source_key => (string) $account->account_code]);
+        $reportAccounts = DB::table('cost_accounts')->get(['account_code', 'parent_code', 'is_parent'])->keyBy('account_code');
+        $parentCodes = collect();
+        $rows = $accounts->map(function ($account) use ($sourceToCode, $reportAccounts, $parentCodes): array {
+            $payload = json_decode((string) $account->payload, true) ?: [];
+            $parentKey = (string) ($payload['ParentMainAccount'] ?? $payload['parentMainAccount'] ?? '');
+            $parentCode = $parentKey !== '' && $parentKey !== '0' ? ($sourceToCode->get('source:'.$parentKey) ?: null) : null;
+            if ($parentCode) $parentCodes->push($parentCode);
+            $report = $reportAccounts->get((string) $account->account_code);
+            return [
+                'source_key' => (string) $account->source_key,
+                'account_code' => (string) $account->account_code,
+                'account_name' => (string) $account->account_name,
+                'parent_code' => $parentCode ?: $report?->parent_code,
+                'is_parent' => $parentCode ? $parentCodes->contains($account->account_code) : (bool) ($report?->is_parent),
+                'type' => $payload['Type'] ?? null,
+                'report_account' => (bool) $report,
+            ];
+        })->sortBy('account_code')->values();
+        $parentSet = $parentCodes->unique()->flip();
+        $rows = $rows->map(function (array $row) use ($parentSet): array {
+            if ($parentSet->has($row['account_code'])) $row['is_parent'] = true;
+            return $row;
+        });
+        return ['rows' => $rows, 'summary' => [
+            'total' => $rows->count(),
+            'report_accounts' => $rows->where('report_account', true)->count(),
+            'parents' => $rows->where('is_parent', true)->count(),
+            'children' => $rows->where('is_parent', false)->count(),
+        ]];
+    }
+
     public function storeMapping(Request $request): array
     {
         $data = $request->validate($this->mappingRules());

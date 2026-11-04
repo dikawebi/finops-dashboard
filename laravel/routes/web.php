@@ -41,6 +41,7 @@ Route::prefix('api')->group(function () {
     Route::post('/d365/staging/preview', [D365Controller::class, 'preview']);
     Route::post('/d365/staging/import', [D365Controller::class, 'import']);
     Route::get('/d365/mappings', [D365Controller::class, 'mappings']);
+    Route::get('/d365/account-hierarchy', [D365Controller::class, 'accountHierarchy']);
     Route::post('/d365/mappings', [D365Controller::class, 'storeMapping']);
     Route::post('/d365/mappings/import', [D365Controller::class, 'importMappings']);
     Route::put('/d365/mappings/{id}', [D365Controller::class, 'updateMapping']);
