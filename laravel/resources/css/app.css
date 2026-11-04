@@ -49,5 +49,8 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sa
 @media(max-width:1050px){.voucher-summary-grid{grid-template-columns:repeat(5,minmax(105px,1fr))}.gl-review-filters{grid-template-columns:repeat(3,minmax(150px,1fr))}}
 @media(max-width:760px){.gl-review-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.gl-review-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.voucher-summary-grid{grid-template-columns:repeat(3,minmax(105px,1fr))}}
 @media(max-width:480px){.gl-review-filters{grid-template-columns:1fr}.gl-review-summary{grid-template-columns:1fr}.voucher-summary-grid{grid-template-columns:repeat(2,minmax(105px,1fr))}}
+.gl-detail-row>td{padding:0!important;background:#f8fafc!important;border-top:0!important}.gl-detail-grid{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px;padding:14px 16px;border-top:1px solid #dbe5f2}.gl-detail-grid>div{padding:8px 10px;background:#fff;border:1px solid #e5ebf3;border-radius:6px}.gl-detail-grid span{display:block;color:var(--muted);font-size:10px}.gl-detail-grid strong{display:block;margin-top:4px;color:var(--ink);font-size:11px;overflow-wrap:anywhere}
+@media(max-width:760px){.gl-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){.gl-detail-grid{grid-template-columns:1fr}}
 @media(max-width:760px){.mapping-account-summary{grid-template-columns:repeat(2,minmax(0,1fr));padding-top:12px}.mapping-hierarchy-table{margin-left:12px;margin-right:12px}}
 @media(max-width:480px){.mapping-account-summary{grid-template-columns:1fr}.mapping-account-summary span{display:flex;justify-content:space-between;align-items:center;gap:8px}.mapping-account-summary b{margin:0}}
