@@ -67,7 +67,14 @@ class OperationsController extends Controller
             $row->main_account_lookup_name = $lookup?->account_name;
             return $row;
         });
-        $columns = array_merge(Schema::getColumnListing('gl_entries'), ['main_account_source_key', 'main_account_lookup_name']);
+        $columns = Schema::getColumnListing('gl_entries');
+        $mainAccountPosition = array_search('main_account', $columns, true);
+        if ($mainAccountPosition !== false) {
+            array_splice($columns, $mainAccountPosition + 1, 0, ['main_account_lookup_name']);
+        } else {
+            $columns[] = 'main_account_lookup_name';
+        }
+        $columns[] = 'main_account_source_key';
         return response()->json(['success'=>true,'data'=>[
             'period'=>$period,
             'columns'=>$columns,

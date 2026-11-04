@@ -628,7 +628,8 @@ async function viewD365Staging(entity, label, page = 1) {
 async function viewGlData(period, page = 1) {
     const data = await api(`/api/gl-data?period=${encodeURIComponent(period)}&page=${page}&per_page=100`);
     const columns = data.columns || Object.keys(data.rows?.[0] || {});
-    const labels = columns.map(column => column.replace(/_/g, ' ').replace(/\b\w/g, character => character.toUpperCase()));
+    const labelOverrides = { main_account_lookup_name: 'Main Account Name', main_account_source_key: 'Main Account Source Key' };
+    const labels = columns.map(column => labelOverrides[column] || column.replace(/_/g, ' ').replace(/\b\w/g, character => character.toUpperCase()));
     const numericColumns = new Set(['amount', 'amount_txn', 'amount_idr', 'amount_reporting', 'fuel_quantity']);
     const rows = (data.rows || []).map(row => `<tr>${columns.map(column => `<td class="${numericColumns.has(column) ? 'num' : ''}">${numericColumns.has(column) ? detailMoney(row[column]) : esc(row[column])}</td>`).join('')}</tr>`);
     const pagination = data.pagination || {};
