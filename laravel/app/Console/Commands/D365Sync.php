@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Jobs\RunD365Sync;
+use App\Services\D365\D365AllocationService;
 use App\Services\D365\D365SyncService;
 use Illuminate\Console\Command;
 
@@ -19,6 +20,11 @@ class D365Sync extends Command
         $limit = $this->option('limit') !== null ? max(1, (int) $this->option('limit')) : null;
         $rows = $entityKey === 'all' ? $sync->syncAll($limit, $this->option('date-from'), $this->option('date-to')) : [$sync->syncEntity($sync->entityByKey($entityKey), $limit, $this->option('date-from'), $this->option('date-to'))];
         foreach ($rows as $row) $this->line(sprintf('[%s] %s: %d rows', $row['status'], $row['entity']['key'], $row['fetched'] ?? 0));
+        $glResult = collect($rows)->firstWhere('entity.key', 'gl_entries') ?? collect($rows)->firstWhere('entity', 'gl_entries');
+        if ($glResult && ($glResult['status'] ?? null) === 'success') {
+            $import = app(D365AllocationService::class)->importStaging($this->option('date-from'), $this->option('date-to'));
+            $this->info(sprintf('Imported %d GL rows (%d mapped, %d unmapped).', $import['rows'], $import['mapped'], $import['unmapped']));
+        }
         return self::SUCCESS;
     }
 }

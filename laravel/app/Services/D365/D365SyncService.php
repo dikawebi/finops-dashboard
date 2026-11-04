@@ -44,7 +44,7 @@ class D365SyncService
         if (PHP_OS_FAMILY !== 'Windows' || ! app()->environment('local')) return;
         $php = escapeshellarg(PHP_BINARY);
         $artisan = escapeshellarg(base_path('artisan'));
-        $command = 'start "" /B '.$php.' '.$artisan.' queue:work database --queue=default --tries=1 --timeout=900 --stop-when-empty';
+        $command = 'start "" /B '.$php.' -d memory_limit=512M '.$artisan.' queue:work database --queue=default --tries=1 --timeout=1800 --stop-when-empty';
         pclose(popen($command, 'r'));
     }
 

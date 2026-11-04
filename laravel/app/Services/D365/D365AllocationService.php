@@ -175,6 +175,8 @@ class D365AllocationService
 
     public function importStaging(?string $dateFrom = null, ?string $dateTo = null): array
     {
+        @ini_set('memory_limit', '512M');
+        @set_time_limit(0);
         $this->syncAccountHierarchy();
         $rows = $this->stagingRows('gl_entries', $dateFrom, $dateTo);
         $headerMeta = DB::table('d365_typed_records')
