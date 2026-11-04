@@ -16,6 +16,8 @@ class CostMatrixService
 
     public function build(string $period, string $mode = 'mtd'): array
     {
+        @ini_set('memory_limit', '512M');
+        @set_time_limit(120);
         $periods = $this->periods($period, $mode);
         $hasD365Data = GlEntry::where('source_type', 'd365')->whereIn('period', $periods)->exists();
         // Historical YTD figures are frozen workbook outputs until the full
