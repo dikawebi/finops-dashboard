@@ -87,6 +87,52 @@ class OperationsController extends Controller
             ],
         ]]);
     }
+
+    public function glTransactionReview(Request $request): array
+    {
+        $period = (string) $request->query('period', '2026-10');
+        abort_unless((bool) preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $period), 422, 'Invalid period.');
+        $perPage = min(max((int) $request->query('per_page', 100), 1), 500);
+        $query = GlEntry::query()->where('source_type', 'd365')->where('period', $period);
+        $this->applyGlReviewFilters($query, $request);
+        $summaryQuery = clone $query;
+        $summary = [
+            'transactions' => (clone $summaryQuery)->count(),
+            'amount_reporting' => (float) (clone $summaryQuery)->sum('amount_reporting'),
+            'mapped' => (clone $summaryQuery)->where('mapping_status', 'mapped')->count(),
+            'unmapped' => (clone $summaryQuery)->where(function ($builder): void { $builder->where('mapping_status', 'unmapped')->orWhereNull('mapping_status'); })->count(),
+            'voucher_summary' => (clone $summaryQuery)->whereNotNull('voucher')->where('voucher', '<>', '')
+                ->selectRaw("substr(voucher, 1, 3) as code, count(*) as transactions, sum(amount_reporting) as amount_reporting")
+                ->groupBy('code')->orderBy('code')->get(),
+        ];
+        $paginator = $query->orderByDesc('entry_date')->orderByDesc('id')->paginate($perPage)->withQueryString();
+        return [
+            'period' => $period,
+            'summary' => $summary,
+            'rows' => $paginator->items(),
+            'pagination' => ['current_page' => $paginator->currentPage(), 'last_page' => $paginator->lastPage(), 'per_page' => $paginator->perPage(), 'total' => $paginator->total()],
+        ];
+    }
+
+    private function applyGlReviewFilters($query, Request $request): void
+    {
+        if ($request->filled('date_from')) $query->whereDate('entry_date', '>=', $request->query('date_from'));
+        if ($request->filled('date_to')) $query->whereDate('entry_date', '<=', $request->query('date_to'));
+        if ($request->filled('account')) $query->where(function ($builder) use ($request): void { $builder->where('main_account', 'like', '%'.$request->query('account').'%')->orWhere('account_name', 'like', '%'.$request->query('account').'%'); });
+        if ($request->filled('mapping_status') && $request->query('mapping_status') !== 'all') {
+            if ($request->query('mapping_status') === 'unmapped') $query->where(function ($builder): void { $builder->where('mapping_status', 'unmapped')->orWhereNull('mapping_status'); });
+            else $query->where('mapping_status', $request->query('mapping_status'));
+        }
+        foreach (['valuation_to', 'costing_to'] as $field) {
+            if ($request->filled($field)) $query->where($field, 'like', '%'.$request->query($field).'%');
+        }
+        if ($request->filled('search')) {
+            $search = '%'.$request->query('search').'%';
+            $query->where(function ($builder) use ($search): void {
+                foreach (['main_account', 'account_name', 'journal_number', 'voucher', 'description', 'source_key'] as $field) $builder->orWhere($field, 'like', $search);
+            });
+        }
+    }
     public function uploadGl(Request $request, GlImportService $importer)
     {
         $data=$request->validate(['rows'=>'required|array|min:1','filename'=>'nullable|string','note'=>'nullable|string']);

@@ -164,19 +164,19 @@ class D365AllocationService
     {
         $this->syncAccountHierarchy();
         $rows = $this->stagingRows('gl_entries', $dateFrom, $dateTo);
-        $headerDates = DB::table('d365_typed_records')
+        $headerMeta = DB::table('d365_typed_records')
             ->where('entity_key', 'gl_journal_entries')
             ->when($dateFrom, fn ($builder) => $builder->whereDate('accounting_date', '>=', $dateFrom))
             ->when($dateTo, fn ($builder) => $builder->whereDate('accounting_date', '<=', $dateTo))
-            ->get(['source_key', 'accounting_date'])
-            ->mapWithKeys(fn ($row): array => [(string) $row->source_key => $row->accounting_date])
+            ->get(['source_key', 'accounting_date', 'journal_number', 'voucher'])
+            ->mapWithKeys(fn ($row): array => [(string) $row->source_key => $row])
             ->all();
         $months = collect();
         $batch = GlImportBatch::create(['filename' => 'd365-auto-sync.json', 'source' => 'd365', 'row_count' => $rows->count(), 'months_covered' => [], 'note' => 'Automatic import after D365 sync', 'imported_at' => now()]);
         $mapped = 0;
         $unmapped = 0;
         foreach ($rows->chunk(200) as $chunk) {
-            $entries = $chunk->map(function ($row) use (&$mapped, &$unmapped, $batch, $headerDates, $months): array {
+            $entries = $chunk->map(function ($row) use (&$mapped, &$unmapped, $batch, $headerMeta, $months): array {
                 $dimensions = json_decode((string) $row->dimensions, true) ?: [];
                 $account = $this->mainAccount($row->account_code);
                 $accountCode = $account?->account_code ?: $row->account_code;
@@ -184,11 +184,12 @@ class D365AllocationService
                 $allocation['mapping_status'] === 'mapped' ? $mapped++ : $unmapped++;
                 $payload = json_decode((string) $row->payload, true) ?: [];
                 $parentKey = (string) ($payload['GeneralJournalEntry'] ?? $payload['generalJournalEntry'] ?? '');
-                $entryDate = $row->accounting_date ?: ($headerDates[$parentKey] ?? null);
+                $header = $headerMeta[$parentKey] ?? null;
+                $entryDate = $row->accounting_date ?: ($header?->accounting_date ?? null);
                 $period = $entryDate ? substr((string) $entryDate, 0, 7) : 'unknown';
                 if ($period !== 'unknown') $months->push($period);
                 $amount = $row->amount_accounting ?? $row->amount_reporting ?? 0;
-                return ['batch_id' => $batch->id, 'journal_number' => $row->journal_number ?: $row->source_key, 'voucher' => $row->voucher, 'entry_date' => $entryDate, 'year_closed' => 'No', 'account_name' => $account?->account_name ?: $row->account_name, 'description' => $row->description, 'currency' => $row->currency, 'fuel_quantity' => $row->quantity ?? 0, 'amount_txn' => $row->amount_transaction, 'amount_idr' => $amount, 'amount' => $row->amount_accounting, 'amount_reporting' => $row->amount_reporting ?? $amount, 'posting_type' => null, 'posting_layer' => null, 'vendor_account' => null, 'customer_account' => null, 'invoice_no' => null, 'main_account' => $accountCode, 'activity' => $dimensions['ACTIVITY'] ?? null, 'cash_flow' => $dimensions['CASH_FLOW'] ?? null, 'department' => $dimensions['DEPARTMENT'] ?? null, 'group_activity' => $dimensions['GROUP_ACTIVITY'] ?? null, 'location' => $dimensions['LOCATION'] ?? null, 'project' => $dimensions['PROJECT'] ?? null, 'project_name' => null, 'cost_center' => $dimensions['COST_CENTER'] ?? null, 'valuation_to' => $allocation['valuation_to'], 'costing_to' => $allocation['costing_to'], 'po_dt_number' => null, 'gjae_id' => null, 'created_datetime' => null, 'period' => $period, 'source_type' => 'd365', 'source_key' => $row->source_key, 'd365_entity' => 'gl_entries', 'mapping_status' => $allocation['mapping_status'], 'created_at' => now(), 'updated_at' => now()];
+                return ['batch_id' => $batch->id, 'journal_number' => $row->journal_number ?: ($header?->journal_number ?: $row->source_key), 'voucher' => $row->voucher ?: ($header?->voucher ?: null), 'entry_date' => $entryDate, 'year_closed' => 'No', 'account_name' => $account?->account_name ?: $row->account_name, 'description' => $row->description, 'currency' => $row->currency, 'fuel_quantity' => $row->quantity ?? 0, 'amount_txn' => $row->amount_transaction, 'amount_idr' => $amount, 'amount' => $row->amount_accounting, 'amount_reporting' => $row->amount_reporting ?? $amount, 'posting_type' => null, 'posting_layer' => null, 'vendor_account' => null, 'customer_account' => null, 'invoice_no' => null, 'main_account' => $accountCode, 'activity' => $dimensions['ACTIVITY'] ?? null, 'cash_flow' => $dimensions['CASH_FLOW'] ?? null, 'department' => $dimensions['DEPARTMENT'] ?? null, 'group_activity' => $dimensions['GROUP_ACTIVITY'] ?? null, 'location' => $dimensions['LOCATION'] ?? null, 'project' => $dimensions['PROJECT'] ?? null, 'project_name' => null, 'cost_center' => $dimensions['COST_CENTER'] ?? null, 'valuation_to' => $allocation['valuation_to'], 'costing_to' => $allocation['costing_to'], 'po_dt_number' => null, 'gjae_id' => null, 'created_datetime' => null, 'period' => $period, 'source_type' => 'd365', 'source_key' => $row->source_key, 'd365_entity' => 'gl_entries', 'mapping_status' => $allocation['mapping_status'], 'created_at' => now(), 'updated_at' => now()];
             })->values()->all();
             if ($entries) DB::table('gl_entries')->upsert($entries, ['source_type', 'source_key'], array_values(array_diff(array_keys($entries[0]), ['id', 'source_type', 'source_key', 'created_at'])));
         }

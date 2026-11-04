@@ -49,6 +49,7 @@
     <nav class="tabs" aria-label="Dashboard navigation">
         <button type="button" class="active" data-view="overview">📊 Executive Overview</button>
         <button type="button" data-view="cost">📑 Report Cost (COGP)</button>
+        <button type="button" data-view="glReview">🧾 GL Transaction Review</button>
         <button type="button" data-view="variance">📈 Cost Variance Analysis</button>
         <button type="button" data-view="metric">⚖️ Cost per Metric Ton</button>
         <button type="button" data-view="inventory">📦 Inventory Valuation (Moving Avg)</button>
