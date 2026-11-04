@@ -101,7 +101,11 @@ class D365SyncService
         $companyField = $entity['company_field'];
         if ($companyField && filled($entity['exclude_company'] ?? null)) $parts[] = $companyField." ne '".str_replace("'", "''", $entity['exclude_company'])."'";
         elseif ($companyField && filled(config('services.d365.company'))) $parts[] = $companyField." eq '".str_replace("'", "''", config('services.d365.company'))."'";
-        if (! $forceFull && $entity['mode'] === 'incremental' && ($entity['source_field'] ?? null)) {
+        // A period-bounded sync must be driven by the entity's date field.
+        // Applying the previous SourceKey cursor as well can skip journal
+        // headers whose keys are not ordered by AccountingDate, leaving GL
+        // detail rows without a header date and therefore without a period.
+        if (! $forceFull && !$dateFrom && !$dateTo && $entity['mode'] === 'incremental' && ($entity['source_field'] ?? null)) {
             $cursor = DB::table('d365_sync_logs')->where('entity_key', $entity['key'])->where('status', 'success')->whereNotNull('max_source_key')->latest('id')->value('max_source_key');
             if ($cursor !== null && ctype_digit((string) $cursor)) $parts[] = $entity['source_field'].' gt '.(int) $cursor;
         }
