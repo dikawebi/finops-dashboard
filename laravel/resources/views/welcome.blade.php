@@ -41,10 +41,10 @@
         <div class="brand"><img class="logo" src="{{ e($logoPath) }}" alt="{{ e($companyName) }}"><div class="brand-info"><b>{{ $companyName }}</b><span>Accounting &amp; Mining Cost Management System • Local Hosting (Intranet)</span></div></div>
         <div class="header-status"><button class="import" type="button">📤 Import GL Data</button><div class="source-pill"><i></i><span>D365 GL: Online</span></div><div class="source-pill"><i></i><span>Google Sheets: Manual Sync</span></div><div class="period-label">Period:<b id="periodText">2026-10</b></div></div>
     </header>
-    <div class="filterbar">
-        <label>Month <input id="period" type="month" value="2026-10"></label>
-        <label>View <select id="mode"><option value="mtd">MTD</option><option value="ytd">YTD</option></select></label>
-        <span id="viewText">MTD — 2026-10</span>
+    <div class="filterbar" aria-label="Reporting period controls">
+        <div class="period-control-group"><span class="filterbar-label">Period</span><div class="period-picker"><button id="periodPrevious" class="period-step" type="button" aria-label="Previous month">‹</button><input id="period" type="month" value="2026-10" aria-label="Selected reporting month"><button id="periodNext" class="period-step" type="button" aria-label="Next month">›</button></div><button id="periodCurrent" class="period-current" type="button">Current month</button></div>
+        <div class="mode-control-group"><span class="filterbar-label">View</span><div class="mode-toggle" role="group" aria-label="Reporting view"><button type="button" class="active" data-mode="mtd">MTD</button><button type="button" data-mode="ytd">YTD</button></div><select id="mode" class="visually-hidden" tabindex="-1" aria-hidden="true"><option value="mtd">MTD</option><option value="ytd">YTD</option></select></div>
+        <span id="viewText" class="active-period">MTD · October 2026</span>
     </div>
     <nav class="tabs" aria-label="Dashboard navigation">
         <button type="button" class="active" data-view="overview">📊 Executive Overview</button>

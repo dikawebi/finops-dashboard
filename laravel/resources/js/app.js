@@ -6,6 +6,7 @@ const reportAmount = value => { const amount = Number(value || 0); if (Math.abs(
 const detailMoney = value => { const amount = Number(value); if (!Number.isFinite(amount)) return '—'; const formatted = Math.abs(amount).toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 }); return amount < 0 ? `(${formatted})` : formatted; };
 const qty = value => Number(value || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
 const formatDate = value => { const match = String(value ?? '').slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/); if (!match) return value ?? '—'; const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']; return `${match[3]} ${months[Number(match[2]) - 1] || match[2]} ${match[1]}`; };
+const formatPeriod = value => { const match = String(value ?? '').match(/^(\d{4})-(\d{2})$/); if (!match) return value || '—'; return new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1)).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' }); };
 const setGlReviewLoading = visible => { let overlay = document.querySelector('#glReviewLoading'); if (visible && !overlay) { overlay = document.createElement('div'); overlay.id = 'glReviewLoading'; overlay.className = 'gl-review-loading'; overlay.innerHTML = '<div class="gl-review-loading-card"><i></i><strong>Loading GL transactions</strong><span>Preparing all rows. Please wait…</span></div>'; document.body.appendChild(overlay); } if (!visible) overlay?.remove(); };
 const esc = value => String(value ?? '—').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' })[char]);
 const companyName = document.body.dataset.companyName || 'FinOps Dashboard';
@@ -97,8 +98,9 @@ async function refreshD365Progress() {
 function mountD365ProgressMonitor() { if (d365ProgressTimer) clearInterval(d365ProgressTimer); if (!readD365SyncState()) { clearD365ProgressPanel(); return; } refreshD365Progress(); d365ProgressTimer = setInterval(refreshD365Progress, 2000); }
 
 function updateNavigation(period, mode) {
-    $('#periodText').textContent = period;
-    $('#viewText').textContent = `${mode.toUpperCase()} — ${period}`;
+    $('#periodText').textContent = formatPeriod(period);
+    $('#viewText').textContent = `${mode.toUpperCase()} · ${formatPeriod(period)}`;
+    document.querySelectorAll('.mode-toggle [data-mode]').forEach(button => { const active = button.dataset.mode === mode; button.classList.toggle('active', active); button.setAttribute('aria-pressed', active ? 'true' : 'false'); });
     document.querySelectorAll('.tabs [data-view]').forEach(tab => tab.classList.toggle('active', tab.dataset.view === state.view));
     history.replaceState(null, '', `/?view=${state.view}&period=${period}&mode=${mode}`);
 }
@@ -749,6 +751,11 @@ document.querySelector('.tabs').addEventListener('click', event => {
     state.view = tab.dataset.view;
     render();
 });
+const shiftPeriod = offset => { const [year, month] = $('#period').value.split('-').map(Number); const date = new Date(Date.UTC(year, month - 1 + offset, 1)); $('#period').value = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`; render(); };
 $('#period').addEventListener('change', render);
+$('#periodPrevious').addEventListener('click', () => shiftPeriod(-1));
+$('#periodNext').addEventListener('click', () => shiftPeriod(1));
+$('#periodCurrent').addEventListener('click', () => { const now = new Date(); $('#period').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; render(); });
+document.querySelectorAll('.mode-toggle [data-mode]').forEach(button => button.addEventListener('click', () => { $('#mode').value = button.dataset.mode; render(); }));
 $('#mode').addEventListener('change', render);
 render();
