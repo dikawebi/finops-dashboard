@@ -30,6 +30,45 @@ class D365AllocationService
         return $this->mainAccounts->get('source:'.$key) ?: $this->mainAccounts->get('code:'.$key);
     }
 
+    public function syncAccountHierarchy(): array
+    {
+        $accounts = DB::table('d365_typed_records')
+            ->where('entity_key', 'main_accounts')
+            ->get(['source_key', 'account_code', 'account_name', 'payload']);
+        $sourceToCode = $accounts->mapWithKeys(fn ($account): array => ['source:'.(string) $account->source_key => (string) $account->account_code]);
+        $childrenByParent = collect();
+        $normalized = $accounts->map(function ($account) use ($sourceToCode, $childrenByParent): array {
+            $payload = json_decode((string) $account->payload, true) ?: [];
+            $parentKey = (string) ($payload['ParentMainAccount'] ?? $payload['parentMainAccount'] ?? '');
+            $parentCode = $parentKey !== '' && $parentKey !== '0' ? ($sourceToCode->get('source:'.$parentKey) ?: null) : null;
+            if ($parentCode) $childrenByParent->push($parentCode);
+            return [
+                'account_code' => (string) $account->account_code,
+                'account_name' => (string) $account->account_name,
+                'parent_code' => $parentCode,
+            ];
+        });
+        $parentCodes = $childrenByParent->unique()->flip();
+        $hasHierarchy = $normalized->contains(fn (array $account): bool => $account['parent_code'] !== null);
+        $updated = 0;
+        foreach ($normalized as $account) {
+            if (!DB::table('cost_accounts')->where('account_code', $account['account_code'])->exists()) continue;
+            $updates = [
+                'head_account' => substr($account['account_code'], 0, 1),
+                'updated_at' => now(),
+            ];
+            if ($hasHierarchy) {
+                $updates['parent_code'] = $account['parent_code'];
+                $updates['is_parent'] = $parentCodes->has($account['account_code']);
+            }
+            if ($account['account_name'] !== '') $updates['account_name'] = $account['account_name'];
+            DB::table('cost_accounts')->where('account_code', $account['account_code'])->update($updates);
+            $updated++;
+        }
+        $this->mainAccounts = null;
+        return ['d365_accounts' => $accounts->count(), 'report_accounts_updated' => $updated];
+    }
+
     public function resolve(array $row): array
     {
         $dimensions = array_change_key_case((array) ($row['dimensions'] ?? []), CASE_UPPER);
@@ -123,6 +162,7 @@ class D365AllocationService
 
     public function importStaging(?string $dateFrom = null, ?string $dateTo = null): array
     {
+        $this->syncAccountHierarchy();
         $rows = $this->stagingRows('gl_entries', $dateFrom, $dateTo);
         $headerDates = DB::table('d365_typed_records')
             ->where('entity_key', 'gl_journal_entries')

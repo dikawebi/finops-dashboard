@@ -79,13 +79,16 @@ class CostMatrixService
         // logger()->debug('cost-matrix allocation', ['entries' => $entries->count(), 'sample' => $rows['5000056'] ?? null]);
         foreach ($rows as &$row) $this->finish($row);
         unset($row);
-        // Parent accounts are derived from their leaf children, never added twice.
-        foreach ($rows as $code => &$row) {
-            if (!$row['isParent']) continue;
-            $children = array_filter($rows, fn ($child) => (string) $child['_parent'] === (string) $code);
-            foreach (self::FIELDS as $field) { $row[$field] = $this->sum(array_column($children, $field)); }
+        // Parent accounts are derived from their children, deepest level first,
+        // so multi-level D365 hierarchies aggregate correctly.
+        $parentCodes = array_keys(array_filter($rows, fn (array $row): bool => $row['isParent']));
+        usort($parentCodes, function (string $a, string $b) use ($rows): int {
+            return $this->hierarchyDepth($rows, $b) <=> $this->hierarchyDepth($rows, $a);
+        });
+        foreach ($parentCodes as $code) {
+            $children = array_filter($rows, fn (array $child): bool => (string) $child['_parent'] === (string) $code);
+            foreach (self::FIELDS as $field) $rows[$code][$field] = $this->sum(array_column($children, $field));
         }
-        unset($row);
         $public = array_map(function (array $row): array {
             if ($row['_parent'] !== null) $row['parent'] = $row['_parent'];
             return array_diff_key($row, ['_parent' => true]);
@@ -163,6 +166,17 @@ class CostMatrixService
         $r['cek'] = '0';
     }
     private function sum(array $values): string { $total = '0'; foreach ($values as $value) $total = bcadd($total, (string) $value, 6); return $total; }
+    private function hierarchyDepth(array $rows, string $code): int
+    {
+        $depth = 0;
+        $seen = [];
+        while (isset($rows[$code]['_parent']) && $rows[$code]['_parent'] !== null && !isset($seen[$code])) {
+            $seen[$code] = true;
+            $code = (string) $rows[$code]['_parent'];
+            $depth++;
+        }
+        return $depth;
+    }
     private function historicalEntries(array $periods): array
     {
         $file = base_path('../data_snapshot/extracted/cost_report_history.json');

@@ -20,6 +20,10 @@ class RunD365Sync implements ShouldQueue
             ? $sync->syncAll(null, $this->dateFrom, $this->dateTo, $this->forceFull)
             : (($entity = $sync->entityByKey($this->entityKey)) ? [$sync->syncEntity($entity, null, $this->dateFrom, $this->dateTo, $this->forceFull)] : []);
         $glResult = collect($results)->firstWhere('entity.key', 'gl_entries') ?? collect($results)->firstWhere('entity', 'gl_entries');
+        $mainAccountsResult = collect($results)->firstWhere('entity.key', 'main_accounts') ?? collect($results)->firstWhere('entity', 'main_accounts');
+        if (!$sync->stopRequested() && ($mainAccountsResult['status'] ?? null) === 'success') {
+            app(D365AllocationService::class)->syncAccountHierarchy();
+        }
         if (!$sync->stopRequested() && $glResult && ($glResult['status'] ?? null) === 'success') {
             app(D365AllocationService::class)->importStaging($this->dateFrom, $this->dateTo);
         }
