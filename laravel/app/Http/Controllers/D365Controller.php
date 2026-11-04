@@ -118,14 +118,17 @@ class D365Controller extends Controller
                 'account_code' => (string) $account->account_code,
                 'account_name' => (string) $account->account_name,
                 'parent_code' => $parentCode ?: $report?->parent_code,
+                'hierarchy_source' => $parentCode ? 'D365 hierarchy' : ($report?->parent_code ? 'Report Cost fallback' : 'D365 root'),
                 'is_parent' => $parentCode ? $parentCodes->contains($account->account_code) : (bool) ($report?->is_parent),
                 'type' => $payload['Type'] ?? null,
                 'report_account' => (bool) $report,
             ];
         })->sortBy('account_code')->values();
         $parentSet = $parentCodes->unique()->flip();
-        $rows = $rows->map(function (array $row) use ($parentSet): array {
+        $childCounts = $rows->groupBy('parent_code')->map->count();
+        $rows = $rows->map(function (array $row) use ($parentSet, $childCounts): array {
             if ($parentSet->has($row['account_code'])) $row['is_parent'] = true;
+            $row['children_count'] = (int) ($childCounts->get($row['account_code']) ?? 0);
             return $row;
         });
         return ['rows' => $rows, 'summary' => [
@@ -133,6 +136,8 @@ class D365Controller extends Controller
             'report_accounts' => $rows->where('report_account', true)->count(),
             'parents' => $rows->where('is_parent', true)->count(),
             'children' => $rows->where('is_parent', false)->count(),
+            'reference_only' => $rows->where('report_account', false)->count(),
+            'fallback_hierarchy' => $rows->where('hierarchy_source', 'Report Cost fallback')->count(),
         ]];
     }
 
