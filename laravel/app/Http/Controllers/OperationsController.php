@@ -92,7 +92,7 @@ class OperationsController extends Controller
     {
         $period = (string) $request->query('period', '2026-10');
         abort_unless((bool) preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $period), 422, 'Invalid period.');
-        $perPage = min(max((int) $request->query('per_page', 100), 1), 500);
+        $requestedPerPage = (string) $request->query('per_page', '100');
         $query = GlEntry::query()->where('source_type', 'd365')->where('period', $period);
         $this->applyGlReviewFilters($query, $request);
         $summaryQuery = clone $query;
@@ -105,6 +105,10 @@ class OperationsController extends Controller
                 ->selectRaw("substr(voucher, 1, 3) as code, count(*) as transactions, sum(amount_reporting) as amount_reporting")
                 ->groupBy('code')->orderBy('code')->get(),
         ];
+        $totalRows = (int) $summary['transactions'];
+        if ($requestedPerPage === 'all') @ini_set('memory_limit', '512M');
+        $perPage = $requestedPerPage === 'all' ? max($totalRows, 1) : min(max((int) $requestedPerPage, 1), 2000);
+        $query->select(['id', 'entry_date', 'main_account', 'account_name', 'voucher', 'journal_number', 'description', 'costing_to', 'valuation_to', 'currency', 'amount_idr', 'amount_reporting', 'source_key', 'mapping_status', 'year_closed', 'fuel_quantity', 'amount_txn', 'amount', 'posting_type', 'posting_layer', 'vendor_account', 'customer_account', 'invoice_no', 'activity', 'cash_flow', 'department', 'group_activity', 'location', 'project', 'project_name', 'cost_center', 'po_dt_number', 'gjae_id', 'created_datetime']);
         $paginator = $query->orderByDesc('entry_date')->orderByDesc('id')->paginate($perPage)->withQueryString();
         return [
             'period' => $period,
