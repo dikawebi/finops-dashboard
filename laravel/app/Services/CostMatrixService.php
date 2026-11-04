@@ -45,7 +45,7 @@ class CostMatrixService
             $this->allocate($row, $entry, (string) ($entry->amount_reporting ?? '0'));
             $rows[$code] = $row;
         }
-        foreach ($this->historicalEntries($periods) as $entry) {
+        foreach ($hasD365Data ? [] : $this->historicalEntries($periods) as $entry) {
             $code = (string) ($entry['MainAccount'] ?? '');
             if (!isset($rows[$code])) continue;
             $model = new GlEntry($entry);
