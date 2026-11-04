@@ -16,17 +16,18 @@ class CostMatrixService
 
     public function build(string $period, string $mode = 'mtd'): array
     {
+        $periods = $this->periods($period, $mode);
+        $hasD365Data = GlEntry::where('source_type', 'd365')->whereIn('period', $periods)->exists();
         // Historical YTD figures are frozen workbook outputs until the full
         // historical allocation model is ported. Use the approved baseline
-        // as the deterministic source rather than mixing partial heuristics.
-        if ($mode === 'ytd' || $period < '2026-10') {
+        // only when no D365 GL has been imported for the requested period.
+        if (($mode === 'ytd' || $period < '2026-10') && !$hasD365Data) {
             $baseline = base_path("../baseline/reference_dump/cost-matrix_{$period}_{$mode}.json");
             if (is_file($baseline)) {
                 return json_decode(file_get_contents($baseline), true, 512, JSON_THROW_ON_ERROR)['data'];
             }
         }
         $rows = $this->emptyRows();
-        $periods = $this->periods($period, $mode);
         $entries = GlEntry::whereIn('period', $periods)->get();
         foreach ($entries as $entry) {
             $code = (string) $entry->main_account;
