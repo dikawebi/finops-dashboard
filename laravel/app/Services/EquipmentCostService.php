@@ -37,7 +37,7 @@ class EquipmentCostService
             $row = $this->normalizeRow($raw);
             $date = $this->date($row['financial_date'] ?? $row['financialdate'] ?? $row['physical_date'] ?? $row['physicaldate'] ?? null);
             if (!$date || $date < $from || $date > $end) continue;
-            $activity = trim((string) ($row['aktivitas'] ?? $row['activity'] ?? '')) ?: '(Unassigned)';
+            $activity = $this->canonicalActivity(trim((string) ($row['aktivitas'] ?? $row['activity'] ?? '')) ?: '(Unassigned)');
             $unit = $this->unitCode($row['asset'] ?? $row['unit'] ?? '');
             $itemGroup = trim((string) ($row['item_group'] ?? $row['itemgroup'] ?? '')) ?: '(Unassigned)';
             $cost = -($this->number($row['cost_amount'] ?? $row['costamount'] ?? 0) ?? 0);
@@ -77,7 +77,7 @@ class EquipmentCostService
             $haulingUnit = $this->unitCode($row[3] ?? '');
             $loaderUnit = $this->unitCode($row[4] ?? '');
             $transporter = strtoupper(preg_replace('/[^A-Z0-9]/', '', (string) ($row[11] ?? '')));
-            $activity = trim((string) ($row[12] ?? ''));
+            $activity = $this->canonicalActivity(trim((string) ($row[12] ?? '')));
             if (!$date || $date < $from || $date > $end || $netto === null || !$haulingUnit || !$activity || !str_starts_with($transporter, 'PTBP')) continue;
             $mt = $netto / 1000;
             $month = substr($date, 0, 7);
@@ -96,8 +96,7 @@ class EquipmentCostService
         $dbPeriodAvailable = $dbYear === (int) substr($period, 0, 4);
         $fuelPrices = $dbPeriodAvailable ? $this->fuelPrices($dbRows, (int) substr($period, 0, 4)) : [];
         $employeeCosts = $dbPeriodAvailable ? $this->employeeCosts($dbRows, $period, $mode) : [];
-        $activityNames = array_unique(array_merge(array_keys($monthlyProduction), array_keys($inventoryByActivity), array_keys($employeeCosts)));
-        sort($activityNames, SORT_NATURAL | SORT_FLAG_CASE);
+        $activityNames = array_unique(array_merge($this->equipmentActivities(), array_keys($monthlyProduction), array_keys($inventoryByActivity), array_keys($employeeCosts)));
         $activities = [];
         foreach ($activityNames as $activity) {
             $productionMT = (float) ($monthlyProduction[$activity] ?? 0);
@@ -112,7 +111,7 @@ class EquipmentCostService
                 'employeeCostComplete' => $employee['complete'],
                 'totalCostUSD' => $inventoryAvailable ? $inventoryCost + (float) ($employee['value'] ?? 0) : null,
                 'inventoryCostPerMT' => $inventoryAvailable && $productionMT > 0 ? $inventoryCost / $productionMT : null,
-                'itemGroups' => $this->chartGroups($inventoryByActivity[$activity]['groups'] ?? []),
+                'itemGroups' => $this->chartGroups($this->groupsWithEmployeeCost($inventoryByActivity[$activity]['groups'] ?? [], $employee['value'])),
                 'hasInventoryCost' => isset($inventoryByActivity[$activity]),
                 'hasProduction' => $productionMT > 0,
             ];
@@ -207,6 +206,31 @@ class EquipmentCostService
         return $result;
     }
 
+    private function equipmentActivities(): array
+    {
+        return ['Coal Hauling BUA to Port','Coal Hauling BUA to WP','Coal Hauling WP to Port','Coal Loading BUA to Port','Coal Loading BUA to WP','Coal Loading WP to Port'];
+    }
+
+    private function canonicalActivity(string $activity): string
+    {
+        $key = strtolower(preg_replace('/[^a-z0-9]/i', '', $activity));
+        $aliases = [
+            'coalhaulingrombuatport'=>'Coal Hauling BUA to Port', 'coalhaulingbuatport'=>'Coal Hauling BUA to Port',
+            'coalhaulingrombuatwp'=>'Coal Hauling BUA to WP', 'coalhaulingbuatwp'=>'Coal Hauling BUA to WP',
+            'coalhaulingwptoport'=>'Coal Hauling WP to Port',
+            'coalloadingatromtoport'=>'Coal Loading BUA to Port', 'coalloadingbuatport'=>'Coal Loading BUA to Port',
+            'coalloadingatromtowp'=>'Coal Loading BUA to WP', 'coalloadingbuatwp'=>'Coal Loading BUA to WP',
+            'coalloadingatwptoport'=>'Coal Loading WP to Port', 'coalloadingwptoport'=>'Coal Loading WP to Port',
+        ];
+        return $aliases[$key] ?? $activity;
+    }
+
+    private function groupsWithEmployeeCost(array $groups, ?float $employeeCost): array
+    {
+        if ($employeeCost !== null) $groups['EMPLOYEE COST (DB)'] = ($groups['EMPLOYEE COST (DB)'] ?? 0) + $employeeCost;
+        return $groups;
+    }
+
     private function fuelPrices(array $rows, int $year): array
     {
         $months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
@@ -233,8 +257,9 @@ class EquipmentCostService
             $label = strtolower(trim((string) ($row[3] ?? '')));
             $currency = strtoupper(trim((string) ($row[4] ?? '')));
             $entity = strtoupper(trim((string) ($row[5] ?? '')));
-            $activity = trim((string) ($row[22] ?? ''));
+            $activity = $this->canonicalActivity(trim((string) ($row[22] ?? '')));
             if ($label !== 'employee cost' || $currency !== 'USD' || $entity !== 'BP' || !$activity) continue;
+            if (!in_array($activity, $this->equipmentActivities(), true)) continue;
             $amounts = []; $complete = true;
             $first = $mode === 'ytd' ? 1 : $lastMonth; $last = $lastMonth;
             for ($month = $first; $month <= $last; $month++) {
