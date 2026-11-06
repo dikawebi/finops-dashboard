@@ -40,7 +40,40 @@ return new class extends Migration
         });
 
         // === 3. GL TRANSAKSI (dari gl_data.json — 29 kolom D365) ===
-        Schema::create('gl_entries', function (Blueprint $t) {
+        if (Schema::hasTable('gl_entries')) {
+            // The reference MySQL schema already has an empty legacy gl_entries
+            // table. Extend it in place so its data and table identity survive.
+            Schema::table('gl_entries', function (Blueprint $t): void {
+                if (Schema::hasColumn('gl_entries', 'amount_idr')) $t->decimal('amount_idr', 19, 6)->nullable()->change();
+                else $t->decimal('amount_idr', 19, 6)->nullable();
+                if (! Schema::hasColumn('gl_entries', 'batch_id')) $t->unsignedBigInteger('batch_id')->nullable();
+                if (! Schema::hasColumn('gl_entries', 'year_closed')) $t->string('year_closed', 10)->nullable();
+                if (! Schema::hasColumn('gl_entries', 'description')) $t->text('description')->nullable();
+                if (! Schema::hasColumn('gl_entries', 'currency')) $t->string('currency', 10)->nullable()->index();
+                if (! Schema::hasColumn('gl_entries', 'fuel_quantity')) $t->decimal('fuel_quantity', 19, 6)->default(0);
+                if (! Schema::hasColumn('gl_entries', 'amount_txn')) $t->decimal('amount_txn', 19, 6)->nullable();
+                if (! Schema::hasColumn('gl_entries', 'amount')) $t->decimal('amount', 19, 6)->nullable();
+                if (! Schema::hasColumn('gl_entries', 'amount_reporting')) $t->decimal('amount_reporting', 19, 6)->nullable()->index();
+                if (! Schema::hasColumn('gl_entries', 'posting_type')) $t->string('posting_type', 40)->nullable();
+                if (! Schema::hasColumn('gl_entries', 'posting_layer')) $t->string('posting_layer', 40)->nullable();
+                if (! Schema::hasColumn('gl_entries', 'vendor_account')) $t->string('vendor_account', 40)->nullable();
+                if (! Schema::hasColumn('gl_entries', 'customer_account')) $t->string('customer_account', 40)->nullable();
+                if (! Schema::hasColumn('gl_entries', 'invoice_no')) $t->string('invoice_no')->nullable();
+                if (! Schema::hasColumn('gl_entries', 'activity')) $t->string('activity', 20)->nullable();
+                if (! Schema::hasColumn('gl_entries', 'cash_flow')) $t->string('cash_flow', 20)->nullable();
+                if (! Schema::hasColumn('gl_entries', 'department')) $t->string('department', 20)->nullable();
+                if (! Schema::hasColumn('gl_entries', 'group_activity')) $t->string('group_activity', 20)->nullable();
+                if (! Schema::hasColumn('gl_entries', 'location')) $t->string('location', 20)->nullable();
+                if (! Schema::hasColumn('gl_entries', 'project')) $t->string('project', 20)->nullable();
+                if (! Schema::hasColumn('gl_entries', 'project_name')) $t->string('project_name')->nullable();
+                if (! Schema::hasColumn('gl_entries', 'cost_center')) $t->string('cost_center', 100)->nullable();
+                if (! Schema::hasColumn('gl_entries', 'po_dt_number')) $t->string('po_dt_number', 40)->nullable();
+                if (! Schema::hasColumn('gl_entries', 'gjae_id')) $t->unsignedBigInteger('gjae_id')->nullable();
+                if (! Schema::hasColumn('gl_entries', 'created_datetime')) $t->dateTime('created_datetime')->nullable();
+                if (! Schema::hasColumn('gl_entries', 'period')) $t->string('period', 7)->nullable()->index();
+            });
+        } else {
+            Schema::create('gl_entries', function (Blueprint $t) {
             $t->id();
             $t->unsignedBigInteger('batch_id')->nullable(); // FK logic di service (tanpa constraint unutk fleksibilitas import)
             $t->string('journal_number', 40);          // "Journal number"
@@ -79,7 +112,8 @@ return new class extends Migration
             $t->timestamps();
             $t->index(['period', 'main_account']);
             $t->index(['journal_number', 'main_account', 'amount_reporting'], 'gl_dedupe_idx');
-        });
+            });
+        }
 
         // === 4. PRODUKSI (dari production_daily_sheets.json) ===
         // 20 metric key × months{period: value}
@@ -104,6 +138,24 @@ return new class extends Migration
             $t->string('source', 20)->default('sheet'); // sheet | manual
             $t->timestamps();
             $t->index(['period', 'production_date']);
+        });
+
+        Schema::create('production_activity_details', function (Blueprint $t) {
+            $t->id();
+            $t->date('production_date');
+            $t->string('activity', 80);
+            $t->string('location', 80)->nullable();
+            $t->string('activity_type', 80)->nullable();
+            $t->string('route', 100)->nullable();
+            $t->string('contractor', 100)->nullable();
+            $t->string('equipment', 100)->nullable();
+            $t->string('metric', 60);
+            $t->decimal('value', 19, 6)->nullable();
+            $t->string('unit', 20)->nullable();
+            $t->string('source_key', 120)->unique();
+            $t->string('source', 30)->default('google_sheets');
+            $t->timestamps();
+            $t->index(['production_date', 'activity', 'location'], 'prod_activity_date_activity_loc_idx');
         });
 
         // Sheet DB costSummary — aktivitas × entitas per bulan
