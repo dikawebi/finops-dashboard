@@ -10,6 +10,7 @@ use App\Services\CostMatrixService;
 use App\Services\FinancialStatementService;
 use App\Services\InventoryValuationService;
 use App\Services\CostPerMtService;
+use App\Services\GoogleSheetsProductionSync;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -42,14 +43,29 @@ class DashboardController extends Controller
         $mode = (string) $request->query('mode', 'mtd');
         abort_unless((bool) preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $period), 422, 'Invalid period.');
         abort_unless(in_array($mode, ['mtd', 'ytd'], true), 422, 'Invalid mode.');
-        $baselinePath = base_path("../baseline/reference_dump/production-summary_{$period}_{$mode}.json");
-        if (is_file($baselinePath)) {
-            $data = json_decode(file_get_contents($baselinePath), true, 512, JSON_THROW_ON_ERROR)['data'] ?? [];
-            return response()->json(['success' => true, 'data' => $data]);
+        $yearStart = substr($period, 0, 4).'-01';
+        $syncedInPeriod = DailyProduction::query()->where('source', 'google_sheets')->where('period', $period)->exists();
+        $syncedInYtd = DailyProduction::query()->where('source', 'google_sheets')->whereBetween('period', [$yearStart, $period])->exists();
+        if (($mode === 'mtd' && !$syncedInPeriod) || ($mode === 'ytd' && !$syncedInYtd)) {
+            $baselinePath = base_path("../baseline/reference_dump/production-summary_{$period}_{$mode}.json");
+            if (is_file($baselinePath)) {
+                $data = json_decode(file_get_contents($baselinePath), true, 512, JSON_THROW_ON_ERROR)['data'] ?? [];
+                return response()->json(['success' => true, 'data' => $data]);
+            }
         }
         $daily = DailyProduction::period($period)->orderBy('production_date')->get();
+        $monthlyRows = MonthlyMetric::query()->where('metric_key', 'coalGetting')->where('period', '<=', $period)->where('period', '>=', $yearStart)->get();
+        $metrics = MonthlyMetric::period($period)->get()->keyBy('metric_key');
+        if ($mode === 'ytd' && $syncedInYtd && $monthlyRows->isNotEmpty()) {
+            $metric = $metrics->get('coalGetting');
+            $ytdValue = $monthlyRows->sum(fn ($row): float => (float) $row->value);
+            if ($metric) $metric->value = (string) $ytdValue;
+            else $metrics->put('coalGetting', (object) ['metric_key'=>'coalGetting','label'=>'Coal Getting','unit'=>'MT','value'=>(string)$ytdValue]);
+        }
         return response()->json(['success' => true, 'data' => [
-            'dbMetrics' => MonthlyMetric::period($period)->get()->keyBy('metric_key'),
+            'dbMetrics' => $metrics,
+            'sheetLastSyncedAt' => \App\Models\SystemConfig::get('sheetsSync', [])['last_synced_at'] ?? null,
+            'dataSource' => ($mode === 'ytd' ? $syncedInYtd : $syncedInPeriod) ? 'Google Sheets sync' : 'database',
             'dailyTrends' => $daily->map(fn (DailyProduction $row): array => [
                 'date' => $row->production_date->format('Y-m-d'),
                 'nettoMT' => (float) $row->coal_getting_mt,
@@ -62,7 +78,24 @@ class DashboardController extends Controller
     {
         $d365 = config('services.d365');
         $d365Configured = (bool) ($d365['enabled'] ?? false) && filled($d365['environment_url'] ?? null) && filled($d365['tenant_id'] ?? null) && filled($d365['client_id'] ?? null) && filled($d365['client_secret'] ?? null);
-        return response()->json(['success' => true, 'data' => ['d365' => ['status' => $d365Configured ? 'configured' : 'not-configured', 'mode' => $d365Configured ? 'environment config' : 'local snapshot', 'environmentUrl' => $d365['environment_url'] ?? null, 'entityName' => $d365['entity_name'] ?? null, 'autoSync' => (bool) ($d365['auto_sync'] ?? false)], 'googleSheets' => ['status' => 'manual-sync', 'mode' => 'local snapshot'], 'dataFreeze' => '2026-10-30', 'database' => ['glEntries' => \App\Models\GlEntry::count(), 'monthlyMetrics' => \App\Models\MonthlyMetric::count()]]]);
+        $sheets = config('services.google_sheets');
+        $sheetsConfigured = (bool) ($sheets['enabled'] ?? false) && filled($sheets['spreadsheet_id'] ?? null) && filled($sheets['credentials_path'] ?? null) && is_file($sheets['credentials_path']);
+        $serviceAccountEmail = null;
+        if ($sheetsConfigured) {
+            try { $serviceAccountEmail = json_decode(file_get_contents($sheets['credentials_path']), true, 512, JSON_THROW_ON_ERROR)['client_email'] ?? null; } catch (\Throwable) { $sheetsConfigured = false; }
+        }
+        $sync = \App\Models\SystemConfig::get('sheetsSync', []);
+        return response()->json(['success' => true, 'data' => ['d365' => ['status' => $d365Configured ? 'configured' : 'not-configured', 'mode' => $d365Configured ? 'environment config' : 'local snapshot', 'environmentUrl' => $d365['environment_url'] ?? null, 'entityName' => $d365['entity_name'] ?? null, 'autoSync' => (bool) ($d365['auto_sync'] ?? false)], 'googleSheets' => ['status' => $sheetsConfigured ? 'configured' : 'not-configured', 'mode' => 'Google Sheets API', 'spreadsheetId' => $sheets['spreadsheet_id'] ?? null, 'sheetName' => $sheets['sheet_name'] ?? 'Produksi', 'serviceAccountEmail' => $serviceAccountEmail, 'credentialStatus' => $sheetsConfigured ? 'Private key loaded on server' : 'Credential unavailable', 'lastSyncedAt' => $sync['last_synced_at'] ?? null, 'lastRows' => $sync['rows'] ?? null], 'dataFreeze' => '2026-10-30', 'database' => ['glEntries' => \App\Models\GlEntry::count(), 'monthlyMetrics' => \App\Models\MonthlyMetric::count()]]]);
+    }
+
+    public function syncGoogleSheets(GoogleSheetsProductionSync $sync): JsonResponse
+    {
+        return response()->json(['success' => true, 'data' => $sync->sync()]);
+    }
+
+    public function previewGoogleSheets(GoogleSheetsProductionSync $sync): JsonResponse
+    {
+        return response()->json(['success' => true, 'data' => $sync->preview()]);
     }
 
     public function costPerMt(Request $request, CostPerMtService $service): JsonResponse

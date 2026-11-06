@@ -47,4 +47,12 @@ return [
         'auto_sync' => (bool) env('D365_AUTO_SYNC', false),
     ],
 
+    'google_sheets' => [
+        'enabled' => (bool) env('GOOGLE_SHEETS_ENABLED', false),
+        'spreadsheet_id' => env('GOOGLE_SHEETS_SPREADSHEET_ID'),
+        'sheet_name' => env('GOOGLE_SHEETS_SHEET_NAME', 'Produksi'),
+        'credentials_path' => env('GOOGLE_SHEETS_CREDENTIALS_PATH'),
+        'gid' => env('GOOGLE_SHEETS_GID', '298998208'),
+    ],
+
 ];
