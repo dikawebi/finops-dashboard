@@ -8,6 +8,8 @@
     @php($companyName = $system['companyName'] ?? 'FinOps Dashboard')
     @php($logoPath = $system['logoPath'] ?? '/images/logo-bp.svg')
     <title>{{ $companyName }} — Coal Mining Accounting &amp; Cost Dashboard</title>
+    <link rel="icon" href="{{ e($logoPath) }}">
+    <link rel="apple-touch-icon" href="{{ e($logoPath) }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         .content { max-width: 1550px; margin: 0 auto; }
