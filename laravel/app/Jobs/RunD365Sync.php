@@ -25,6 +25,18 @@ class RunD365Sync implements ShouldQueue
         if (!$sync->stopRequested() && ($mainAccountsResult['status'] ?? null) === 'success') {
             app(D365AllocationService::class)->syncAccountHierarchy();
         }
+        $findimResult = collect($results)->firstWhere('entity.key', 'mapping_valuation_by_findims') ?? collect($results)->firstWhere('entity', 'mapping_valuation_by_findims');
+        if (!$sync->stopRequested() && ($findimResult['status'] ?? null) === 'success') {
+            try {
+                $mappingImport = app(D365AllocationService::class)->replaceMappingsFromFindims();
+                $log = DB::table('d365_sync_logs')->where('entity_key', 'mapping_valuation_by_findims')->latest('id')->first();
+                if ($log) DB::table('d365_sync_logs')->where('id', $log->id)->update(['message' => sprintf('Replaced %d allocation rules from D365 Findim mapping.', $mappingImport['rows']), 'updated_at' => now()]);
+            } catch (\Throwable $exception) {
+                $log = DB::table('d365_sync_logs')->where('entity_key', 'mapping_valuation_by_findims')->latest('id')->first();
+                if ($log) DB::table('d365_sync_logs')->where('id', $log->id)->update(['status' => 'failed', 'message' => 'Allocation mapping replace failed: '.$exception->getMessage(), 'updated_at' => now()]);
+                throw $exception;
+            }
+        }
         if (!$sync->stopRequested() && $glResult && ($glResult['status'] ?? null) === 'success') {
             $log = DB::table('d365_sync_logs')->where('entity_key', 'gl_entries')->latest('id')->first();
             if ($log) DB::table('d365_sync_logs')->where('id', $log->id)->update(['message' => 'Importing GL staging into dashboard...', 'updated_at' => now()]);

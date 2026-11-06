@@ -69,6 +69,35 @@ class D365AllocationService
         return ['d365_accounts' => $accounts->count(), 'report_accounts_updated' => $updated];
     }
 
+    public function replaceMappingsFromFindims(): array
+    {
+        $rows = DB::table('d365_typed_records')->where('entity_key', 'mapping_valuation_by_findims')->get(['source_key', 'payload']);
+        $mappings = [];
+        foreach ($rows as $row) {
+            $payload = json_decode((string) $row->payload, true) ?: [];
+            $values = array_change_key_case($payload, CASE_LOWER);
+            $activity = trim((string) ($values['activity'] ?? ''));
+            $location = trim((string) ($values['location'] ?? ''));
+            $costingTo = trim((string) ($values['costingto'] ?? ''));
+            $valuationTo = trim((string) ($values['valuationto'] ?? ''));
+            if ($activity === '' || $location === '' || $costingTo === '' || $valuationTo === '') continue;
+            $key = mb_strtolower($activity.'|'.$location);
+            $value = ['activity'=>$activity,'location'=>$location,'costing_to'=>$costingTo,'valuation_to'=>$valuationTo];
+            if (isset($mappings[$key]) && $mappings[$key] !== $value) throw new \RuntimeException("MappingValuationByFindims memiliki tujuan ganda untuk Activity {$activity} dan Location {$location}.");
+            $mappings[$key] = $value;
+        }
+        if (!$mappings) throw new \RuntimeException('MappingValuationByFindims tidak berisi mapping valid; allocation rules lama dipertahankan.');
+        DB::transaction(function () use ($mappings): void {
+            DB::table('d365_allocation_mappings')->delete();
+            foreach (array_chunk(array_values($mappings), 500) as $chunk) {
+                $now = now();
+                DB::table('d365_allocation_mappings')->insert(array_map(static fn (array $mapping): array => $mapping + ['label'=>$mapping['activity'].' / '.$mapping['location'],'priority'=>100,'is_active'=>true,'created_at'=>$now,'updated_at'=>$now], $chunk));
+            }
+        });
+        $this->activeRules = null;
+        return ['replaced'=>true,'rows'=>count($mappings)];
+    }
+
     public function resolve(array $row): array
     {
         $dimensions = array_change_key_case((array) ($row['dimensions'] ?? []), CASE_UPPER);
