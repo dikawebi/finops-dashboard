@@ -518,6 +518,44 @@ async function inventory(period, mode) {
     $('#inventoryPeriod').addEventListener('change', event => { $('#period').value = event.target.value; render(); });
 }
 
+async function equipmentCost(period, mode) {
+    const data = await api(`/api/equipment-cost?period=${encodeURIComponent(period)}&mode=${encodeURIComponent(mode)}`);
+    const activityOptions = (data.activities || []).map(item => `<option value="${esc(item.activity)}">${esc(item.activity)}</option>`).join('');
+    const moneyOrMissing = value => value === null || value === undefined ? '—' : money(value);
+    $('#pageContent').innerHTML = `${sectionHeader('Equipment Cost — Inhouse Mining', 'Review inhouse production and inventory cost by activity and unit. Period follows the dashboard selection.', `<span class="config-source">MTD / YTD · ${esc(formatPeriod(period))}</span>`)}<div class="equipment-filters"><label>Activity cards<select id="equipmentActivityFilter"><option value="all">All activities</option>${activityOptions}</select></label><label>Search unit table<input id="equipmentUnitSearch" type="search" placeholder="Type a unit code"></label></div>${(data.notes || []).map(note => `<div class="financial-notice equipment-note">${esc(note)}</div>`).join('')}<div class="equipment-source-line"><span>Inventory: ${data.sources?.inventory?.available ? 'snapshot loaded' : 'not available'}</span><span>Production: ${esc(data.sources?.production || 'Google Sheets')}</span><span>Employee Cost / Fuel: ${data.sources?.employeeAndFuel?.available ? `DB sheet · ${esc(data.sources.employeeAndFuel.year)}` : 'DB reference unavailable for this period'}</span></div><div id="equipmentActivityCards"></div>${card('Equipment by Activity', '<div class="equipment-table-tools"><span id="equipmentUnitCount" class="integration-note"></span><span class="integration-note">Search applies to this table only.</span></div><div id="equipmentUnitTable"></div>')}`;
+
+    const renderActivities = () => {
+        const selected = $('#equipmentActivityFilter').value;
+        const activities = (data.activities || []).filter(item => selected === 'all' || item.activity === selected);
+        const cards = activities.map(item => {
+            const groups = item.itemGroups || [];
+            const totalPositive = groups.reduce((sum, group) => sum + Math.max(0, Number(group.value || 0)), 0);
+            let angle = 0;
+            const colors = ['#1769e0', '#0e9f9a', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b', '#14b8a6'];
+            const stops = groups.filter(group => Number(group.value) > 0).map((group, index) => {
+                const start = angle; angle += totalPositive ? Number(group.value) / totalPositive * 360 : 0;
+                return `${colors[index % colors.length]} ${start}deg ${angle}deg`;
+            });
+            const chart = stops.length ? `<div class="equipment-chart-row"><div class="equipment-donut" style="--equipment-chart:${stops.join(',')}"></div><div class="equipment-legend">${groups.map((group, index) => `<div><i style="--equipment-color:${group.value < 0 ? '#b42318' : colors[index % colors.length]}"></i><span>${esc(group.label)}${group.credit ? ' · Credit' : ''}</span><b>${qty(group.percentage)}%</b></div>`).join('')}</div></div>` : '<div class="equipment-chart-empty">No inventory composition available.</div>';
+            return `<article class="equipment-activity-card"><div class="equipment-activity-title"><h3>${esc(item.activity)}</h3><span class="equipment-unit-count">${qty(item.unitCount)} units</span></div><div class="equipment-kpis"><div><span>Production</span><b>${item.productionMT === null ? '—' : `${qty(item.productionMT)} MT`}</b></div><div><span>Inventory cost</span><b>${moneyOrMissing(item.inventoryCostUSD)}</b></div><div><span>Employee Cost</span><b>${moneyOrMissing(item.employeeCostUSD)}${item.employeeCostUSD !== null && !item.employeeCostComplete ? '<small>Incomplete</small>' : ''}</b></div><div><span>Total cost</span><b>${moneyOrMissing(item.totalCostUSD)}</b></div><div><span>Inventory cost / MT</span><b>${moneyOrMissing(item.inventoryCostPerMT)}</b></div></div>${chart}</article>`;
+        }).join('');
+        $('#equipmentActivityCards').innerHTML = `<div class="equipment-activity-grid">${cards || '<div class="integration-note">No activity matches the selected period.</div>'}</div>`;
+    };
+    const renderUnits = () => {
+        const query = $('#equipmentUnitSearch').value.trim().toUpperCase();
+        const rows = (data.units || []).filter(row => !query || row.unit.toUpperCase().includes(query));
+        $('#equipmentUnitCount').textContent = `${qty(rows.length)} of ${qty((data.units || []).length)} unit rows`;
+        const html = rows.map(row => {
+            const groupDetails = (row.itemGroups || []).map(group => `${esc(group.label)}: ${money(group.value)}`).join('<br>') || '—';
+            return `<tr><td>${esc(row.activity)}</td><td><b>${esc(row.unit)}</b></td><td class="num">${row.haulingMT === null ? '—' : qty(row.haulingMT)}</td><td class="num">${row.loaderMT === null ? '—' : qty(row.loaderMT)}</td><td class="num">${row.fuelLitres === null ? '—' : qty(row.fuelLitres)}</td><td class="num">${row.fuelPerHaulingMT === null ? '—' : qty(row.fuelPerHaulingMT)}</td><td class="num">${row.fuelPerLoaderMT === null ? '—' : qty(row.fuelPerLoaderMT)}</td><td class="num">${moneyOrMissing(row.fuelCostEstimateUSD)}</td><td class="num">${moneyOrMissing(row.otherInventoryCostUSD)}</td><td class="num"><b>${moneyOrMissing(row.totalInventoryCostUSD)}</b></td><td>${groupDetails}</td></tr>`;
+        }).join('');
+        $('#equipmentUnitTable').innerHTML = `<div class="table-responsive equipment-cost-table"><table class="table-accounting"><thead><tr><th>Activity</th><th>Unit</th><th>Hauling MT</th><th>Loader MT</th><th>Fuel litres</th><th>Fuel / Hauling MT</th><th>Fuel / Loader MT</th><th>Est. fuel USD</th><th>Other inventory USD</th><th>Total inventory USD</th><th>Item group detail</th></tr></thead><tbody>${html || '<tr><td colspan="11">No units found for this period or search.</td></tr>'}</tbody></table></div>`;
+    };
+    $('#equipmentActivityFilter').addEventListener('change', renderActivities);
+    $('#equipmentUnitSearch').addEventListener('input', renderUnits);
+    renderActivities(); renderUnits();
+}
+
 async function financial(period, mode) {
     const data = await api(`/api/financial-statements?period=${period}&mode=${mode}`);
     const report = data.report || {};
@@ -770,6 +808,7 @@ async function render() {
         else if (state.view === 'glReview') await glTransactionReview(period);
         else if (state.view === 'variance') await variance(period, mode);
         else if (state.view === 'metric') await metric(period, mode);
+        else if (state.view === 'equipmentCost') await equipmentCost(period, mode);
         else if (state.view === 'inventory') await inventory(period, mode);
         else if (state.view === 'financial') await financial(period, mode);
         else if (state.view === 'mapping') await allocationMapping();

@@ -10,6 +10,7 @@ use App\Services\CostMatrixService;
 use App\Services\FinancialStatementService;
 use App\Services\InventoryValuationService;
 use App\Services\CostPerMtService;
+use App\Services\EquipmentCostService;
 use App\Services\GoogleSheetsProductionSync;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -72,6 +73,15 @@ class DashboardController extends Controller
                 'count' => 0,
             ])->values(),
         ]]);
+    }
+
+    public function equipmentCost(Request $request, EquipmentCostService $service): JsonResponse
+    {
+        $period = (string) $request->query('period', '2026-10');
+        $mode = (string) $request->query('mode', 'mtd');
+        abort_unless((bool) preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $period), 422, 'Invalid period.');
+        abort_unless(in_array($mode, ['mtd', 'ytd'], true), 422, 'Invalid mode.');
+        return response()->json(['success'=>true,'data'=>$service->build($period, $mode)]);
     }
 
     public function integration(): JsonResponse

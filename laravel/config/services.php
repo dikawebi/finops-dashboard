@@ -53,6 +53,9 @@ return [
         'sheet_name' => env('GOOGLE_SHEETS_SHEET_NAME', 'Produksi'),
         'credentials_path' => env('GOOGLE_SHEETS_CREDENTIALS_PATH'),
         'gid' => env('GOOGLE_SHEETS_GID', '298998208'),
+        'equipment_sheet_name' => env('GOOGLE_SHEETS_EQUIPMENT_SHEET_NAME', 'Inhouse Mining'),
+        'equipment_db_sheet_name' => env('GOOGLE_SHEETS_EQUIPMENT_DB_SHEET_NAME', 'DB'),
+        'equipment_inventory_path' => env('EQUIPMENT_INVENTORY_PATH', base_path('../data/equipment_inventory.json')),
     ],
 
 ];

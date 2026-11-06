@@ -50,6 +50,7 @@
                 <button type="button" data-view="cost"><span class="nav-icon">📑</span><span class="nav-label">Report Cost (COGP)</span></button>
                 <button type="button" data-view="variance"><span class="nav-icon">📈</span><span class="nav-label">Cost Variance Analysis</span></button>
                 <button type="button" data-view="metric"><span class="nav-icon">⚖️</span><span class="nav-label">Cost per Metric Ton</span></button>
+                <button type="button" data-view="equipmentCost"><span class="nav-icon">🚜</span><span class="nav-label">Equipment Cost</span></button>
                 <button type="button" data-view="inventory"><span class="nav-icon">📦</span><span class="nav-label">Inventory Valuation</span></button>
                 <button type="button" data-view="financial"><span class="nav-icon">📑</span><span class="nav-label">Financial Statements</span></button>
                 <span class="nav-group-label">TRANSACTIONS</span>
