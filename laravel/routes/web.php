@@ -33,6 +33,7 @@ Route::prefix('api')->group(function () {
     Route::get('/db-cost-summary', [DashboardController::class, 'dbCostSummary']);
     Route::post('/db-cost-summary/remark', [DashboardController::class, 'saveDbCostRemark'])->middleware(['auth', EnsurePeriodOpen::class]);
     Route::get('/cost-variance', [DashboardController::class, 'variance']);
+    Route::post('/cost-variance/remark', [DashboardController::class, 'saveVarianceRemark'])->middleware(EnsurePeriodOpen::class);
     Route::get('/integration-status', [DashboardController::class, 'integration']);
     Route::get('/d365/entities', [D365Controller::class, 'entities']);
     Route::post('/d365/sync', [D365Controller::class, 'sync']);

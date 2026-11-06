@@ -137,11 +137,11 @@ class DashboardController extends Controller
         $current = $service->build($period, $mode);
         $prior = $service->build($previous, 'mtd');
         $variance = [];
-        $remarks = CostVarianceRemark::period($period)->get()->keyBy('account_code');
-        $priorRows = collect($prior['rows'])->keyBy('code');
         $location = trim((string) $request->query('location', 'allCost'));
+        $priorRows = collect($prior['rows'])->keyBy('code');
         $varianceFields = ['allCost', 'costMining', 'costHaulingBUAToWP', 'costHaulingBUAToPort', 'costHaulingWPToPort', 'costWP', 'costPort', 'valMining', 'valHauling', 'valWP', 'valPort', 'directGA', 'sellingExpense'];
         abort_unless(in_array($location, $varianceFields, true), 422, 'Invalid variance category.');
+        $remarks = CostVarianceRemark::period($period)->where('category', $location)->get()->keyBy('account_code');
         foreach ($current['rows'] as $row) {
             $old = $priorRows->get($row['code']);
             $base = (float) ($old[$location] ?? 0);
@@ -156,6 +156,21 @@ class DashboardController extends Controller
         }
         $locationOptions = $varianceFields;
         return response()->json(['success' => true, 'data' => ['period' => $period, 'previousPeriod' => $previous, 'current' => $current, 'previous' => $prior, 'rows' => $variance, 'locations' => $locationOptions]]);
+    }
+
+    public function saveVarianceRemark(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'period' => ['required', 'date_format:Y-m'],
+            'category' => ['required', 'in:allCost,costMining,costHaulingBUAToWP,costHaulingBUAToPort,costHaulingWPToPort,costWP,costPort,valMining,valHauling,valWP,valPort,directGA,sellingExpense'],
+            'account_code' => ['required', 'string', 'max:20'],
+            'remark' => ['nullable', 'string', 'max:2000'],
+        ]);
+        $remark = CostVarianceRemark::updateOrCreate(
+            ['period' => $validated['period'], 'category' => $validated['category'], 'account_code' => $validated['account_code']],
+            ['remark' => $validated['remark'] ?? '']
+        );
+        return response()->json(['success' => true, 'data' => ['id' => $remark->id, 'updated_at' => $remark->updated_at]]);
     }
 
     private function periodMode(Request $request): array
