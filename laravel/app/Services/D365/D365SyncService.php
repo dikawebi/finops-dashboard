@@ -13,6 +13,7 @@ class D365SyncService
         ['key' => 'gl_journal_entries', 'label' => 'GL Journal Entries', 'entity' => 'GeneralJournalEntryBiEntities', 'mode' => 'incremental', 'source_field' => 'SourceKey', 'date_field' => 'AccountingDate', 'company_field' => 'SubledgerVoucherDataAreaId'],
         ['key' => 'main_accounts', 'label' => 'Main Accounts', 'entity' => 'MainAccountBiEntities', 'mode' => 'snapshot', 'source_field' => 'SourceKey', 'date_field' => null, 'company_field' => null],
         ['key' => 'dimension_values', 'label' => 'Financial Dimension Values', 'entity' => 'FinancialDimensionValues', 'mode' => 'snapshot', 'source_field' => 'SourceKey', 'date_field' => null, 'company_field' => 'LegalEntityId', 'exclude_company' => 'Arcs'],
+        ['key' => 'mapping_valuation_by_findims', 'label' => 'Mapping Valuation by Findim', 'entity' => 'MappingValuationByFindims', 'mode' => 'snapshot', 'source_field' => 'SourceKey', 'date_field' => null, 'company_field' => null],
         ['key' => 'ledger_journal_lines', 'label' => 'Ledger Journal Lines', 'entity' => 'LedgerJournalTransBiEntities', 'mode' => 'incremental', 'source_field' => 'SourceKey', 'date_field' => 'DocumentDate', 'company_field' => 'dataAreaId'],
         ['key' => 'ledger_entry_journals', 'label' => 'Ledger Entry Journals', 'entity' => 'LedgerEntryJournalBiEntities', 'mode' => 'incremental', 'source_field' => 'SourceKey', 'date_field' => null, 'company_field' => null],
         ['key' => 'vendors', 'label' => 'Vendors', 'entity' => 'VendorsV2', 'mode' => 'snapshot', 'source_field' => 'SourceKey', 'date_field' => null, 'company_field' => 'dataAreaId'],
@@ -89,7 +90,7 @@ class D365SyncService
         }
     }
 
-    public function syncAll(?int $limit = null, ?string $dateFrom = null, ?string $dateTo = null, bool $forceFull = false): array { $order = ['main_accounts', 'dimension_values', 'vendors', 'customers', 'gl_journal_entries', 'gl_entries', 'ledger_journal_lines', 'ledger_entry_journals', 'inventory_trans']; $results = []; foreach ($order as $key) { if ($this->stopRequested()) break; $results[] = $this->syncEntity($this->entityByKey($key), $limit, $dateFrom, $dateTo, $forceFull); } return $results; }
+    public function syncAll(?int $limit = null, ?string $dateFrom = null, ?string $dateTo = null, bool $forceFull = false): array { $order = ['main_accounts', 'dimension_values', 'mapping_valuation_by_findims', 'vendors', 'customers', 'gl_journal_entries', 'gl_entries', 'ledger_journal_lines', 'ledger_entry_journals', 'inventory_trans']; $results = []; foreach ($order as $key) { if ($this->stopRequested()) break; $results[] = $this->syncEntity($this->entityByKey($key), $limit, $dateFrom, $dateTo, $forceFull); } return $results; }
     public function requestStop(): void { Cache::put('d365_sync_stop', true, now()->addHour()); }
     public function clearStop(): void { Cache::forget('d365_sync_stop'); }
     public function stopRequested(): bool { return (bool) Cache::get('d365_sync_stop', false); }
