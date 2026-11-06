@@ -15,8 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withSchedule(function (Schedule $schedule): void {
-        $interval = max(1, (int) config('services.d365.sync_interval_minutes', 15));
-        $schedule->command('d365:sync --queued')->cron('*/'.$interval.' * * * *')->withoutOverlapping()->when(fn (): bool => (bool) config('services.d365.auto_sync', false));
+        $schedule->command('d365:sync-yesterday')
+            ->dailyAt('01:00')
+            ->timezone('Asia/Bangkok')
+            ->withoutOverlapping()
+            ->when(fn (): bool => (bool) config('services.d365.enabled', false) && (bool) config('services.d365.auto_sync', false));
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

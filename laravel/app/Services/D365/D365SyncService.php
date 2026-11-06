@@ -119,7 +119,10 @@ class D365SyncService
         if (!$dateFrom && !$dateTo) return [$this->filter($entity, null, null, $forceFull)];
         if ($entity['key'] === 'gl_entries') {
             $keys = DB::table('d365_typed_records')->where('entity_key', 'gl_journal_entries')->when($dateFrom, fn ($query) => $query->whereDate('accounting_date', '>=', $dateFrom))->when($dateTo, fn ($query) => $query->whereDate('accounting_date', '<=', $dateTo))->pluck('source_key')->filter()->map(fn ($key): string => (string) $key)->unique()->values();
-            return $keys->isEmpty() ? [$this->filter($entity, $dateFrom, $dateTo, $forceFull)] : $keys->chunk(50)->map(fn ($chunk): string => $this->appendFilter($this->filter($entity, $dateFrom, $dateTo, $forceFull), $chunk->map(fn (string $key): string => 'GeneralJournalEntry eq '.$key)->implode(' or ')))->all();
+            // This entity has no date field. If the date-scoped journal lookup is empty,
+            // do not fall back to an unfiltered request that could import all GL history.
+            if ($keys->isEmpty()) return [];
+            return $keys->chunk(50)->map(fn ($chunk): string => $this->appendFilter($this->filter($entity, $dateFrom, $dateTo, $forceFull), $chunk->map(fn (string $key): string => 'GeneralJournalEntry eq '.$key)->implode(' or ')))->all();
         }
         if ($entity['key'] === 'ledger_entry_journals') {
             $keys = DB::table('d365_typed_records')->where('entity_key', 'ledger_journal_lines')->when($dateFrom, fn ($query) => $query->whereDate('accounting_date', '>=', $dateFrom))->when($dateTo, fn ($query) => $query->whereDate('accounting_date', '<=', $dateTo))->pluck('journal_number')->filter()->map(fn ($key): string => (string) $key)->unique()->values();
