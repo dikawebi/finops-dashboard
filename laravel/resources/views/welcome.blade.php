@@ -37,28 +37,38 @@
     </style>
 </head>
 <body data-company-name="{{ e($companyName) }}">
-    <header class="app-header">
-        <div class="brand"><img class="logo" src="{{ e($logoPath) }}" alt="{{ e($companyName) }}"><div class="brand-info"><b>{{ $companyName }}</b><span>Accounting &amp; Mining Cost Management System • Local Hosting (Intranet)</span></div></div>
-        <div class="header-status"><button class="import" type="button">📤 Import GL Data</button><div class="source-pill"><i></i><span>D365 GL: Online</span></div><div class="source-pill"><i></i><span>Google Sheets: Manual Sync</span></div><div class="period-label">Period:<b id="periodText">2026-10</b></div></div>
-    </header>
-    <div class="filterbar" aria-label="Reporting period controls">
-        <div class="period-control-group"><span class="filterbar-label">Period</span><div class="period-picker"><button id="periodPrevious" class="period-step" type="button" aria-label="Previous month">‹</button><input id="period" type="month" value="2026-10" aria-label="Selected reporting month"><button id="periodNext" class="period-step" type="button" aria-label="Next month">›</button></div><button id="periodCurrent" class="period-current" type="button">Current month</button></div>
-        <div class="mode-control-group"><span class="filterbar-label">View</span><div class="mode-toggle" role="group" aria-label="Reporting view"><button type="button" class="active" data-mode="mtd">MTD</button><button type="button" data-mode="ytd">YTD</button></div><select id="mode" class="visually-hidden" tabindex="-1" aria-hidden="true"><option value="mtd">MTD</option><option value="ytd">YTD</option></select></div>
-        <span id="viewText" class="active-period">MTD · October 2026</span>
+    <div class="app-shell">
+        <div id="sidebarScrim" class="sidebar-scrim" aria-hidden="true"></div>
+        <aside id="appSidebar" class="app-sidebar" aria-label="Main navigation">
+            <div class="sidebar-brand"><img class="logo" src="{{ e($logoPath) }}" alt=""><div><b>{{ $companyName }}</b><span>FINANCE &amp; OPERATIONS</span></div></div>
+            <nav class="tabs" aria-label="Dashboard navigation">
+                <span class="nav-group-label">OVERVIEW</span>
+                <button type="button" class="active" data-view="overview"><span class="nav-icon">📊</span><span class="nav-label">Executive Overview</span></button>
+                <span class="nav-group-label">COST &amp; REPORTS</span>
+                <button type="button" data-view="cost"><span class="nav-icon">📑</span><span class="nav-label">Report Cost (COGP)</span></button>
+                <button type="button" data-view="variance"><span class="nav-icon">📈</span><span class="nav-label">Cost Variance Analysis</span></button>
+                <button type="button" data-view="metric"><span class="nav-icon">⚖️</span><span class="nav-label">Cost per Metric Ton</span></button>
+                <button type="button" data-view="inventory"><span class="nav-icon">📦</span><span class="nav-label">Inventory Valuation</span></button>
+                <button type="button" data-view="financial"><span class="nav-icon">📑</span><span class="nav-label">Financial Statements</span></button>
+                <span class="nav-group-label">TRANSACTIONS</span>
+                <button type="button" data-view="glReview"><span class="nav-icon">🧾</span><span class="nav-label">GL Transaction Review</span></button>
+                <span class="nav-group-label">DATA &amp; CONFIGURATION</span>
+                <button type="button" data-view="integration"><span class="nav-icon">🔄</span><span class="nav-label">Integration &amp; Data Sources</span></button>
+                <button type="button" data-view="mapping"><span class="nav-icon">🧭</span><span class="nav-label">Allocation Mapping</span></button>
+                <button type="button" data-view="config"><span class="nav-icon">⚙️</span><span class="nav-label">Configuration</span></button>
+            </nav>
+            <div class="sidebar-company"><b>{{ $companyName }}</b><span>Coal Production Accounting</span></div>
+        </aside>
+        <div class="app-main">
+            <div class="filterbar" aria-label="Reporting period controls">
+                <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="Toggle navigation" aria-controls="appSidebar" aria-expanded="true"><span></span><span></span><span></span></button>
+                <div class="period-control-group"><span class="filterbar-label">Period</span><div class="period-picker"><button id="periodPrevious" class="period-step" type="button" aria-label="Previous month">‹</button><input id="period" type="month" value="2026-10" aria-label="Selected reporting month"><button id="periodNext" class="period-step" type="button" aria-label="Next month">›</button></div><button id="periodCurrent" class="period-current" type="button">Current month</button></div>
+                <div class="mode-control-group"><span class="filterbar-label">View</span><div class="mode-toggle" role="group" aria-label="Reporting view"><button type="button" class="active" data-mode="mtd">MTD</button><button type="button" data-mode="ytd">YTD</button></div><select id="mode" class="visually-hidden" tabindex="-1" aria-hidden="true"><option value="mtd">MTD</option><option value="ytd">YTD</option></select></div>
+                <span id="viewText" class="active-period">MTD · October 2026</span>
+            </div>
+            <main id="pageContent" class="content" aria-live="polite"></main>
+            <footer>{{ $companyName }} • Coal Production Accounting &amp; Cost Dashboard · Data freeze 2026-10-30</footer>
+        </div>
     </div>
-    <nav class="tabs" aria-label="Dashboard navigation">
-        <button type="button" class="active" data-view="overview">📊 Executive Overview</button>
-        <button type="button" data-view="cost">📑 Report Cost (COGP)</button>
-        <button type="button" data-view="glReview">🧾 GL Transaction Review</button>
-        <button type="button" data-view="variance">📈 Cost Variance Analysis</button>
-        <button type="button" data-view="metric">⚖️ Cost per Metric Ton</button>
-        <button type="button" data-view="inventory">📦 Inventory Valuation (Moving Avg)</button>
-        <button type="button" data-view="financial">📑 Financial Statements (FS)</button>
-        <button type="button" data-view="integration">🔄 Integration &amp; Data Sources</button>
-        <button type="button" data-view="mapping">🧭 Allocation Mapping</button>
-        <button type="button" data-view="config">⚙️ Configuration</button>
-    </nav>
-    <main id="pageContent" class="content" aria-live="polite"></main>
-    <footer>{{ $companyName }} • Coal Production Accounting &amp; Cost Dashboard · Data freeze 2026-10-30</footer>
 </body>
 </html>

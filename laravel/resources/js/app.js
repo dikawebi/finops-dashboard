@@ -98,10 +98,11 @@ async function refreshD365Progress() {
 function mountD365ProgressMonitor() { if (d365ProgressTimer) clearInterval(d365ProgressTimer); if (!readD365SyncState()) { clearD365ProgressPanel(); return; } refreshD365Progress(); d365ProgressTimer = setInterval(refreshD365Progress, 2000); }
 
 function updateNavigation(period, mode) {
-    $('#periodText').textContent = formatPeriod(period);
+    const periodText = $('#periodText');
+    if (periodText) periodText.textContent = formatPeriod(period);
     $('#viewText').textContent = `${mode.toUpperCase()} · ${formatPeriod(period)}`;
     document.querySelectorAll('.mode-toggle [data-mode]').forEach(button => { const active = button.dataset.mode === mode; button.classList.toggle('active', active); button.setAttribute('aria-pressed', active ? 'true' : 'false'); });
-    document.querySelectorAll('.tabs [data-view]').forEach(tab => tab.classList.toggle('active', tab.dataset.view === state.view));
+    document.querySelectorAll('.tabs [data-view]').forEach(tab => { const active = tab.dataset.view === state.view; tab.classList.toggle('active', active); if (active) tab.setAttribute('aria-current', 'page'); else tab.removeAttribute('aria-current'); });
     history.replaceState(null, '', `/?view=${state.view}&period=${period}&mode=${mode}`);
 }
 
@@ -530,11 +531,13 @@ async function integration() {
     const recentRows = (production.recentTickets || []).map(ticket => `<tr><td>${display(ticket['Tgl Keluar'])} ${display(ticket['Jam Keluar'])}</td><td><strong>${display(ticket.Product)}</strong></td><td>${display(ticket['No Pol'])}</td><td>${display(ticket.Sopir)}</td><td>${display(ticket.WEIGHBRIDGE || ticket.source)}</td><td class="num">${ticket.BRUTO == null ? '—' : Number(ticket.BRUTO).toLocaleString('en-US', { maximumFractionDigits: 0 })}</td><td class="num">${ticket.TARA == null ? '—' : Number(ticket.TARA).toLocaleString('en-US', { maximumFractionDigits: 0 })}</td><td class="num">${ticket.source === 'Google Sheets' ? '—' : Number(ticket.NETTO || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</td><td class="num val-text">${qty((Number(ticket.NETTO) || 0) / 1000)} MT</td><td>${display(ticket.Operator)}</td></tr>`).join('');
     $('#pageContent').innerHTML = `
         ${sectionHeader('Integration & Real-Time Data Sources', 'Microsoft Dynamics 365 and Google Sheets production sources.')}
-        <div class="connector-grid">${connector('Microsoft Dynamics 365 OData Connector', 'Reads D365 connection settings from the Laravel environment configuration.', data.d365.status === 'configured' ? 'Configured' : 'Not configured', 'environment', [`<b>Environment URL:</b> <code>${esc(data.d365.environmentUrl || 'Not configured')}</code>`, `<b>Sync Period:</b> <code>${esc($('#period').value)}</code>`, `<b>Auto Sync:</b> <code>${data.d365.autoSync ? 'Enabled' : 'Disabled'}</code>`, `<b>Local Records:</b> ${qty(data.database.glEntries)} GL records`], `<button id="d365SyncAll" class="btn btn-primary" type="button">${Number(data.database.glEntries || 0) === 0 ? 'Rebuild D365 Transaction Staging' : 'Sync Selected Month to Staging'}</button><button id="viewGlData" class="btn btn-outline" type="button">View GL Data</button>`, data.d365.status === 'configured' ? 'online' : 'manual')}${connector('Google Sheets Production Connector', 'Reads monthly production activities from DB and daily Coal Getting Actual from Produksi.', 'Manual Sync', 'production_daily_sheets.json', [`<b>Source unit:</b> <code>MT</code>`, `<b>Source:</b> ${esc(data.googleSheets.mode)}`, `<b>Metrics:</b> ${qty(data.database.monthlyMetrics)} records`, `<b>Last Sync:</b> ${esc(production.sheetLastSyncedAt || 'Not synced')}`], unavailable('Sync Production Now'), 'manual')}</div>
+        <div class="connector-grid">${connector('Microsoft Dynamics 365 OData Connector', 'Reads D365 connection settings from the Laravel environment configuration.', data.d365.status === 'configured' ? 'Configured' : 'Not configured', 'environment', [`<b>Environment URL:</b> <code>${esc(data.d365.environmentUrl || 'Not configured')}</code>`, `<b>Sync Period:</b> <code>${esc($('#period').value)}</code>`, `<b>Auto Sync:</b> <code>${data.d365.autoSync ? 'Enabled' : 'Disabled'}</code>`, `<b>Local Records:</b> ${qty(data.database.glEntries)} GL records`], `<button id="d365SyncAll" class="btn btn-primary" type="button">${Number(data.database.glEntries || 0) === 0 ? 'Rebuild D365 Transaction Staging' : 'Sync Selected Month to Staging'}</button><button id="viewGlData" class="btn btn-outline" type="button">View GL Data</button>`, data.d365.status === 'configured' ? 'online' : 'manual')}${connector('Google Sheets Production Connector', 'Preview and sync activity data from the Produksi tab.', data.googleSheets.status === 'configured' ? 'Configured' : 'Not configured', 'Google Sheets API', [`<b>Spreadsheet ID:</b> <code>${esc(data.googleSheets.spreadsheetId || '—')}</code>`, `<b>Sheet:</b> <code>${esc(data.googleSheets.sheetName || 'Produksi')}</code>`, `<b>Service account:</b> <code>${esc(data.googleSheets.serviceAccountEmail || '—')}</code>`, `<b>Credential:</b> ${esc(data.googleSheets.credentialStatus || 'Unavailable')}`, `<b>Last Sync:</b> ${esc(data.googleSheets.lastSyncedAt || 'Not synced')}`], `<button id="googleSheetsPreview" class="btn btn-outline" type="button">Preview Sheet</button><button id="googleSheetsSync" class="btn btn-primary" type="button">Sync Production Now</button><div id="googleSheetsSyncStatus" class="integration-note" role="status"></div>`, data.googleSheets.status === 'configured' ? 'online' : 'manual')}</div>
         ${card('D365 Staging Status', `<p class="integration-note">Sync hanya mengisi staging. Gunakan View Staging untuk melihat seluruh field payload OData. Allocation Mapping dan Preview/Import digunakan untuk memindahkan GL ke dashboard utama.</p>${table(['Entity', 'Status', 'Staging Rows', 'Last Fetched', 'Message', ''], entityRows)}`)}
         ${card('Accrual Input — Add to Report Cost <span class="status manual">Manual</span>', `<p class="integration-note">Accrual menambah amount ke <strong>Report Cost</strong> dan <strong>Cost/MT</strong> pada periode terpilih. Amount = Qty × Rate dalam USD penuh.</p><div class="accrual-form-grid"><label>Periode<input type="month" value="${esc($('#period').value)}" disabled></label><label>Akun COA (5–9)<select disabled><option>Select account</option></select></label><label>Qty (MT)<input type="number" value="1" disabled></label><label>Rate (USD/MT)<input type="number" disabled></label><label>Amount (USD)<input type="text" value="0" disabled></label><label>Kategori<select disabled><option>Select category</option></select></label><button class="btn btn-primary" type="button" disabled>Add Accrual</button></div><p class="integration-note">Entry form remains available only after authentication is enabled.</p><div class="table-responsive"><table class="table-accounting"><thead><tr><th>Periode</th><th>Akun / Item Description</th><th>Kategori</th><th>Qty (MT)</th><th>Rate (USD/MT)</th><th>Amount (USD)</th><th></th></tr></thead><tbody><tr><td colspan="7" class="center">Belum ada accrual.</td></tr></tbody></table></div>`)}
         ${card('Latest 15 Production Records', table(['Date & Time', 'Product', 'Vehicle Plate', 'Driver', 'Weighbridge', 'BRUTO (Kg)', 'TARA (Kg)', 'NETTO (Kg)', 'NETTO (MT)', 'Operator'], recentRows))}`;
     $('#viewGlData').addEventListener('click', () => viewGlData($('#period').value));
+    $('#googleSheetsPreview').addEventListener('click', async event => { const button = event.currentTarget; const status = $('#googleSheetsSyncStatus'); button.disabled = true; status.textContent = 'Reading preview…'; try { const result = await postJson('/api/google-sheets/preview', {}); status.textContent = `Preview: ${qty(result.rows)} dated rows, ${qty(result.details)} details; periods ${result.periods.join(', ')}. First date: ${result.samples?.[0]?.production_date || '—'}.`; } catch (error) { status.textContent = error.message; } finally { button.disabled = false; } });
+    $('#googleSheetsSync').addEventListener('click', async event => { const button = event.currentTarget; const status = $('#googleSheetsSyncStatus'); button.disabled = true; status.className = 'integration-note sheets-sync-result'; status.textContent = 'Sync in progress…'; const overlay = document.createElement('div'); overlay.className = 'sheets-sync-overlay'; overlay.setAttribute('role','status'); overlay.setAttribute('aria-live','polite'); overlay.innerHTML = '<div class="sheets-sync-dialog"><i></i><strong>Syncing production data</strong><span>Reading rows and updating the dashboard database…</span></div>'; document.body.appendChild(overlay); try { const result = await postJson('/api/google-sheets/sync', {}); const timestamp = new Date(result.synced_at).toLocaleString(); status.className = 'integration-note sheets-sync-result is-success'; status.innerHTML = `<strong>✓ Sync successful</strong><span>${qty(result.rows)} production dates · ${qty(result.details)} activity details</span><span>Periods: ${esc(result.periods.join(', '))} · Completed: ${esc(timestamp)}</span>`; } catch (error) { status.className = 'integration-note sheets-sync-result is-error'; status.textContent = `Sync failed: ${error.message}`; } finally { overlay.remove(); button.disabled = false; } });
     document.querySelectorAll('.d365-staging-view').forEach(button => button.addEventListener('click', () => viewD365Staging(button.dataset.entity, button.dataset.label)));
     $('#d365SyncAll').addEventListener('click', async event => {
         const button = event.currentTarget;
@@ -592,7 +595,7 @@ async function configuration() {
         const inputValue = inputType === 'checkbox' ? (value ? 'checked' : '') : `value="${esc(value)}"`;
         return `<div class="config-editor"><input data-config-input="true" data-config-key="${esc(section)}" data-config-field="${esc(key)}" type="${inputType}" ${inputValue}></div>`;
     };
-    const sections = Object.entries(data || {}).filter(([section]) => section !== 'd365Config').map(([section, values]) => {
+    const sections = Object.entries(data || {}).filter(([section]) => !['d365Config', 'sheetsConfig', 'sheetsSync'].includes(section)).map(([section, values]) => {
         const rows = Object.entries(values && typeof values === 'object' && !Array.isArray(values) ? values : { value: values }).map(([key, value]) => {
             const canEdit = editable[section]?.includes(key) && (typeof value !== 'object' || value === null);
             return `<tr><th>${esc(label(key))}</th><td>${canEdit ? editor(section, key, value) : display(key, value)}</td></tr>`;
@@ -749,7 +752,54 @@ document.querySelector('.tabs').addEventListener('click', event => {
     if (!tab) return;
     event.preventDefault();
     state.view = tab.dataset.view;
+    document.body.classList.remove('sidebar-open');
+    $('#sidebarToggle').setAttribute('aria-expanded', 'false');
     render();
+});
+$('#sidebarToggle').addEventListener('click', () => {
+    const width = window.innerWidth;
+    const mobile = width <= 760;
+    const tablet = width > 760 && width <= 1050;
+    const expanded = !(mobile
+        ? document.body.classList.contains('sidebar-open')
+        : tablet
+            ? document.body.classList.contains('tablet-sidebar-expanded')
+            : !document.body.classList.contains('sidebar-collapsed'));
+    if (mobile) document.body.classList.toggle('sidebar-open', expanded);
+    else if (tablet) document.body.classList.toggle('tablet-sidebar-expanded', expanded);
+    else document.body.classList.toggle('sidebar-collapsed', !expanded);
+    $('#sidebarToggle').setAttribute('aria-expanded', String(expanded));
+});
+$('#sidebarScrim').addEventListener('click', () => { document.body.classList.remove('sidebar-open'); $('#sidebarToggle').setAttribute('aria-expanded', 'false'); });
+document.addEventListener('keydown', event => { if (event.key === 'Escape' && document.body.classList.contains('sidebar-open')) { document.body.classList.remove('sidebar-open'); $('#sidebarToggle').setAttribute('aria-expanded', 'false'); $('#sidebarToggle').focus(); } });
+const sidebarTooltip = document.createElement('div');
+sidebarTooltip.id = 'sidebarTooltip';
+sidebarTooltip.className = 'sidebar-tooltip';
+sidebarTooltip.setAttribute('role', 'tooltip');
+sidebarTooltip.hidden = true;
+document.body.append(sidebarTooltip);
+const sidebarIsCompact = () => document.body.classList.contains('sidebar-collapsed') || (window.innerWidth > 760 && window.innerWidth <= 1050 && !document.body.classList.contains('tablet-sidebar-expanded'));
+const showSidebarTooltip = button => {
+    if (!sidebarIsCompact()) { sidebarTooltip.hidden = true; return; }
+    const label = button.querySelector('.nav-label')?.textContent.trim();
+    if (!label) return;
+    const rect = button.getBoundingClientRect();
+    sidebarTooltip.textContent = label;
+    sidebarTooltip.style.left = `${Math.max(8, Math.min(window.innerWidth - 228, rect.left + rect.width / 2 - 110))}px`;
+    sidebarTooltip.style.top = `${Math.min(window.innerHeight - 42, rect.bottom + 5)}px`;
+    sidebarTooltip.hidden = false;
+};
+document.querySelectorAll('.app-sidebar [data-view]').forEach(button => {
+    button.addEventListener('mouseenter', () => showSidebarTooltip(button));
+    button.addEventListener('mouseleave', () => { sidebarTooltip.hidden = true; });
+    button.addEventListener('focus', () => showSidebarTooltip(button));
+    button.addEventListener('blur', () => { sidebarTooltip.hidden = true; });
+});
+$('#sidebarToggle').setAttribute('aria-expanded', String(window.innerWidth > 1050));
+window.addEventListener('resize', () => {
+    document.body.classList.remove('sidebar-open', 'tablet-sidebar-expanded');
+    $('#sidebarToggle').setAttribute('aria-expanded', String(window.innerWidth > 1050));
+    sidebarTooltip.hidden = true;
 });
 const shiftPeriod = offset => { const [year, month] = $('#period').value.split('-').map(Number); const date = new Date(Date.UTC(year, month - 1 + offset, 1)); $('#period').value = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`; render(); };
 $('#period').addEventListener('change', render);
