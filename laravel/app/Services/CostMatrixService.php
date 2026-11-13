@@ -32,8 +32,8 @@ class CostMatrixService
         // GL-backed and replaces that month's workbook cost history.
         $monthsWithGl = array_fill_keys($glEntries->pluck('period')->filter()->unique()->all(), true);
         $history = $this->historicalEntries($periods, $monthsWithGl);
-        $accruals = $this->accrualEntries($periods);
-        $closedPeriods = array_fill_keys((array) SystemConfig::get('locked_periods', []), true);
+        $closedPeriods = array_fill_keys($this->closedPeriods(), true);
+        $accruals = array_values(array_filter($this->accrualEntries($periods), static fn (array $entry): bool => !isset($closedPeriods[(string) ($entry['period'] ?? '')])));
 
         foreach ($glEntries as $entry) {
             $code = trim((string) $entry->main_account);
@@ -61,7 +61,7 @@ class CostMatrixService
 
         foreach ($accruals as $entry) {
             $month = (string) ($entry['period'] ?? '');
-            if ($month === '' || isset($closedPeriods[$month])) continue;
+            if ($month === '') continue;
             $code = trim((string) ($entry['account_code'] ?? $entry['code'] ?? ''));
             if (!preg_match('/^[5-9]/', $code)) continue;
             $this->ensureRow($rows, $code, (string) ($entry['name'] ?? $entry['description'] ?? ''));
@@ -78,7 +78,8 @@ class CostMatrixService
         $parents = array_keys(array_filter($rows, static fn (array $row): bool => $row['isParent']));
         usort($parents, fn (string $a, string $b): int => $this->hierarchyDepth($rows, $b) <=> $this->hierarchyDepth($rows, $a));
         foreach ($parents as $code) {
-            $children = array_filter($rows, static fn (array $row): bool => (string) $row['_parent'] === $code);
+            $parentCode = (string) $code;
+            $children = array_filter($rows, static fn (array $row): bool => (string) $row['_parent'] === $parentCode);
             foreach (self::FIELDS as $field) $rows[$code][$field] = $this->sum(array_column($children, $field));
         }
 
@@ -266,5 +267,18 @@ class CostMatrixService
         if ($mode !== 'ytd') return [$period];
         [$year] = explode('-', $period);
         return array_map(fn (int $month): string => sprintf('%s-%02d', $year, $month), range(1, (int) substr($period, 5, 2)));
+    }
+
+    private function closedPeriods(): array
+    {
+        $path = base_path('../data_snapshot/extracted/report_cost_closing.json');
+        $referencePeriods = is_file($path)
+            ? (json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR)['periods'] ?? [])
+            : [];
+        $configured = SystemConfig::query()->where('key', 'locked_periods')->first()?->value ?? [];
+        if (is_string($configured)) $configured = json_decode($configured, true) ?? [];
+        if (!is_array($configured)) $configured = [];
+        $closed = array_keys(array_filter($referencePeriods, static fn ($isClosed): bool => (bool) $isClosed));
+        return array_values(array_unique(array_merge($closed, array_map('strval', $configured))));
     }
 }
