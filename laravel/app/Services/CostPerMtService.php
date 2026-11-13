@@ -45,7 +45,9 @@ class CostPerMtService
             'complete'=>count(array_filter($haulingParts, static fn (array $item): bool => $item['complete'])) === count($haulingParts)];
         $wash = $volume('washFeed');
         $port = $volume('portLoading');
-        $incompleteVolume = $mode === 'ytd' && (!$coal['complete'] || !$hauling['complete'] || !$wash['complete'] || !$port['complete']);
+        // Overall cost/MT uses Coal Getting as its production denominator. A
+        // missing stage-specific metric must not invalidate this overall rate.
+        $incompleteVolume = $mode === 'ytd' && !$coal['complete'];
         $grand = $matrix['grandTotal'];
         $stages = [
             ['stage'=>'Mining','valuationCost'=>$grand['valMining'],'operatingCost'=>$grand['costMining'],'totalCost'=>$this->add($grand['valMining'],$grand['costMining']),'volume'=>$coal],
@@ -58,18 +60,23 @@ class CostPerMtService
 
         foreach ($stages as &$stage) {
             $item = $stage['volume'];
-            $stage['metricTons'] = $item['value'];
-            $stage['costPerMT'] = $item['value'] > 0 && ($mode !== 'ytd' || $item['complete']) ? (float) $stage['totalCost'] / $item['value'] : null;
-            $stage['costPerTotalMT'] = $coal['value'] > 0 && ($mode !== 'ytd' || $coal['complete']) ? (float) $stage['totalCost'] / $coal['value'] : null;
+            $stageVolume = $item['complete'] ? $item['value'] : null;
+            $stage['metricTons'] = $stageVolume;
+            $stage['costPerMT'] = $stageVolume !== null && $stageVolume > 0 && !$incompleteVolume ? (float) $stage['totalCost'] / $stageVolume : null;
+            $stage['costPerTotalMT'] = $coal['complete'] && $coal['value'] > 0 && !$incompleteVolume ? (float) $stage['totalCost'] / $coal['value'] : null;
             unset($stage['volume']);
         }
         unset($stage);
 
         $accountGroups = $this->accountGroups($matrix['rows']);
-        $volumeMissing = array_values(array_unique(array_merge($coal['missing'],$hauling['missing'],$wash['missing'],$port['missing'])));
+        $volumeMissing = $coal['missing'];
+        $stageVolumeMissing = [
+            'coalGetting'=>$coal['missing'],'hauling'=>array_values(array_unique(array_merge(...array_column($haulingParts, 'missing')))),
+            'washFeed'=>$wash['missing'],'portLoading'=>$port['missing'],
+        ];
         return ['currency'=>'USD','amountScale'=>1,'mode'=>$mode,'period'=>$period,
             'dataSource'=>$matrix['dataSource'] ?? 'none','missingVolumePeriods'=>$volumeMissing,
-            'incompleteVolume'=>$incompleteVolume,'volumeSource'=>'Google Sheets DB','totalVolumeProducedMT'=>$coal['value'],
+            'stageMissingVolumePeriods'=>$stageVolumeMissing,'incompleteVolume'=>$incompleteVolume,'volumeSource'=>'Google Sheets DB','totalVolumeProducedMT'=>$coal['value'],
             'grandTotalCost'=>$grand['allCost'],'overallCostPerMT'=>$coal['value'] > 0 && !$incompleteVolume ? (float) $grand['allCost'] / $coal['value'] : null,
             'stages'=>$stages,'costByAccountGroup'=>$accountGroups];
     }

@@ -11,24 +11,27 @@ class GoogleSheetsProductionSync
     public function sync(): array
     {
         $parsed = $this->readAndParse();
-        $rows = $parsed['rows']; $details = $parsed['details']; $monthly = $parsed['monthly']; $inventoryMovements = $parsed['inventoryMovements'];
-        DB::transaction(function () use ($rows, $details, $monthly, $inventoryMovements): void {
+        $rows = $parsed['rows']; $details = $parsed['details']; $monthlyMetrics = $parsed['monthlyMetrics']; $productionPeriods = $parsed['productionPeriods']; $inventoryMovements = $parsed['inventoryMovements'];
+        DB::transaction(function () use ($rows, $details, $monthlyMetrics, $productionPeriods, $inventoryMovements): void {
             $dates = array_column($rows, 'production_date');
             DB::table('production_activity_details')->where('source', 'google_sheets')->whereIn('production_date', $dates)->delete();
-            DB::table('inventory_movements')->where('source', 'google_sheets')->whereIn('period', array_keys($monthly))->delete();
+            DB::table('inventory_movements')->where('source', 'google_sheets')->whereIn('period', array_keys($productionPeriods))->delete();
             DB::table('daily_production')->upsert($rows, ['production_date'], ['period','coal_getting_mt','routes','source','updated_at']);
             DB::table('production_activity_details')->insert($details);
             if ($inventoryMovements) DB::table('inventory_movements')->insert($inventoryMovements);
-            foreach ($monthly as $period=>$value) DB::table('monthly_metrics')->updateOrInsert(['metric_key'=>'coalGetting','period'=>$period], ['label'=>'Coal Getting','unit'=>'MT','value'=>$value,'updated_at'=>now(),'created_at'=>now()]);
+            $metricLabels = ['coalGetting'=>'Coal Getting','haulingBuaWp'=>'Hauling BUA to Washing Plant','haulingBuaPort'=>'Hauling BUA to Port','haulingWpPort'=>'Hauling Washing Plant to Port','washFeed'=>'Washing Plant Feed','portLoading'=>'Barging / Port Loading'];
+            foreach ($monthlyMetrics as $period => $metrics) foreach ($metricLabels as $key => $label) {
+                DB::table('monthly_metrics')->updateOrInsert(['metric_key'=>$key,'period'=>$period], ['label'=>$label,'unit'=>'MT','value'=>$metrics[$key] ?? null,'updated_at'=>now(),'created_at'=>now()]);
+            }
             DB::table('system_configs')->updateOrInsert(['key'=>'sheetsSync'], ['value'=>json_encode(['last_synced_at'=>now()->toIso8601String(),'rows'=>count($rows),'details'=>count($details)]),'updated_at'=>now(),'created_at'=>now()]);
         });
-        return ['rows'=>count($rows),'details'=>count($details),'inventory_movements'=>count($inventoryMovements),'periods'=>array_keys($monthly),'synced_at'=>now()->toIso8601String()];
+        return ['rows'=>count($rows),'details'=>count($details),'inventory_movements'=>count($inventoryMovements),'metrics'=>count($monthlyMetrics, COUNT_RECURSIVE) - count($monthlyMetrics),'periods'=>array_keys($productionPeriods),'synced_at'=>now()->toIso8601String()];
     }
 
     public function preview(): array
     {
         $data = $this->readAndParse();
-        return ['rows'=>count($data['rows']),'details'=>count($data['details']),'periods'=>array_keys($data['monthly']),'samples'=>array_slice($data['rows'],0,5),'sample_details'=>array_slice($data['details'],0,12)];
+        return ['rows'=>count($data['rows']),'details'=>count($data['details']),'metric_periods'=>array_keys($data['monthlyMetrics']),'periods'=>array_keys($data['productionPeriods']),'monthly_metrics'=>$data['monthlyMetrics'],'samples'=>array_slice($data['rows'],0,5),'sample_details'=>array_slice($data['details'],0,12)];
     }
 
     private function readAndParse(): array
@@ -52,11 +55,12 @@ class GoogleSheetsProductionSync
             if (count($chunk) < 500) break;
         }
         if (count($values) < 4) throw new RuntimeException('Sheet Produksi tidak berisi header dan data yang cukup.');
-        $rows = $details = $monthly = $inventoryMovements = [];
+        $rows = $details = $productionPeriods = $inventoryMovements = [];
         foreach (array_slice($values, 3, null, true) as $offset => $cells) {
             $date = $this->date($cells[0] ?? null);
             if (!$date) continue;
             $period = substr($date, 0, 7);
+            $productionPeriods[$period] = true;
             $get = static fn (int $column): mixed => $cells[$column - 1] ?? null;
             $coal = $this->number($get(19));
             $routes = ['bua_to_port' => ['PT BP' => $this->number($get(28)), 'PT SMA' => $this->number($get(30)), 'PT HRS' => $this->number($get(32))], 'wp_to_port' => ['PT BP (WP)' => $this->number($get(29)), 'PT SMA (WP)' => $this->number($get(31)), 'PT HRS (WP)' => $this->number($get(33))]];
@@ -81,8 +85,6 @@ class GoogleSheetsProductionSync
                 $details[] = $detail;
             }
             foreach ([['metric'=>'Feed','column'=>47],['metric'=>'Reject','column'=>48],['metric'=>'Clean Cooking','column'=>49],['metric'=>'Barging','column'=>50]] as $item) $details[] = $this->detail($date, ['activity'=>'Coal Wash','metric'=>$item['metric'],'unit'=>'MT'], $this->number($get($item['column'])));
-            $monthly[$period] = ($monthly[$period] ?? 0) + ($coal ?? 0);
-
             $appendMovement = function (string $location, string $type, float $qty, array $meta = []) use (&$inventoryMovements, $period): void {
                 if (abs($qty) < 0.000001) return;
                 $inventoryMovements[] = ['period'=>$period,'location'=>$location,'movement_type'=>$type,'source'=>'google_sheets','qty_mt'=>$qty,'amount_usd'=>0,'metadata'=>json_encode($meta),'created_at'=>now(),'updated_at'=>now()];
@@ -106,7 +108,41 @@ class GoogleSheetsProductionSync
             if ($barging > 0) $appendMovement('port','barging',-$barging,['source_column'=>'AX']);
         }
         if (!$rows) throw new RuntimeException('Tidak ditemukan baris bertanggal yang dapat disinkronkan.');
-        return compact('rows','details','monthly','inventoryMovements');
+        $dbRange = "'DB'!A:T";
+        $dbUrl = 'https://sheets.googleapis.com/v4/spreadsheets/'.rawurlencode($spreadsheet).'/values/'.rawurlencode($dbRange);
+        $dbResponse = Http::withToken($token)->timeout(60)->get($dbUrl, ['valueRenderOption'=>'UNFORMATTED_VALUE']);
+        if ($dbResponse->failed()) throw new RuntimeException('Google Sheets DB tab gagal dibaca: HTTP '.$dbResponse->status().' '.$dbResponse->json('error.message', ''));
+        $monthlyMetrics = $this->parseDbMetrics($dbResponse->json('values', []), $productionPeriods);
+        return compact('rows','details','monthlyMetrics','productionPeriods','inventoryMovements');
+    }
+
+    private function parseDbMetrics(array $rows, array $productionPeriods): array
+    {
+        $definitions = [
+            'coalGetting'=>['Coal Getting','MT'],
+            'haulingBuaWp'=>['Total Hauling BUA To Wash Plant','MT'],
+            'haulingBuaPort'=>['Total Hauling Bua Stock to Port','MT'],
+            'haulingWpPort'=>['Total hauling Wash Plant to Port','MT'],
+            'washFeed'=>['Feed','MT'],
+            'portLoading'=>['Coal Loading Port (BLC)','MT'],
+        ];
+        $metrics = [];
+        foreach ($definitions as $key => [$label, $unit]) {
+            $matches = array_values(array_filter($rows, static fn (array $row): bool =>
+                strtolower(trim((string) ($row[2] ?? ''))) === strtolower($label)
+                && strtolower(trim((string) ($row[3] ?? ''))) === strtolower($unit)
+            ));
+            if (count($matches) !== 1) throw new RuntimeException("Google Sheets DB metric row is missing or ambiguous: {$label} ({$unit}).");
+            $metrics[$key] = $matches[0];
+        }
+
+        $year = $productionPeriods ? (int) substr(max(array_keys($productionPeriods)), 0, 4) : (int) date('Y');
+        $result = [];
+        for ($month = 1; $month <= 12; $month++) {
+            $period = sprintf('%04d-%02d', $year, $month);
+            foreach ($definitions as $key => $_definition) $result[$period][$key] = $this->number($metrics[$key][7 + $month] ?? null);
+        }
+        return $result;
     }
 
     private function token(array $credentials): string
