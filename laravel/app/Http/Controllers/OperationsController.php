@@ -92,8 +92,12 @@ class OperationsController extends Controller
     {
         $period = (string) $request->query('period', '2026-10');
         abort_unless((bool) preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $period), 422, 'Invalid period.');
+        $mode = (string) $request->query('mode', 'mtd');
+        abort_unless(in_array($mode, ['mtd', 'ytd'], true), 422, 'Invalid mode.');
         $requestedPerPage = (string) $request->query('per_page', '100');
-        $query = GlEntry::query()->where('source_type', 'd365')->where('period', $period);
+        $query = GlEntry::query()->where('source_type', 'd365');
+        if ($mode === 'ytd') $query->whereBetween('period', [substr($period, 0, 4).'-01', $period]);
+        else $query->where('period', $period);
         $this->applyGlReviewFilters($query, $request);
         $summaryQuery = clone $query;
         $summary = [
@@ -110,10 +114,17 @@ class OperationsController extends Controller
         $perPage = $requestedPerPage === 'all' ? max($totalRows, 1) : min(max((int) $requestedPerPage, 1), 2000);
         $query->select(['id', 'entry_date', 'main_account', 'account_name', 'voucher', 'journal_number', 'description', 'costing_to', 'valuation_to', 'currency', 'amount_idr', 'amount_reporting', 'source_key', 'mapping_status', 'year_closed', 'fuel_quantity', 'amount_txn', 'amount', 'posting_type', 'posting_layer', 'vendor_account', 'customer_account', 'invoice_no', 'activity', 'cash_flow', 'department', 'group_activity', 'location', 'project', 'project_name', 'cost_center', 'po_dt_number', 'gjae_id', 'created_datetime']);
         $paginator = $query->orderByDesc('entry_date')->orderByDesc('id')->paginate($perPage)->withQueryString();
+        $rows = collect($paginator->items())->map(function (GlEntry $entry): GlEntry {
+            // SourceKey identifies the GeneralJournalAccountEntry row. The
+            // GeneralJournalEntry payload value is its parent journal ID.
+            $entry->gjae_id = $entry->source_key;
+            return $entry;
+        });
         return [
             'period' => $period,
+            'mode' => $mode,
             'summary' => $summary,
-            'rows' => $paginator->items(),
+            'rows' => $rows,
             'pagination' => ['current_page' => $paginator->currentPage(), 'last_page' => $paginator->lastPage(), 'per_page' => $paginator->perPage(), 'total' => $paginator->total()],
         ];
     }
