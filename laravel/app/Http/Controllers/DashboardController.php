@@ -177,7 +177,9 @@ class DashboardController extends Controller
     {
         [$period, $mode] = $this->periodMode($request);
         $previous = date('Y-m', strtotime($period . '-01 -1 month'));
-        $current = $service->build($period, $mode);
+        // Variance is a month-to-month report. The global MTD/YTD toggle must
+        // not turn the current side into YTD while the previous side stays MTD.
+        $current = $service->build($period, 'mtd');
         $prior = $service->build($previous, 'mtd');
         $variance = [];
         $location = trim((string) $request->query('location', 'allCost'));
