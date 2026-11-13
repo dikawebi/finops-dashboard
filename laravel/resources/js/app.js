@@ -583,10 +583,10 @@ async function financial(period, mode) {
     const diagnostics = data.diagnostics || {};
     const accountRows = (data.accountBalances || []).map(row => `<tr><td>${esc(row.code)}</td><td>${esc(row.name)}</td><td>${esc(row.mapping)}</td><td class="num">${formatStatementAmount(row.baseUSD)}</td><td class="num">${formatStatementAmount(row.glMovementUSD)}</td><td class="num">${formatStatementAmount(row.closingUSD)}</td></tr>`);
     $('#pageContent').innerHTML = `
-        ${sectionHeader('Financial Statements', 'Profit and loss and balance sheet — September baseline plus GL movements from October onward. Amounts in USD. Baseline through 2026-09. Monthly GL movements are added from 2026-10. Finance and FX follow the financial statement format.', `<label>Month <input type="month" value="${period}" disabled></label>`)}
+        ${sectionHeader('Financial Statements', 'Synced D365 GL movements are used when available. Historical opening balances remain based on the approved financial baseline. Amounts in USD.', `<label>Month <input type="month" value="${period}" disabled></label>`)}
         <p class="financial-notice">${mode === 'ytd' ? `YTD P&amp;L through ${esc(period)}; balance sheet is the closing position as of that month.` : `MTD P&amp;L for ${esc(period)}; balance sheet is the closing position as of that month.`}</p>
         <p class="financial-notice">${esc(period)} GL rows. Accounts requiring mapping: ${(diagnostics.unmappedAccounts || []).length}. Baseline difference: ${money(diagnostics.baselineDifferenceUSD ?? diagnostics.balanceDifferenceUSD)}.</p>
-        <p class="source-row">${badge('financial_baseline.json')} ${badge('gl_data.json')}</p>
+        <p class="source-row">${data.dataSource?.startsWith('d365-gl') ? `${badge('D365 synced GL')} ${badge('Financial baseline opening balances')}` : badge('financial_baseline.json')}</p>
         ${card(`${esc(companyName)} — Profit & Loss Statement (USD)`, reportTable(report.profitLoss || data.sections?.profitLoss), 'financial-reference-card')}
         ${card(`${esc(companyName)} — Balance Sheet (USD)`, reportTable(report.balanceSheet || data.sections?.balanceSheet), 'financial-reference-card')}
         <details class="stage-card financial-accounts-card"><summary><strong>Balances by Account</strong><p>September balance, subsequent GL movements, and closing balance. Debit positive, credit negative.</p></summary>${table(['COA', 'Account Name', 'Balance Sheet Mapping', 'September Base Balance', 'GL Movement', 'Closing Balance'], accountRows)}</details>`;
