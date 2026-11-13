@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AccrualController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\D365Controller;
+use App\Http\Controllers\FinancialAccountMappingController;
 use App\Http\Middleware\EnsurePeriodOpen;
 
 Route::get('/', function () {
@@ -26,6 +27,8 @@ Route::prefix('api')->group(function () {
     Route::delete('/gl-data', [OperationsController::class, 'deleteGl'])->middleware(['auth', EnsurePeriodOpen::class]);
     Route::get('/cost-matrix', [DashboardController::class, 'costMatrix']);
     Route::get('/financial-statements', [DashboardController::class, 'financialStatements']);
+    Route::get('/financial-mappings', [FinancialAccountMappingController::class, 'index']);
+    Route::put('/financial-mappings/{accountCode}', [FinancialAccountMappingController::class, 'update']);
     Route::get('/inventory-valuation', [DashboardController::class, 'inventory']);
     Route::get('/production-summary', [DashboardController::class, 'production']);
     Route::get('/equipment-cost', [DashboardController::class, 'equipmentCost']);

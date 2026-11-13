@@ -2,265 +2,355 @@
 
 namespace App\Services;
 
+use App\Models\FinancialAccountMapping;
 use App\Models\FinancialBaseline;
-use App\Models\GlEntry;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
+/** Laravel port of the reference financial_engine.js. */
 class FinancialStatementService
 {
+    private const BS_SUMS = [
+        'cashAndEquivalents'=>['cashOnHand','cashInBanks','timeDeposits'],
+        'prepaidTaxesAdvances'=>['advances','prepayments','prepaidTaxes'],
+        'totalCurrentAssets'=>['cashAndEquivalents','tradeReceivables','prepaidTaxesAdvances','inventories','derivativeAsset'],
+        'totalNonCurrentAssets'=>['restrictedCash','miningProperties','explorationAssets','fixedAssets','retirementAsset','deferredTaxAsset'],
+        'totalAssets'=>['totalCurrentAssets','totalNonCurrentAssets'],
+        'totalCurrentLiabilities'=>['loansCurrent','financeLeaseCurrent','tradePayables','accruedExpenses','taxesPayable','advancesCustomer','otherCurrentLiabilities','derivativeLiability'],
+        'totalNonCurrentLiabilities'=>['loansNonCurrent','financeLeaseNonCurrent','employeeBenefits','reclamationProvision','deferredTaxLiabilities'],
+        'totalLiabilities'=>['totalCurrentLiabilities','totalNonCurrentLiabilities'],
+        'totalLiabilitiesEquity'=>['totalLiabilities','totalEquity'],
+    ];
+
+    private const PL_SUMS = [
+        'grossProfit'=>['coalSales','costOfCoalSold'],
+        'profitBeforeInterest'=>['grossProfit','sellingExpense','royaltyCoalSales','generalAdmin'],
+        'profitBeforeTax'=>['profitBeforeInterest','financeIncome','financeCost','realisedFX','unrealisedFX'],
+        'profitForYear'=>['profitBeforeTax','incomeTax'],
+    ];
+
+    private const CREDIT_ROWS = [
+        'loansCurrent','financeLeaseCurrent','tradePayables','accruedExpenses','taxesPayable','advancesCustomer',
+        'otherCurrentLiabilities','derivativeLiability','loansNonCurrent','financeLeaseNonCurrent','employeeBenefits',
+        'reclamationProvision','deferredTaxLiabilities','totalEquity',
+    ];
+
     public function build(string $period, string $mode = 'mtd', ?CostMatrixService $costs = null): array
     {
+        unset($costs);
         $mode = strtolower($mode) === 'ytd' ? 'ytd' : 'mtd';
-        $baselinePath = base_path("../baseline/reference_dump/financial-statements_{$period}_{$mode}.json");
-        $payload = is_file($baselinePath)
-            ? json_decode(file_get_contents($baselinePath), true, 512, JSON_THROW_ON_ERROR)['data'] ?? []
-            : $this->baselinePayload($period, $mode, $costs);
+        $baselineModel = FinancialBaseline::first();
+        if (!$baselineModel) return ['period'=>$period,'mode'=>$mode,'sections'=>[]];
 
-        if (!$payload) return ['period' => $period, 'mode' => $mode, 'sections' => []];
-
-        $report = $payload['report'] ?? [];
-        $glStart = $report['glStartPeriod'] ?? '2026-10';
-        $glMonths = $this->syncedMonths($period, $glStart);
-        if (!$glMonths) {
-            return $this->response($payload, $period, $mode, 'financial-baseline');
-        }
-
-        $profitLoss = $report['profitLoss'] ?? [];
-        $balanceSheet = $report['balanceSheet'] ?? [];
-        $existingMonths = $report['periods'] ?? [];
-        $accountBalances = $payload['accountBalances'] ?? [];
-        $unmappedAccounts = [];
-        $movementByAccount = [];
-        $movementByMonth = [];
-        $knownAccountCodes = array_fill_keys(array_map(static fn (array $row): string => (string) ($row['code'] ?? ''), $accountBalances), true);
-
-        foreach ($glMonths as $month => $data) {
-            $movementByMonth[$month] = $data['accounts'];
-            foreach ($data['accounts'] as $code => $amount) {
-                $movementByAccount[$code] = ($movementByAccount[$code] ?? 0) + $amount;
-            }
-        }
-
-        // Keep the official September closing balances as opening values, then replace
-        // the reference snapshot's GL movements with the currently synced GL rows.
-        $mappedAccounts = [];
-        foreach ($accountBalances as &$account) {
-            $code = (string) ($account['code'] ?? '');
-            $mapping = (string) ($account['mapping'] ?? '');
-            $reportLine = $this->lineIdForLabel($balanceSheet, $mapping);
-            $rawMovement = (float) ($movementByAccount[$code] ?? 0);
-            $movement = $this->isLiabilityOrEquity($balanceSheet, $reportLine) ? -$rawMovement : $rawMovement;
-            $account['glMovementUSD'] = $movement;
-            $account['closingUSD'] = (float) ($account['baseUSD'] ?? 0) + $movement;
-            if ($reportLine !== null) {
-                $mappedAccounts[$reportLine] = ($mappedAccounts[$reportLine] ?? 0) + $account['closingUSD'];
-            }
-        }
-        unset($account);
-
-        foreach ($movementByAccount as $code => $amount) {
-            if (!isset($knownAccountCodes[$code]) && $this->profitLossLine((string) $code, '') === null) {
-                $unmappedAccounts[] = ['code' => $code, 'month' => $period, 'amountUSD' => $amount];
-            }
-        }
-
-        $plMovements = [];
-        foreach ($movementByMonth as $month => $accounts) {
-            $monthData = $glMonths[$month];
-            $plMovements[$month] = [];
-            foreach ($monthData['entries'] as $entry) {
-                $lineId = $this->profitLossLine((string) $entry['code'], (string) $entry['costingTo']);
-                if ($lineId !== null) $plMovements[$month][$lineId] = ($plMovements[$month][$lineId] ?? 0) - $entry['amount'];
-            }
-        }
-
-        foreach ($profitLoss as &$line) {
-            $id = $line['id'] ?? '';
-            foreach ($glMonths as $month => $data) {
-                if (in_array($month, $existingMonths, true)) {
-                    $line['months'][$month] = (float) ($plMovements[$month][$id] ?? 0);
-                }
-            }
-            if ($mode === 'ytd') {
-                $line['ytd'] = (float) ($line['ytd'] ?? 0) + array_sum(array_map(
-                    static fn (string $month): float => (float) ($plMovements[$month][$id] ?? 0),
-                    array_keys($glMonths)
-                ));
-            }
-        }
-        unset($line);
-        $this->recalculateProfitLoss($profitLoss, $mode, $period);
-
-        foreach ($balanceSheet as &$line) {
-            $id = $line['id'] ?? '';
-            if (($line['kind'] ?? '') === 'detail' || isset($mappedAccounts[$id])) {
-                $line['ytd'] = (float) ($mappedAccounts[$id] ?? 0);
-                $cumulativeMovement = 0.0;
-                foreach ($existingMonths as $month) {
-                    if ($month < $glStart || $month > $period) continue;
-                    $monthMovement = 0.0;
-                    foreach ($accountBalances as $account) {
-                        if ($this->lineIdForLabel($balanceSheet, (string) ($account['mapping'] ?? '')) !== $id) continue;
-                        $monthMovement += (float) ($movementByMonth[$month][(string) $account['code']] ?? 0)
-                            * ($this->isLiabilityOrEquity($balanceSheet, $id) ? -1 : 1);
-                    }
-                    $cumulativeMovement += $monthMovement;
-                    $line['months'][$month] = (float) array_sum(array_map(
-                        static fn (array $account): float => strcasecmp((string) ($account['mapping'] ?? ''), (string) ($line['label'] ?? '')) === 0
-                            ? (float) ($account['baseUSD'] ?? 0) : 0.0,
-                        $accountBalances
-                    )) + $cumulativeMovement;
-                }
-            }
-        }
-        unset($line);
-        $this->recalculateBalanceSheet($balanceSheet);
-
-        $report['profitLoss'] = $profitLoss;
-        $report['balanceSheet'] = $balanceSheet;
-        $report['glMonths'] = array_replace($report['glMonths'] ?? [], array_map(
-            static fn (array $data): array => ['rows' => $data['rows'], 'ledgerSumUSD' => $data['sum']],
-            $glMonths
-        ));
-        $payload['report'] = $report;
-        $payload['accountBalances'] = $accountBalances;
-        $payload['diagnostics']['unmappedAccounts'] = $unmappedAccounts;
-        $payload['diagnostics']['source'] = 'gl_entries (D365) + financial baseline opening balances';
-        $payload['diagnostics']['syncedGLRows'] = array_sum(array_column($glMonths, 'rows'));
-        $payload['sections'] = [
-            'profitLoss' => $this->selectValues($profitLoss, $period, $mode),
-            'balanceSheet' => $this->selectValues($balanceSheet, $period, $mode),
+        $baseline = [
+            'company'=>$baselineModel->company,
+            'currency'=>$baselineModel->currency,
+            'basePeriod'=>$baselineModel->base_period,
+            'glStartPeriod'=>$baselineModel->gl_start_period,
+            'year'=>(int) $baselineModel->year,
+            'comparativeYear'=>(int) ($baselineModel->comparative_year ?? $baselineModel->year - 1),
+            'sections'=>$baselineModel->sections ?? [],
+            'accounts'=>$baselineModel->accounts ?? [],
         ];
-        $payload['incomeStatement'] = $this->incomeSummary($profitLoss, $period, $mode, $payload['currency'] ?? 'USD');
-        $payload['balanceSheet'] = $payload['sections']['balanceSheet'];
-
-        return $this->response($payload, $period, $mode, 'd365-gl+financial-baseline');
-    }
-
-    private function baselinePayload(string $period, string $mode, ?CostMatrixService $costs): array
-    {
-        $baseline = FinancialBaseline::first();
-        if (!$baseline) return [];
-        $sections = [];
-        foreach (($baseline->sections ?? []) as $name => $lines) {
-            $sections[$name] = array_map(static function (array $line) use ($period, $mode): array {
-                $line['value'] = $mode === 'ytd' ? ($line['baselineYTD'] ?? 0) : ($line['months'][$period] ?? 0);
-                return $line;
-            }, $lines);
+        if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $period) || $period < sprintf('%04d-01', $baseline['year'])) {
+            throw new InvalidArgumentException("Financial Statement is available from {$baseline['year']}-01.");
         }
-        $matrix = $costs?->build($period, $mode);
-        $total = (float) ($matrix['grandTotal']['allCost'] ?? 0);
-        $selling = (float) ($matrix['grandTotal']['sellingExpense'] ?? 0);
-        return ['currency' => $baseline->currency, 'report' => $sections, 'sections' => $sections,
-            'cashFlowEnabled' => (bool) $baseline->cash_flow_enabled, 'accountBalances' => [],
-            'diagnostics' => ['cashFlowEnabled' => (bool) $baseline->cash_flow_enabled],
-            'incomeStatement' => ['operatingExpenses' => ['generalAdministrative' => $total - $selling, 'sellingExpense' => $selling, 'totalOpex' => $total]],
-            'inventoryReconciliation' => ['status' => 'provisional']];
-    }
 
-    private function syncedMonths(string $period, string $start): array
-    {
-        if ($period < $start) return [];
-        $end = $period;
-        return DB::table('gl_entries')->where('source_type', 'd365')->whereBetween('period', [$start, $end])
-            // The reference financial engine reads only the reporting-currency
-            // amount. Falling back to transaction-currency `amount` mixes currencies.
-            ->selectRaw('period, main_account, costing_to, SUM(amount_reporting) as amount, COUNT(*) as row_count')
-            ->groupBy('period', 'main_account', 'costing_to')->orderBy('period')->get()
-            ->groupBy('period')->map(static function ($rows): array {
-                $accounts = [];
-                $entries = [];
-                $count = 0;
-                $sum = 0.0;
-                foreach ($rows as $row) {
-                    $code = (string) $row->main_account;
-                    $accounts[$code] = ($accounts[$code] ?? 0) + (float) $row->amount;
-                    $entries[] = ['code' => (string) $row->main_account, 'costingTo' => (string) ($row->costing_to ?? ''), 'amount' => (float) $row->amount];
-                    $count += (int) $row->row_count;
-                    $sum += (float) $row->amount;
-                }
-                return ['accounts' => $accounts, 'entries' => $entries, 'rows' => $count, 'sum' => $sum];
-            })->all();
+        $mappings = FinancialAccountMapping::orderBy('account_code')->get()->keyBy('account_code')
+            ->map(static fn (FinancialAccountMapping $item): array => [
+                'name'=>$item->account_name,
+                'rowId'=>$item->row_id,
+                'sourceLabel'=>$item->source_label,
+                'referenceSep'=>$item->reference_sep === null ? null : (float) $item->reference_sep,
+                'referenceOct'=>$item->reference_oct === null ? null : (float) $item->reference_oct,
+            ])->all();
+
+        $futurePeriods = $period >= $baseline['glStartPeriod']
+            ? $this->periodsBetween($baseline['glStartPeriod'], $period)
+            : [];
+        $byMonth = array_fill_keys($futurePeriods, ['pl'=>[],'bs'=>[],'accounts'=>[],'rows'=>0,'adjustmentRows'=>0,'ledgerSum'=>0.0]);
+        $accounts = [];
+        foreach ($baseline['accounts'] as $account) $accounts[(string) $account['code']] = $account;
+
+        // Reclassify the September YTD baseline per the account-level reference.
+        // Historical monthly columns intentionally keep their original classification.
+        $profitLoss = $baseline['sections']['profitLoss'] ?? [];
+        $plBase = [];
+        foreach ($profitLoss as $line) if (($line['kind'] ?? '') !== 'heading') $plBase[$line['id']] = (float) ($line['baselineYTD'] ?? 0);
+        $mappedBase = [];
+        foreach ($mappings as $mapping) {
+            $sourceId = $this->lineIdForLabel($profitLoss, (string) ($mapping['sourceLabel'] ?? ''));
+            if ($sourceId !== null) $mappedBase[$sourceId] = 0.0;
+        }
+        foreach ($mappings as $code => $mapping) {
+            $rowId = (string) ($mapping['rowId'] ?? '');
+            if (preg_match('/^[3-9]/', (string) $code) && array_key_exists($rowId, $plBase) && $mapping['referenceSep'] !== null) {
+                $mappedBase[$rowId] = ($mappedBase[$rowId] ?? 0.0) + (float) $mapping['referenceSep'];
+            }
+        }
+        $plBaseAdjust = [];
+        foreach ($mappedBase as $id => $value) $plBaseAdjust[$id] = $value - ($plBase[$id] ?? 0.0);
+        $this->applySums($plBaseAdjust, self::PL_SUMS);
+        foreach ($plBaseAdjust as $id => $value) $plBase[$id] = ($plBase[$id] ?? 0.0) + $value;
+
+        // Reclassify baseline balance-sheet accounts with the same debit/credit
+        // presentation sign rules used for subsequent GL movements.
+        $balanceSheet = $baseline['sections']['balanceSheet'] ?? [];
+        $bsBaseAdjust = [];
+        foreach ($mappings as $code => $mapping) {
+            $account = $accounts[(string) $code] ?? null;
+            $target = (string) ($mapping['rowId'] ?? '');
+            $original = (string) ($account['bsRowId'] ?? '');
+            if (!$account || $original === '' || $target === '' || $original === $target || !$this->isBalanceSheetTarget($balanceSheet, $target)) continue;
+            $value = (float) ($account['baselineClosingUSD'] ?? 0);
+            $this->add($bsBaseAdjust, $original, -$value * ($this->isCreditRow($original) ? -1 : 1));
+            $this->add($bsBaseAdjust, $target, $value * ($this->isCreditRow($target) ? -1 : 1));
+        }
+        $this->applySums($bsBaseAdjust, self::BS_SUMS);
+
+        $glRows = DB::table('gl_entries')->where('source_type', 'd365')
+            ->whereBetween('period', [$baseline['glStartPeriod'], $period])
+            ->select(['period','main_account','account_name','costing_to','amount_reporting'])
+            ->orderBy('period')->get();
+        $movementByAccount = [];
+        foreach ($glRows as $entry) {
+            $month = (string) $entry->period;
+            if (!isset($byMonth[$month])) continue;
+            $code = trim((string) $entry->main_account);
+            $amount = (float) ($entry->amount_reporting ?? 0);
+            $byMonth[$month]['rows']++;
+            $byMonth[$month]['ledgerSum'] += $amount;
+            $byMonth[$month]['accounts'][$code] = ($byMonth[$month]['accounts'][$code] ?? 0.0) + $amount;
+            $movementByAccount[$code] = ($movementByAccount[$code] ?? 0.0) + $amount;
+
+            $mapping = $mappings[$code] ?? null;
+            $account = $accounts[$code] ?? null;
+            $bsId = $this->mappedBalanceSheetId($code, $mapping, $account, $balanceSheet);
+            if ($bsId !== null) {
+                $this->add($byMonth[$month]['bs'], $bsId, $amount * ($this->isCreditRow($bsId) ? -1 : 1));
+            } elseif (abs($amount) > 0.000001) {
+                $this->addUnmapped($unmappedAccounts ??= [], $code, $month, (string) ($entry->account_name ?? ''), $amount, 'Balance Sheet');
+            }
+
+            $plId = $this->mappedProfitLossId($mapping, $profitLoss)
+                ?? $this->profitLossLine($code, (string) ($entry->costing_to ?? ''));
+            if ($plId !== null) {
+                $this->add($byMonth[$month]['pl'], $plId, -$amount);
+            } elseif (preg_match('/^[3-9]/', $code) && abs($amount) > 0.000001) {
+                $this->addUnmapped($unmappedAccounts ??= [], $code, $month, (string) ($entry->account_name ?? ''), $amount, 'P&L');
+            }
+        }
+        $unmappedAccounts ??= [];
+        foreach ($byMonth as &$monthData) {
+            $this->applySums($monthData['pl'], self::PL_SUMS);
+            $this->applySums($monthData['bs'], self::BS_SUMS);
+        }
+        unset($monthData);
+
+        $plValue = function (array $line, string $to) use ($baseline, $plBase, $byMonth): float {
+            $targetYear = (int) substr($to, 0, 4);
+            if ($targetYear === $baseline['comparativeYear']) return (float) ($line['comparative'] ?? 0);
+            if ($targetYear === $baseline['year'] && $to >= $baseline['basePeriod']) {
+                return (float) ($plBase[$line['id']] ?? $line['baselineYTD'] ?? 0)
+                    + $this->delta($byMonth, 'pl', $line['id'], $baseline['glStartPeriod'], $to);
+            }
+            $total = 0.0;
+            foreach (($line['months'] ?? []) as $month => $value) if ($month <= $to) $total += (float) $value;
+            return $total;
+        };
+        $bsValue = function (array $line, string $to) use ($baseline, $bsBaseAdjust, $byMonth): float {
+            if ((int) substr($to, 0, 4) === $baseline['comparativeYear']) return (float) ($line['comparative'] ?? 0);
+            if ($to <= $baseline['basePeriod']) return (float) ($line['months'][$to] ?? 0);
+            return (float) ($line['baselineYTD'] ?? 0) + (float) ($bsBaseAdjust[$line['id']] ?? 0)
+                + $this->delta($byMonth, 'bs', $line['id'], $baseline['glStartPeriod'], $to);
+        };
+
+        $yearMonths = $this->periodsBetween(sprintf('%04d-01', (int) substr($period, 0, 4)), $period);
+        $comparativePeriod = sprintf('%04d-12', $baseline['comparativeYear']);
+        $reportPl = array_map(function (array $line) use ($period, $mode, $yearMonths, $baseline, $plValue, $byMonth): array {
+            $months = [];
+            foreach ($yearMonths as $month) {
+                if (($line['kind'] ?? '') === 'heading') { $months[$month] = null; continue; }
+                if ($month <= $baseline['basePeriod']) $months[$month] = $line['months'][$month] ?? null;
+                elseif (($byMonth[$month]['rows'] ?? 0) > 0 || ($byMonth[$month]['adjustmentRows'] ?? 0) > 0) $months[$month] = (float) ($byMonth[$month]['pl'][$line['id']] ?? 0);
+                else $months[$month] = null;
+            }
+            return [
+                'id'=>$line['id'],'label'=>$line['label'],'kind'=>$line['kind'],
+                'comparative'=>($line['kind'] ?? '') === 'heading' ? null : (float) ($line['comparative'] ?? 0),
+                'ytd'=>($line['kind'] ?? '') === 'heading' ? null : $plValue($line, $period),
+                'months'=>$months,
+            ];
+        }, $profitLoss);
+        $reportBs = array_map(function (array $line) use ($period, $yearMonths, $baseline, $bsValue): array {
+            $months = [];
+            foreach ($yearMonths as $month) {
+                $months[$month] = ($line['kind'] ?? '') === 'heading'
+                    ? null
+                    : ($month <= $baseline['basePeriod'] ? ($line['months'][$month] ?? null) : $bsValue($line, $month));
+            }
+            return [
+                'id'=>$line['id'],'label'=>$line['label'],'kind'=>$line['kind'],
+                'comparative'=>($line['kind'] ?? '') === 'heading' ? null : (float) ($line['comparative'] ?? 0),
+                'ytd'=>($line['kind'] ?? '') === 'heading' ? null : $bsValue($line, $period),
+                'months'=>$months,
+            ];
+        }, $balanceSheet);
+
+        $report = [
+            'company'=>$baseline['company'],'basePeriod'=>$baseline['basePeriod'],'glStartPeriod'=>$baseline['glStartPeriod'],
+            'period'=>$period,'year'=>(int) substr($period, 0, 4),'comparativeYear'=>$baseline['comparativeYear'],
+            'periods'=>$yearMonths,'profitLoss'=>$reportPl,'balanceSheet'=>$reportBs,
+            'cashFlowEnabled'=>(bool) $baselineModel->cash_flow_enabled,
+            'glMonths'=>array_map(static fn (array $data): array => [
+                'rows'=>$data['rows'],'adjustmentRows'=>$data['adjustmentRows'],'ledgerSumUSD'=>$data['ledgerSum'],
+            ], $byMonth),
+        ];
+
+        $pl = [];
+        foreach ($reportPl as $line) $pl[$line['id']] = (float) ($mode === 'ytd' ? ($line['ytd'] ?? 0) : ($line['months'][$period] ?? 0));
+        $bs = [];
+        foreach ($reportBs as $line) $bs[$line['id']] = (float) ($line['ytd'] ?? 0);
+        $baselineBs = [];
+        foreach ($balanceSheet as $line) $baselineBs[$line['id']] = (float) ($line['baselineYTD'] ?? 0);
+        $missingGLPeriods = array_values(array_filter($futurePeriods, static fn (string $month): bool => ($byMonth[$month]['rows'] ?? 0) === 0));
+        $diagnostics = [
+            'missingGLPeriods'=>$missingGLPeriods,
+            'unmappedAccounts'=>array_values($unmappedAccounts),
+            'invalidAmounts'=>[],
+            'baselineBalanceDifferenceUSD'=>(float) ($baselineBs['totalAssets'] ?? 0) - (float) ($baselineBs['totalLiabilitiesEquity'] ?? 0),
+            'baselineDifferenceUSD'=>(float) ($baselineBs['totalAssets'] ?? 0) - (float) ($baselineBs['totalLiabilitiesEquity'] ?? 0),
+            'balanceDifferenceUSD'=>(float) ($bs['totalAssets'] ?? 0) - (float) ($bs['totalLiabilitiesEquity'] ?? 0),
+            'glLedgerDifferenceUSD'=>array_sum(array_column($byMonth, 'ledgerSum')),
+            'syncedGLRows'=>array_sum(array_column($byMonth, 'rows')),
+            'source'=>'gl_entries (D365) + financial baseline + account-level financial mapping',
+        ];
+
+        $accountBalances = [];
+        foreach ($baseline['accounts'] as $account) {
+            $code = (string) $account['code'];
+            $movement = (float) ($movementByAccount[$code] ?? 0);
+            $accountBalances[] = [
+                'code'=>$code,'name'=>$account['name'],'mapping'=>$account['sourceMapping'] ?? null,
+                'baseUSD'=>(float) ($account['baselineClosingUSD'] ?? 0),'glMovementUSD'=>$movement,
+                'closingUSD'=>(float) ($account['baselineClosingUSD'] ?? 0) + $movement,
+            ];
+        }
+
+        $sections = [
+            'profitLoss'=>$this->selectValues($reportPl, $period, $mode),
+            'balanceSheet'=>$this->selectValues($reportBs, $period, 'ytd'),
+        ];
+        $revenue = $pl['coalSales'] ?? 0;
+        $gross = $pl['grossProfit'] ?? 0;
+        $beforeInterest = $pl['profitBeforeInterest'] ?? 0;
+        $beforeTax = $pl['profitBeforeTax'] ?? 0;
+        $payload = [
+            'currency'=>$baseline['currency'],'amountScale'=>1,'setupRequired'=>false,'inventoryProvisional'=>false,
+            'period'=>$period,'mode'=>$mode,'dataSource'=>'d365-gl+financial-baseline','report'=>$report,
+            'diagnostics'=>$diagnostics,'accountBalances'=>$accountBalances,'sections'=>$sections,
+            'balanceSheet'=>$sections['balanceSheet'],
+            'incomeStatement'=>[
+                'period'=>$period,'currency'=>$baseline['currency'],'salesVolumeMT'=>null,
+                'revenue'=>['totalRevenue'=>$revenue],'cogs'=>['totalCOGS'=>-($pl['costOfCoalSold'] ?? 0)],
+                'grossProfit'=>$gross,'grossProfitMarginPct'=>$revenue == 0 ? 0 : $gross / $revenue * 100,
+                'operatingExpenses'=>[
+                    'generalAdministrative'=>-($pl['generalAdmin'] ?? 0),'sellingExpense'=>-($pl['sellingExpense'] ?? 0),
+                    'royaltyCoalSales'=>-($pl['royaltyCoalSales'] ?? 0),
+                    'totalOpex'=>-($pl['generalAdmin'] ?? 0)-($pl['sellingExpense'] ?? 0)-($pl['royaltyCoalSales'] ?? 0),
+                ],
+                'operatingProfitEBITDA'=>$beforeInterest,'ebitdaMarginPct'=>$revenue == 0 ? 0 : $beforeInterest / $revenue * 100,
+                'otherItems'=>[
+                    'financeIncome'=>$pl['financeIncome'] ?? 0,'financeCost'=>-($pl['financeCost'] ?? 0),
+                    'forexGainLoss'=>-($pl['realisedFX'] ?? 0)-($pl['unrealisedFX'] ?? 0),'includedInGA'=>false,
+                ],
+                'netProfitBeforeTax'=>$beforeTax,'netProfitAfterTax'=>$pl['profitForYear'] ?? $beforeTax,
+                'netProfitMarginPct'=>$revenue == 0 ? 0 : $beforeTax / $revenue * 100,
+            ],
+        ];
+
+        return $payload;
     }
 
     private function profitLossLine(string $code, string $costingTo): ?string
     {
         if (str_starts_with($code, '3')) return 'coalSales';
         if (str_starts_with($code, '41')) return 'costOfCoalSold';
-        if (in_array($code, ['6000003', '6000004'], true)) return 'royaltyCoalSales';
-        if (in_array($code, ['7000001', '7000002', '7000003', '7006001', '7006002', '7007001'], true)) return 'financeIncome';
+        if (str_starts_with($code, '400')) return 'generalAdmin';
+        if (str_starts_with($code, '5')) return preg_match('/sell|market|mkt/i', $costingTo) ? 'sellingExpense' : 'generalAdmin';
+        if (in_array($code, ['6000003','6000004'], true)) return 'royaltyCoalSales';
+        if (str_starts_with($code, '6')) return 'sellingExpense';
+        if (preg_match('/^(700000[123]|700600[12]|7007001)$/', $code)) return 'financeIncome';
         if ($code === '7002002') return 'realisedFX';
         if ($code === '7002001') return 'unrealisedFX';
-        if (str_starts_with($code, '7001') || str_starts_with($code, '7003') || str_starts_with($code, '7004') || str_starts_with($code, '8')) return 'financeCost';
-        if (str_starts_with($code, '6')) return 'sellingExpense';
-        if (str_starts_with($code, '4') || str_starts_with($code, '5') || str_starts_with($code, '9')) {
-            return in_array(strtolower(trim($costingTo)), ['selling', 'marketing', 'selling expense'], true) ? 'sellingExpense' : 'generalAdmin';
-        }
+        if (preg_match('/^(7001|7003|7004|8)/', $code)) return 'financeCost';
+        if (str_starts_with($code, '9')) return 'generalAdmin';
         return null;
     }
 
-    private function lineIdForLabel(array $lines, string $label): ?string
+    private function mappedProfitLossId(?array $mapping, array $lines): ?string
     {
-        foreach ($lines as $line) if (strcasecmp(trim((string) ($line['label'] ?? '')), trim($label)) === 0) return $line['id'] ?? null;
+        if (!$mapping) return null;
+        $id = (string) ($mapping['rowId'] ?? '');
+        foreach ($lines as $line) if (($line['id'] ?? null) === $id && ($line['kind'] ?? null) === 'detail') return $id;
         return null;
     }
 
-    private function isLiabilityOrEquity(array $lines, ?string $id): bool
+    private function mappedBalanceSheetId(string $code, ?array $mapping, ?array $account, array $lines): ?string
     {
-        $liabilities = false;
-        foreach ($lines as $line) {
-            if (($line['id'] ?? '') === 'heading-45') $liabilities = true;
-            if (($line['id'] ?? '') === $id) return $liabilities;
-        }
+        $mapped = (string) ($mapping['rowId'] ?? '');
+        if ($mapped !== '' && $this->isBalanceSheetTarget($lines, $mapped)) return $mapped;
+        $baseline = (string) ($account['bsRowId'] ?? '');
+        if ($baseline !== '') return $baseline;
+        return preg_match('/^[3-9]/', $code) ? 'totalEquity' : null;
+    }
+
+    private function isBalanceSheetTarget(array $lines, string $id): bool
+    {
+        foreach ($lines as $line) if (($line['id'] ?? null) === $id && (($line['kind'] ?? null) === 'detail' || $id === 'totalEquity')) return true;
         return false;
     }
 
-    private function recalculateProfitLoss(array &$lines, string $mode, string $period): void
+    private function isCreditRow(string $id): bool { return in_array($id, self::CREDIT_ROWS, true); }
+
+    private function lineIdForLabel(array $lines, string $label): ?string
     {
-        $ids = [];
-        foreach ($lines as &$line) $ids[$line['id']] =& $line;
-        unset($line);
-        $months = array_keys($lines[0]['months'] ?? []);
-        $calculate = static function (string $month) use (&$ids): void {
-            $get = static fn (string $id): float => (float) ($ids[$id]['months'][$month] ?? 0);
-            $set = static function (string $id, float $value) use (&$ids, $month): void { $ids[$id]['months'][$month] = $value; };
-            $set('grossProfit', $get('coalSales') + $get('costOfCoalSold'));
-            $set('profitBeforeInterest', $get('grossProfit') + $get('sellingExpense') + $get('royaltyCoalSales') + $get('generalAdmin'));
-            $set('profitBeforeTax', $get('profitBeforeInterest') + $get('financeIncome') + $get('financeCost') + $get('realisedFX') + $get('unrealisedFX'));
-            $set('profitForYear', $get('profitBeforeTax') + $get('incomeTax'));
-        };
-        foreach ($months as $month) $calculate($month);
-        if (isset($ids['grossProfit'])) {
-            foreach (['coalSales','costOfCoalSold','grossProfit','sellingExpense','royaltyCoalSales','generalAdmin','profitBeforeInterest','financeIncome','financeCost','realisedFX','unrealisedFX','profitBeforeTax','incomeTax','profitForYear'] as $id) {
-                if (!isset($ids[$id])) continue;
-                $ids[$id]['ytd'] = array_sum(array_map(static fn (string $month): float => (float) ($ids[$id]['months'][$month] ?? 0), $months));
-            }
-        }
+        $normalize = static fn (string $value): string => strtoupper((string) preg_replace('/\s+/', ' ', trim($value)));
+        foreach ($lines as $line) if (($line['kind'] ?? '') === 'detail' && $normalize((string) ($line['label'] ?? '')) === $normalize($label)) return (string) $line['id'];
+        return null;
     }
 
-    private function recalculateBalanceSheet(array &$lines): void
+    private function add(array &$values, string $key, float $amount): void { $values[$key] = ($values[$key] ?? 0.0) + $amount; }
+
+    private function addUnmapped(array &$items, string $code, string $month, string $name, float $amount, string $statement): void
     {
-        $keys = ['ytd'];
-        foreach ($lines as $line) foreach (array_keys($line['months'] ?? []) as $month) $keys[$month] = $month;
-        foreach ($keys as $key) {
-            $values = [];
-            foreach ($lines as $line) if (($line['kind'] ?? '') === 'detail' || $line['id'] === 'totalEquity') $values[$line['id']] = (float) ($line[$key] ?? $line['months'][$key] ?? 0);
-            $values['cashAndEquivalents'] = ($values['cashOnHand'] ?? 0) + ($values['cashInBanks'] ?? 0) + ($values['timeDeposits'] ?? 0);
-            $values['prepaidTaxesAdvances'] = ($values['advances'] ?? 0) + ($values['prepayments'] ?? 0) + ($values['prepaidTaxes'] ?? 0);
-            $values['totalCurrentAssets'] = ($values['cashAndEquivalents'] ?? 0) + ($values['tradeReceivables'] ?? 0) + ($values['prepaidTaxesAdvances'] ?? 0) + ($values['inventories'] ?? 0) + ($values['derivativeAsset'] ?? 0);
-            $values['totalNonCurrentAssets'] = ($values['restrictedCash'] ?? 0) + ($values['miningProperties'] ?? 0) + ($values['explorationAssets'] ?? 0) + ($values['fixedAssets'] ?? 0) + ($values['retirementAsset'] ?? 0) + ($values['deferredTaxAsset'] ?? 0);
-            $values['totalAssets'] = $values['totalCurrentAssets'] + $values['totalNonCurrentAssets'];
-            $values['totalCurrentLiabilities'] = ($values['loansCurrent'] ?? 0) + ($values['financeLeaseCurrent'] ?? 0) + ($values['tradePayables'] ?? 0) + ($values['accruedExpenses'] ?? 0) + ($values['taxesPayable'] ?? 0) + ($values['advancesCustomer'] ?? 0) + ($values['otherCurrentLiabilities'] ?? 0) + ($values['derivativeLiability'] ?? 0);
-            $values['totalNonCurrentLiabilities'] = ($values['loansNonCurrent'] ?? 0) + ($values['financeLeaseNonCurrent'] ?? 0) + ($values['employeeBenefits'] ?? 0) + ($values['reclamationProvision'] ?? 0) + ($values['deferredTaxLiabilities'] ?? 0);
-            $values['totalLiabilities'] = $values['totalCurrentLiabilities'] + $values['totalNonCurrentLiabilities'];
-            $values['totalLiabilitiesEquity'] = $values['totalLiabilities'] + ($values['totalEquity'] ?? 0);
-            foreach ($lines as &$line) {
-                if (!isset($values[$line['id']])) continue;
-                if ($key === 'ytd') $line['ytd'] = $values[$line['id']];
-                else $line['months'][$key] = $values[$line['id']];
-            }
-            unset($line);
+        $key = $statement.'|'.$month.'|'.$code;
+        if (!isset($items[$key])) $items[$key] = ['code'=>$code,'month'=>$month,'name'=>$name,'amountUSD'=>0.0,'statement'=>$statement];
+        $items[$key]['amountUSD'] += $amount;
+    }
+
+    private function applySums(array &$values, array $definitions): void
+    {
+        foreach ($definitions as $id => $children) $values[$id] = array_sum(array_map(static fn (string $child): float => (float) ($values[$child] ?? 0), $children));
+    }
+
+    private function delta(array $byMonth, string $section, string $id, string $from, string $to): float
+    {
+        $sum = 0.0;
+        foreach ($byMonth as $month => $data) if ($month >= $from && $month <= $to) $sum += (float) ($data[$section][$id] ?? 0);
+        return $sum;
+    }
+
+    private function periodsBetween(string $start, string $end): array
+    {
+        $periods = [];
+        $cursor = new \DateTimeImmutable($start.'-01');
+        $last = new \DateTimeImmutable($end.'-01');
+        while ($cursor <= $last) {
+            $periods[] = $cursor->format('Y-m');
+            $cursor = $cursor->modify('+1 month');
         }
+        return $periods;
     }
 
     private function selectValues(array $lines, string $period, string $mode): array
@@ -269,42 +359,5 @@ class FinancialStatementService
             $line['value'] = $mode === 'ytd' ? ($line['ytd'] ?? null) : ($line['months'][$period] ?? null);
             return $line;
         }, $lines);
-    }
-
-    private function incomeSummary(array $lines, string $period, string $mode, string $currency): array
-    {
-        $value = [];
-        foreach ($lines as $line) $value[$line['id']] = (float) ($mode === 'ytd' ? ($line['ytd'] ?? 0) : ($line['months'][$period] ?? 0));
-        $revenue = $value['coalSales'] ?? 0;
-        $gross = $value['grossProfit'] ?? 0;
-        $beforeInterest = $value['profitBeforeInterest'] ?? 0;
-        $beforeTax = $value['profitBeforeTax'] ?? 0;
-        return ['period' => $period, 'currency' => $currency, 'salesVolumeMT' => null,
-            'revenue' => ['totalRevenue' => $revenue], 'cogs' => ['totalCOGS' => $value['costOfCoalSold'] ?? 0],
-            'grossProfit' => $gross, 'grossProfitMarginPct' => $revenue == 0 ? 0 : $gross / $revenue * 100,
-            'operatingExpenses' => ['generalAdministrative' => $value['generalAdmin'] ?? 0, 'sellingExpense' => $value['sellingExpense'] ?? 0,
-                'royaltyCoalSales' => $value['royaltyCoalSales'] ?? 0, 'totalOpex' => ($value['generalAdmin'] ?? 0) + ($value['sellingExpense'] ?? 0) + ($value['royaltyCoalSales'] ?? 0)],
-            'operatingProfitEBITDA' => $beforeInterest, 'ebitdaMarginPct' => $revenue == 0 ? 0 : $beforeInterest / $revenue * 100,
-            'otherItems' => ['financeIncome' => $value['financeIncome'] ?? 0, 'financeCost' => $value['financeCost'] ?? 0, 'forexGainLoss' => ($value['realisedFX'] ?? 0) + ($value['unrealisedFX'] ?? 0), 'includedInGA' => false],
-            'netProfitBeforeTax' => $beforeTax, 'netProfitAfterTax' => $value['profitForYear'] ?? $beforeTax,
-            'netProfitMarginPct' => $revenue == 0 ? 0 : $beforeTax / $revenue * 100];
-    }
-
-    private function response(array $payload, string $period, string $mode, string $source): array
-    {
-        $payload['period'] = $period;
-        $payload['mode'] = $mode;
-        $payload['dataSource'] = $source;
-        $report = $payload['report'] ?? [];
-        if (isset($report['profitLoss'], $report['balanceSheet'])) {
-            $payload['sections'] = [
-                'profitLoss' => $this->selectValues($report['profitLoss'], $period, $mode),
-                'balanceSheet' => $this->selectValues($report['balanceSheet'], $period, $mode),
-            ];
-            $payload['balanceSheet'] = $payload['sections']['balanceSheet'];
-        } elseif (!isset($payload['sections'])) {
-            $payload['sections'] = $report;
-        }
-        return $payload;
     }
 }

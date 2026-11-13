@@ -1,0 +1,2391 @@
+{
+  "accounts": {
+    "1110010": {
+      "name": "Share Capital",
+      "rowId": "totalEquity",
+      "sourceLabel": "TOTAL EQUITY",
+      "referenceSep": -1112431,
+      "referenceOct": -1112431
+    },
+    "1110020": {
+      "name": "Paid-up Capital",
+      "rowId": "totalEquity",
+      "sourceLabel": "TOTAL EQUITY",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1110030": {
+      "name": "Share Premium",
+      "rowId": "totalEquity",
+      "sourceLabel": "TOTAL EQUITY",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1110040": {
+      "name": "Retained Earnings",
+      "rowId": "totalEquity",
+      "sourceLabel": "TOTAL EQUITY",
+      "referenceSep": 73950868,
+      "referenceOct": 73950868
+    },
+    "1110060": {
+      "name": "Perpetual Loan",
+      "rowId": "totalEquity",
+      "sourceLabel": "TOTAL EQUITY",
+      "referenceSep": -121844021,
+      "referenceOct": -119146786
+    },
+    "1201000": {
+      "name": "Loan Bank Non Current",
+      "rowId": "loansCurrent",
+      "sourceLabel": "LOANS PAYABLE CURRENT",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1201011": {
+      "name": "Collateral Loan - BNI",
+      "rowId": "loansCurrent",
+      "sourceLabel": "LOANS PAYABLE CURRENT",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1201012": {
+      "name": "Collateral Loan - Mandiri",
+      "rowId": "loansCurrent",
+      "sourceLabel": "LOANS PAYABLE CURRENT",
+      "referenceSep": -3000000,
+      "referenceOct": -6232200
+    },
+    "1202010": {
+      "name": "Loan Related Party- IMR Metallurgical Resources AG",
+      "rowId": "loansNonCurrent",
+      "sourceLabel": "LOANS PAYABLE NON CURRENT",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1202020": {
+      "name": "Loan Related Party-IMR Asia Holding Pte Ltd",
+      "rowId": "loansNonCurrent",
+      "sourceLabel": "LOANS PAYABLE NON CURRENT",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1202030": {
+      "name": "Loan Related Party-PT. Pacific Samudra Perkasa",
+      "rowId": "loansNonCurrent",
+      "sourceLabel": "LOANS PAYABLE NON CURRENT",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1202040": {
+      "name": "Loan Related Party-PT IMR Anugrah Maju",
+      "rowId": "loansNonCurrent",
+      "sourceLabel": "LOANS PAYABLE NON CURRENT",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1202050": {
+      "name": "Loan Related Party-PT IMR Anugrah Greens",
+      "rowId": "loansNonCurrent",
+      "sourceLabel": "LOANS PAYABLE NON CURRENT",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1202060": {
+      "name": "Loan Related Party-PT IMR Arc Steel",
+      "rowId": "loansNonCurrent",
+      "sourceLabel": "LOANS PAYABLE NON CURRENT",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1202080": {
+      "name": "Loan Shinhan Bank",
+      "rowId": "loansNonCurrent",
+      "sourceLabel": "LOANS PAYABLE NON CURRENT",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1203000": {
+      "name": "Loan Third Party Non Current",
+      "rowId": "loansNonCurrent",
+      "sourceLabel": "LOANS PAYABLE NON CURRENT",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1300010": {
+      "name": "Leasing Liablity-Non Current Sun Finance",
+      "rowId": "financeLeaseNonCurrent",
+      "sourceLabel": "FINANCE LEASE LIABILITIES, NON-CURRENT PORTION",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1300020": {
+      "name": "Leasing Liablity-Non Current ROU",
+      "rowId": "financeLeaseNonCurrent",
+      "sourceLabel": "FINANCE LEASE LIABILITIES, NON-CURRENT PORTION",
+      "referenceSep": -20140,
+      "referenceOct": 0
+    },
+    "1400010": {
+      "name": "Deferred Tax Liabilities",
+      "rowId": "deferredTaxLiabilities",
+      "sourceLabel": "DEFERRED TAX LIABILITIES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1511000": {
+      "name": "Accounts Payable Trade",
+      "rowId": "tradePayables",
+      "sourceLabel": "ACCOUNTS PAYABLE",
+      "referenceSep": -4723659,
+      "referenceOct": -4340919
+    },
+    "1512001": {
+      "name": "Accounts Payable- IMR Metallurgical Resources AG",
+      "rowId": "tradePayables",
+      "sourceLabel": "ACCOUNTS PAYABLE",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1512002": {
+      "name": "Accounts Payable-IMR Asia Holding Pte Ltd",
+      "rowId": "tradePayables",
+      "sourceLabel": "ACCOUNTS PAYABLE",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1512003": {
+      "name": "Accounts Payable-PT. Pacific Samudra Perkasa",
+      "rowId": "tradePayables",
+      "sourceLabel": "ACCOUNTS PAYABLE",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1512004": {
+      "name": "Accounts Payable-PT IMR Anugrah Maju",
+      "rowId": "tradePayables",
+      "sourceLabel": "ACCOUNTS PAYABLE",
+      "referenceSep": -3361193,
+      "referenceOct": -3356230
+    },
+    "1512005": {
+      "name": "Accounts Payable-PT IMR Anugrah Greens",
+      "rowId": "tradePayables",
+      "sourceLabel": "ACCOUNTS PAYABLE",
+      "referenceSep": -468115,
+      "referenceOct": -875298
+    },
+    "1512006": {
+      "name": "Accounts Payable-PT IMR Arc Steel",
+      "rowId": "tradePayables",
+      "sourceLabel": "ACCOUNTS PAYABLE",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1512007": {
+      "name": "Accounts Payable-PT IMR Mining Service",
+      "rowId": "tradePayables",
+      "sourceLabel": "ACCOUNTS PAYABLE",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1512008": {
+      "name": "Contra - Accounts Payable-",
+      "rowId": "tradePayables",
+      "sourceLabel": "ACCOUNTS PAYABLE",
+      "referenceSep": 97,
+      "referenceOct": 0
+    },
+    "1513000": {
+      "name": "Account Payable Non Trade",
+      "rowId": "tradePayables",
+      "sourceLabel": "ACCOUNTS PAYABLE",
+      "referenceSep": -4180691,
+      "referenceOct": -2402848
+    },
+    "1513020": {
+      "name": "Payable Employee",
+      "rowId": "otherCurrentLiabilities",
+      "sourceLabel": "OTHER CURRENT LIABILITIES",
+      "referenceSep": -306,
+      "referenceOct": -233
+    },
+    "1515000": {
+      "name": "Advance From Customer-3rd Party",
+      "rowId": "advancesCustomer",
+      "sourceLabel": "ADVANCES FROM CUSTOMER",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1516001": {
+      "name": "Advance From - IMR Metallurgical Resources AG",
+      "rowId": "advancesCustomer",
+      "sourceLabel": "ADVANCES FROM CUSTOMER",
+      "referenceSep": -65867935,
+      "referenceOct": -71367935
+    },
+    "1516002": {
+      "name": "Advance From -IMR Asia Holding Pte Ltd",
+      "rowId": "advancesCustomer",
+      "sourceLabel": "ADVANCES FROM CUSTOMER",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1516003": {
+      "name": "Advance From -PT. Pacific Samudra Perkasa",
+      "rowId": "advancesCustomer",
+      "sourceLabel": "ADVANCES FROM CUSTOMER",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1516004": {
+      "name": "Advance From -PT IMR Anugrah Maju",
+      "rowId": "advancesCustomer",
+      "sourceLabel": "ADVANCES FROM CUSTOMER",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1516005": {
+      "name": "Advance From -PT IMR Anugrah Greens",
+      "rowId": "advancesCustomer",
+      "sourceLabel": "ADVANCES FROM CUSTOMER",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1516006": {
+      "name": "Advance From -PT IMR Arc Steel",
+      "rowId": "advancesCustomer",
+      "sourceLabel": "ADVANCES FROM CUSTOMER",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1517001": {
+      "name": "Customer Deposit-3rd Party",
+      "rowId": "advancesCustomer",
+      "sourceLabel": "ADVANCES FROM CUSTOMER",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1518001": {
+      "name": "Customer Deposit- IMR Metallurgical Resources AG",
+      "rowId": "advancesCustomer",
+      "sourceLabel": "ADVANCES FROM CUSTOMER",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1518002": {
+      "name": "Customer Deposit-IMR Asia Holding Pte Ltd",
+      "rowId": "advancesCustomer",
+      "sourceLabel": "ADVANCES FROM CUSTOMER",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1518003": {
+      "name": "Customer Deposit-PT. Pacific Samudra Perkasa",
+      "rowId": "advancesCustomer",
+      "sourceLabel": "ADVANCES FROM CUSTOMER",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1518004": {
+      "name": "Customer Deposit-PT IMR Anugrah Maju",
+      "rowId": "advancesCustomer",
+      "sourceLabel": "ADVANCES FROM CUSTOMER",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1518005": {
+      "name": "Customer Deposit-PT IMR Anugrah Greens",
+      "rowId": "advancesCustomer",
+      "sourceLabel": "ADVANCES FROM CUSTOMER",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1518006": {
+      "name": "Customer Deposit-PT IMR Arc Steel",
+      "rowId": "advancesCustomer",
+      "sourceLabel": "ADVANCES FROM CUSTOMER",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1520001": {
+      "name": "PPN Out",
+      "rowId": "taxesPayable",
+      "sourceLabel": "TAXES PAYABLE",
+      "referenceSep": -54017,
+      "referenceOct": -54017
+    },
+    "1520002": {
+      "name": "Value Added Tax Payable",
+      "rowId": "taxesPayable",
+      "sourceLabel": "TAXES PAYABLE",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1520003": {
+      "name": "Tax Payable PPH 21",
+      "rowId": "taxesPayable",
+      "sourceLabel": "TAXES PAYABLE",
+      "referenceSep": -33480,
+      "referenceOct": -35357
+    },
+    "1520004": {
+      "name": "Tax Payable PPH 22",
+      "rowId": "taxesPayable",
+      "sourceLabel": "TAXES PAYABLE",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1520005": {
+      "name": "Tax Payable PPH 23",
+      "rowId": "taxesPayable",
+      "sourceLabel": "TAXES PAYABLE",
+      "referenceSep": -11622,
+      "referenceOct": -11276
+    },
+    "1520006": {
+      "name": "Tax Payable PPH 4 (2)",
+      "rowId": "taxesPayable",
+      "sourceLabel": "TAXES PAYABLE",
+      "referenceSep": -3673,
+      "referenceOct": -696
+    },
+    "1520007": {
+      "name": "Tax Payable PPH 15",
+      "rowId": "taxesPayable",
+      "sourceLabel": "TAXES PAYABLE",
+      "referenceSep": -2268,
+      "referenceOct": -104
+    },
+    "1520008": {
+      "name": "Tax Payable PPH 26",
+      "rowId": "taxesPayable",
+      "sourceLabel": "TAXES PAYABLE",
+      "referenceSep": -610232,
+      "referenceOct": -590378
+    },
+    "1520009": {
+      "name": "Tax Payable PPH 25",
+      "rowId": "taxesPayable",
+      "sourceLabel": "TAXES PAYABLE",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1520010": {
+      "name": "Tax Payable PPH 29",
+      "rowId": "taxesPayable",
+      "sourceLabel": "TAXES PAYABLE",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1520011": {
+      "name": "Land & Building Tax Payable",
+      "rowId": "taxesPayable",
+      "sourceLabel": "TAXES PAYABLE",
+      "referenceSep": -20631,
+      "referenceOct": -20631
+    },
+    "1530001": {
+      "name": "Provision Employee Benefit",
+      "rowId": "employeeBenefits",
+      "sourceLabel": "EMPLOYEE BENEFIT OBLIGATIONS",
+      "referenceSep": -688418,
+      "referenceOct": -711981
+    },
+    "1530002": {
+      "name": "Provision for Reclamation and Mine Closure",
+      "rowId": "reclamationProvision",
+      "sourceLabel": "PROVISION FOR RECLAMATION AND MINE CLOSURE",
+      "referenceSep": -4900975,
+      "referenceOct": -4988727
+    },
+    "1530003": {
+      "name": "Accrued Expense",
+      "rowId": "accruedExpenses",
+      "sourceLabel": "ACCRUED EXPENSES",
+      "referenceSep": -9931100,
+      "referenceOct": -11762042
+    },
+    "1530004": {
+      "name": "Functional Currency Impact",
+      "rowId": "accruedExpenses",
+      "sourceLabel": "ACCRUED EXPENSES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1530005": {
+      "name": "Accrued Interest Advance",
+      "rowId": "advancesCustomer",
+      "sourceLabel": "ADVANCES FROM CUSTOMER",
+      "referenceSep": -3902860,
+      "referenceOct": -3902860
+    },
+    "1540010": {
+      "name": "Contra for Liabilities for Good Receipt",
+      "rowId": "accruedExpenses",
+      "sourceLabel": "ACCRUED EXPENSES",
+      "referenceSep": -1819893,
+      "referenceOct": -3332597
+    },
+    "1540020": {
+      "name": "Contra for Liabilities for Services Receipt",
+      "rowId": "accruedExpenses",
+      "sourceLabel": "ACCRUED EXPENSES",
+      "referenceSep": -334417,
+      "referenceOct": -368248
+    },
+    "1540030": {
+      "name": "Contra for Liabilities for Capex Items",
+      "rowId": "accruedExpenses",
+      "sourceLabel": "ACCRUED EXPENSES",
+      "referenceSep": -3381,
+      "referenceOct": -346861
+    },
+    "1540040": {
+      "name": "Contra for Liabilities for Good Receipt Consigment",
+      "rowId": "accruedExpenses",
+      "sourceLabel": "ACCRUED EXPENSES",
+      "referenceSep": -25224,
+      "referenceOct": -41682
+    },
+    "1601001": {
+      "name": "Loan Bank Shinhan Current",
+      "rowId": "loansCurrent",
+      "sourceLabel": "LOANS PAYABLE CURRENT",
+      "referenceSep": -2841419,
+      "referenceOct": -2813327
+    },
+    "1602010": {
+      "name": "Loan Related Party- IMR Metallurgical Resources AG",
+      "rowId": "loansCurrent",
+      "sourceLabel": "LOANS PAYABLE CURRENT",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1602020": {
+      "name": "Loan Related Party-IMR Asia Holding Pte Ltd",
+      "rowId": "loansCurrent",
+      "sourceLabel": "LOANS PAYABLE CURRENT",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1602030": {
+      "name": "Loan Related Party-PT. Pacific Samudra Perkasa",
+      "rowId": "loansCurrent",
+      "sourceLabel": "LOANS PAYABLE CURRENT",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1602040": {
+      "name": "Loan Related Party-PT IMR Anugrah Maju",
+      "rowId": "loansCurrent",
+      "sourceLabel": "LOANS PAYABLE CURRENT",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1602050": {
+      "name": "Loan Related Party-PT IMR Anugrah Greens",
+      "rowId": "loansCurrent",
+      "sourceLabel": "LOANS PAYABLE CURRENT",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1602060": {
+      "name": "Loan Related Party-PT IMR Arc Steel",
+      "rowId": "loansCurrent",
+      "sourceLabel": "LOANS PAYABLE CURRENT",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1603000": {
+      "name": "Loan Third Party Current",
+      "rowId": "loansCurrent",
+      "sourceLabel": "LOANS PAYABLE CURRENT",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1700010": {
+      "name": "Leasing Liablity-Current Sun Finance",
+      "rowId": "financeLeaseCurrent",
+      "sourceLabel": "FINANCE LEASE LIABILITIES, CURRENT PORTION",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "1700020": {
+      "name": "Leasing Liablity-Current ROU",
+      "rowId": "financeLeaseCurrent",
+      "sourceLabel": "FINANCE LEASE LIABILITIES, CURRENT PORTION",
+      "referenceSep": -39569,
+      "referenceOct": -37064
+    },
+    "1800010": {
+      "name": "Derivative Financial Liability – CCC",
+      "rowId": "derivativeLiability",
+      "sourceLabel": "Derivative Financial Liabilities",
+      "referenceSep": -3240,
+      "referenceOct": 0
+    },
+    "2110010": {
+      "name": "Land",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2110020": {
+      "name": "Buildings-Permanent",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2110030": {
+      "name": "Buildings-Non Permanent",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": 3985518,
+      "referenceOct": 3985518
+    },
+    "2110040": {
+      "name": "Machine-Own",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": 1360249,
+      "referenceOct": 1360249
+    },
+    "2110050": {
+      "name": "Wheel &Track Equipment Own",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": 4647956,
+      "referenceOct": 4647956
+    },
+    "2110060": {
+      "name": "Machine - Leasing",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2110070": {
+      "name": "Wheel &Track Equipment Leasing",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": 2662569,
+      "referenceOct": 2662569
+    },
+    "2110080": {
+      "name": "Office Equipment",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": 490703,
+      "referenceOct": 490703
+    },
+    "2110090": {
+      "name": "Furniture and Fixture",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": 36762,
+      "referenceOct": 36762
+    },
+    "2110100": {
+      "name": "Vehicles-Own",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": 7045,
+      "referenceOct": 7045
+    },
+    "2110110": {
+      "name": "Vehicles-Leasing",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2110120": {
+      "name": "Project Equipment",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": 205340,
+      "referenceOct": 205340
+    },
+    "2110130": {
+      "name": "Infrastructure",
+      "rowId": "explorationAssets",
+      "sourceLabel": "EXPLORATION AND EVALUATION ASSETS",
+      "referenceSep": 48314900,
+      "referenceOct": 48314900
+    },
+    "2120010": {
+      "name": "Acc Dep-Building-Permanent",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2120020": {
+      "name": "Acc Dep-Building-Non Permanent",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": -1243592,
+      "referenceOct": -1279337
+    },
+    "2120030": {
+      "name": "Acc Dep-Machine-Own",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": -709286,
+      "referenceOct": -722789
+    },
+    "2120040": {
+      "name": "Acc Dep-Wheel &Track Equipment Own",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": -4192265,
+      "referenceOct": -4240492
+    },
+    "2120050": {
+      "name": "Acc Dep-Wheel &Track Equipment Leasing",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": -1922110,
+      "referenceOct": -1949845
+    },
+    "2120060": {
+      "name": "Acc Dep-Machine-Leasing",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2120070": {
+      "name": "Acc.Dep Office Equipment",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": -230853,
+      "referenceOct": -237511
+    },
+    "2120080": {
+      "name": "Acc.Dep Furniture and Fixture",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": -24006,
+      "referenceOct": -24772
+    },
+    "2120090": {
+      "name": "Acc.Dep. Vehicle-Own",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": -6521,
+      "referenceOct": -6547
+    },
+    "2120100": {
+      "name": "Acc.Dep. Vehicle-Leasing",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2120110": {
+      "name": "Acc Dep Project Equipment",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": -174677,
+      "referenceOct": -175428
+    },
+    "2120120": {
+      "name": "Acc Dep-Infrastructure",
+      "rowId": "explorationAssets",
+      "sourceLabel": "EXPLORATION AND EVALUATION ASSETS",
+      "referenceSep": -2751794,
+      "referenceOct": -2842418
+    },
+    "2130010": {
+      "name": "Right of Use Assets of Motor Vehicle",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2130020": {
+      "name": "Right of Use Assets of Building",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": 268547,
+      "referenceOct": 268547
+    },
+    "2140010": {
+      "name": "Mining Properties",
+      "rowId": "miningProperties",
+      "sourceLabel": "MINING PROPERTIES",
+      "referenceSep": 52533478,
+      "referenceOct": 52533478
+    },
+    "2140020": {
+      "name": "Land Compensation",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": 765918,
+      "referenceOct": 821491
+    },
+    "2140030": {
+      "name": "Asset Retirement Obligation",
+      "rowId": "retirementAsset",
+      "sourceLabel": "ASSET RETIREMENT OBLIGATION",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2140040": {
+      "name": "Intangible assets",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2140060": {
+      "name": "Annual Contribution",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": 92512,
+      "referenceOct": 61674
+    },
+    "2150010": {
+      "name": "Accumulated Amortization Mining Properties",
+      "rowId": "miningProperties",
+      "sourceLabel": "MINING PROPERTIES",
+      "referenceSep": -897589,
+      "referenceOct": -945270
+    },
+    "2150020": {
+      "name": "Accumulated Amortization Land Compensation",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": -22407,
+      "referenceOct": -23094
+    },
+    "2150030": {
+      "name": "Acc Dep-Asset Retirement Obligation",
+      "rowId": "retirementAsset",
+      "sourceLabel": "ASSET RETIREMENT OBLIGATION",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2150040": {
+      "name": "Amortization -Intangible Assets",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2150060": {
+      "name": "Acc Right of Use Assets of Motor Vehicle",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2150070": {
+      "name": "Acc Right of Use Assets of Building",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": -215308,
+      "referenceOct": -220692
+    },
+    "2190000": {
+      "name": "Asset Under Construction",
+      "rowId": "fixedAssets",
+      "sourceLabel": "FIXED ASSETS",
+      "referenceSep": 75293,
+      "referenceOct": 396300
+    },
+    "2210070": {
+      "name": "Inventory Coal BUA",
+      "rowId": "inventories",
+      "sourceLabel": "INVENTORIES",
+      "referenceSep": 3330213,
+      "referenceOct": 4030038
+    },
+    "2210071": {
+      "name": "Inventory Coal Wash Plant",
+      "rowId": "inventories",
+      "sourceLabel": "INVENTORIES",
+      "referenceSep": 2441205,
+      "referenceOct": 2262791
+    },
+    "2210072": {
+      "name": "Inventory Coal ISP Road",
+      "rowId": "inventories",
+      "sourceLabel": "INVENTORIES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2210073": {
+      "name": "Inventory Coal BP Port",
+      "rowId": "inventories",
+      "sourceLabel": "INVENTORIES",
+      "referenceSep": 9312633,
+      "referenceOct": 12666136
+    },
+    "2210074": {
+      "name": "Inventory Coal ISP MGM",
+      "rowId": "inventories",
+      "sourceLabel": "INVENTORIES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2210079": {
+      "name": "Inventory Coal ISP BAT",
+      "rowId": "inventories",
+      "sourceLabel": "INVENTORIES",
+      "referenceSep": 103560,
+      "referenceOct": 103560
+    },
+    "2210080": {
+      "name": "Coal in Transit - COGM",
+      "rowId": "inventories",
+      "sourceLabel": "INVENTORIES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2210082": {
+      "name": "Coal in Barge Transit - Sales",
+      "rowId": "inventories",
+      "sourceLabel": "INVENTORIES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2210083": {
+      "name": "Coal in Barge Transit - Transfer",
+      "rowId": "inventories",
+      "sourceLabel": "INVENTORIES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2210101": {
+      "name": "Inventory Fuel",
+      "rowId": "inventories",
+      "sourceLabel": "INVENTORIES",
+      "referenceSep": -10614,
+      "referenceOct": 70559
+    },
+    "2210102": {
+      "name": "Inventory Sparepart",
+      "rowId": "inventories",
+      "sourceLabel": "INVENTORIES",
+      "referenceSep": 686453,
+      "referenceOct": 765175
+    },
+    "2210103": {
+      "name": "Inventory Explosive Material",
+      "rowId": "inventories",
+      "sourceLabel": "INVENTORIES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2210104": {
+      "name": "Inventory Quarry",
+      "rowId": "inventories",
+      "sourceLabel": "INVENTORIES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2210105": {
+      "name": "Inventory Consignment",
+      "rowId": "inventories",
+      "sourceLabel": "INVENTORIES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2210500": {
+      "name": "Provision of Inventory",
+      "rowId": "inventories",
+      "sourceLabel": "INVENTORIES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2220100": {
+      "name": "Account Receivable - Inter Company",
+      "rowId": "tradeReceivables",
+      "sourceLabel": "TRADE AND OTHER RECEIVABLES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2220200": {
+      "name": "Account Receivable - 3rd Parties",
+      "rowId": "tradeReceivables",
+      "sourceLabel": "TRADE AND OTHER RECEIVABLES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2220300": {
+      "name": "Employee Receivable",
+      "rowId": "tradeReceivables",
+      "sourceLabel": "TRADE AND OTHER RECEIVABLES",
+      "referenceSep": 159,
+      "referenceOct": 530
+    },
+    "2220400": {
+      "name": "Other Receivables - Inter Company",
+      "rowId": "tradeReceivables",
+      "sourceLabel": "TRADE AND OTHER RECEIVABLES",
+      "referenceSep": 10438775,
+      "referenceOct": 10605497
+    },
+    "2220500": {
+      "name": "Other Receivables - 3rd Parties",
+      "rowId": "tradeReceivables",
+      "sourceLabel": "TRADE AND OTHER RECEIVABLES",
+      "referenceSep": 1276647,
+      "referenceOct": 1405734
+    },
+    "2220600": {
+      "name": "Accrued Receivable",
+      "rowId": "tradeReceivables",
+      "sourceLabel": "TRADE AND OTHER RECEIVABLES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2230010": {
+      "name": "Prepaid Insurances",
+      "rowId": "prepayments",
+      "sourceLabel": "PREPAYMENTS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2230020": {
+      "name": "Prepaid Expenses",
+      "rowId": "prepayments",
+      "sourceLabel": "PREPAYMENTS",
+      "referenceSep": -1,
+      "referenceOct": -1
+    },
+    "2230030": {
+      "name": "Prepaid Office Rental",
+      "rowId": "prepayments",
+      "sourceLabel": "PREPAYMENTS",
+      "referenceSep": 21137,
+      "referenceOct": 8686
+    },
+    "2230040": {
+      "name": "Prepaid Motor Vehicle Rental",
+      "rowId": "prepayments",
+      "sourceLabel": "PREPAYMENTS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2230050": {
+      "name": "Prepaid Site Office Rental",
+      "rowId": "prepayments",
+      "sourceLabel": "PREPAYMENTS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2230060": {
+      "name": "Prepaid Interest for Car Leasing",
+      "rowId": "prepayments",
+      "sourceLabel": "PREPAYMENTS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2230070": {
+      "name": "Prepaid Guest House Rental",
+      "rowId": "prepayments",
+      "sourceLabel": "PREPAYMENTS",
+      "referenceSep": 49491,
+      "referenceOct": 43992
+    },
+    "2230080": {
+      "name": "Prepaid Permit & Licences",
+      "rowId": "prepayments",
+      "sourceLabel": "PREPAYMENTS",
+      "referenceSep": 29740,
+      "referenceOct": 26010
+    },
+    "2230090": {
+      "name": "Advance Vendor",
+      "rowId": "advances",
+      "sourceLabel": "ADVANCES",
+      "referenceSep": 6589180,
+      "referenceOct": 7217732
+    },
+    "2230091": {
+      "name": "Advance Employee",
+      "rowId": "advances",
+      "sourceLabel": "ADVANCES",
+      "referenceSep": 14790,
+      "referenceOct": 15620
+    },
+    "2230092": {
+      "name": "Advance Vendor Non Current Portion",
+      "rowId": "advances",
+      "sourceLabel": "ADVANCES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2230100": {
+      "name": "Deposits Cash Collateral",
+      "rowId": "advances",
+      "sourceLabel": "ADVANCES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2230200": {
+      "name": "Prepaid forward points",
+      "rowId": "advances",
+      "sourceLabel": "ADVANCES",
+      "referenceSep": -40946,
+      "referenceOct": -61870
+    },
+    "2240010": {
+      "name": "Defered tax assets",
+      "rowId": "deferredTaxAsset",
+      "sourceLabel": "DEFERED TAX ASSET",
+      "referenceSep": 2708900,
+      "referenceOct": 2708900
+    },
+    "2310010": {
+      "name": "Petty Cash-Surabaya",
+      "rowId": "cashOnHand",
+      "sourceLabel": "CASH ON HAND",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2310011": {
+      "name": "Petty Cash-Puruk Cahu",
+      "rowId": "cashOnHand",
+      "sourceLabel": "CASH ON HAND",
+      "referenceSep": 3851,
+      "referenceOct": 5403
+    },
+    "2310012": {
+      "name": "Petty Cash Jakarta",
+      "rowId": "cashOnHand",
+      "sourceLabel": "CASH ON HAND",
+      "referenceSep": 979,
+      "referenceOct": 721
+    },
+    "2310014": {
+      "name": "Cash On Hand Jakarta",
+      "rowId": "cashOnHand",
+      "sourceLabel": "CASH ON HAND",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2320010": {
+      "name": "Bank BNI 46 (IDR) 84937342",
+      "rowId": "cashInBanks",
+      "sourceLabel": "CASH IN BANKS",
+      "referenceSep": 3261,
+      "referenceOct": 3641
+    },
+    "2320011": {
+      "name": "Bank MANDIRI (USD)",
+      "rowId": "cashInBanks",
+      "sourceLabel": "CASH IN BANKS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2320012": {
+      "name": "Bank BNI 46 PCH (IDR)",
+      "rowId": "cashInBanks",
+      "sourceLabel": "CASH IN BANKS",
+      "referenceSep": 359,
+      "referenceOct": 141
+    },
+    "2320013": {
+      "name": "Bank BOI (USD)",
+      "rowId": "cashInBanks",
+      "sourceLabel": "CASH IN BANKS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2320014": {
+      "name": "Bank BOI (IDR)",
+      "rowId": "cashInBanks",
+      "sourceLabel": "CASH IN BANKS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2320015": {
+      "name": "Bank Kalteng (IDR)",
+      "rowId": "cashInBanks",
+      "sourceLabel": "CASH IN BANKS",
+      "referenceSep": 306,
+      "referenceOct": 305
+    },
+    "2320016": {
+      "name": "Bank BNI 46 (USD)",
+      "rowId": "cashInBanks",
+      "sourceLabel": "CASH IN BANKS",
+      "referenceSep": 1452,
+      "referenceOct": 1449
+    },
+    "2320017": {
+      "name": "Bank BNI 46 Reksus (USD)",
+      "rowId": "cashInBanks",
+      "sourceLabel": "CASH IN BANKS",
+      "referenceSep": 2079860,
+      "referenceOct": 97643
+    },
+    "2320018": {
+      "name": "Bank MANDIRI (IDR)",
+      "rowId": "cashInBanks",
+      "sourceLabel": "CASH IN BANKS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2320027": {
+      "name": "Bank BNI 502555555-1 IDR",
+      "rowId": "cashInBanks",
+      "sourceLabel": "CASH IN BANKS",
+      "referenceSep": 989,
+      "referenceOct": 988
+    },
+    "2320028": {
+      "name": "Bank BNI 502555556-2 USD",
+      "rowId": "cashInBanks",
+      "sourceLabel": "CASH IN BANKS",
+      "referenceSep": 1773,
+      "referenceOct": 1771
+    },
+    "2320029": {
+      "name": "Bank BNI 502555557-3 USD - DHE SDA",
+      "rowId": "cashInBanks",
+      "sourceLabel": "CASH IN BANKS",
+      "referenceSep": 531,
+      "referenceOct": 529
+    },
+    "2320031": {
+      "name": "Shinhan Bank 701000076853 (IDR)",
+      "rowId": "cashInBanks",
+      "sourceLabel": "CASH IN BANKS",
+      "referenceSep": 983,
+      "referenceOct": 1587
+    },
+    "2320033": {
+      "name": "Bank BNI 2550502555 - IDR",
+      "rowId": "cashInBanks",
+      "sourceLabel": "CASH IN BANKS",
+      "referenceSep": 178565,
+      "referenceOct": 307645
+    },
+    "2320034": {
+      "name": "Bank BNI 2660602668 - USD",
+      "rowId": "cashInBanks",
+      "sourceLabel": "CASH IN BANKS",
+      "referenceSep": 19029,
+      "referenceOct": 1323
+    },
+    "2320035": {
+      "name": "Bank BNI 5025502553 - USD-DHE-SDA",
+      "rowId": "cashInBanks",
+      "sourceLabel": "CASH IN BANKS",
+      "referenceSep": 5492,
+      "referenceOct": 5490
+    },
+    "2320036": {
+      "name": "Bank Mega Syariah 1000358397 - USD",
+      "rowId": "cashInBanks",
+      "sourceLabel": "CASH IN BANKS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2320037": {
+      "name": "Bank Mandiri 1220022355799 - IDR",
+      "rowId": "cashInBanks",
+      "sourceLabel": "CASH IN BANKS",
+      "referenceSep": 35948,
+      "referenceOct": 74151
+    },
+    "2320038": {
+      "name": "Bank Mandiri 1220022366689 - USD-DHE-SDA",
+      "rowId": "cashInBanks",
+      "sourceLabel": "CASH IN BANKS",
+      "referenceSep": 5043,
+      "referenceOct": 5005
+    },
+    "2320039": {
+      "name": "Bank Mandiri 1220022366671 (USD-ESCROW)",
+      "rowId": "cashInBanks",
+      "sourceLabel": "CASH IN BANKS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2320040": {
+      "name": "Bank BRI 036101001513309 (IDR)",
+      "rowId": "cashInBanks",
+      "sourceLabel": "CASH IN BANKS",
+      "referenceSep": 2807,
+      "referenceOct": 2778
+    },
+    "2320041": {
+      "name": "Bank Mandiri 1220015543641 (USD)",
+      "rowId": "cashInBanks",
+      "sourceLabel": "CASH IN BANKS",
+      "referenceSep": 0,
+      "referenceOct": 2995
+    },
+    "2433010": {
+      "name": "Deposits (IDR)",
+      "rowId": "timeDeposits",
+      "sourceLabel": "TIME DEPOSITS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2433020": {
+      "name": "Deposits (USD)",
+      "rowId": "advances",
+      "sourceLabel": "ADVANCES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2433030": {
+      "name": "Restricted Cash",
+      "rowId": "restrictedCash",
+      "sourceLabel": "RESTRICTED CASH",
+      "referenceSep": 5430140,
+      "referenceOct": 8662340
+    },
+    "2434060": {
+      "name": "Deposit Guarantee - Vendor",
+      "rowId": "restrictedCash",
+      "sourceLabel": "RESTRICTED CASH",
+      "referenceSep": 222727,
+      "referenceOct": 222727
+    },
+    "2443010": {
+      "name": "PPN In",
+      "rowId": "prepaidTaxes",
+      "sourceLabel": "PREPAID TAXES",
+      "referenceSep": 1880244,
+      "referenceOct": 2034562
+    },
+    "2443020": {
+      "name": "Value Added Tax In Calculated Receivable",
+      "rowId": "prepaidTaxes",
+      "sourceLabel": "PREPAID TAXES",
+      "referenceSep": 2225495,
+      "referenceOct": 2229469
+    },
+    "2443030": {
+      "name": "Prepaid Income Tax 22",
+      "rowId": "prepaidTaxes",
+      "sourceLabel": "PREPAID TAXES",
+      "referenceSep": 136088,
+      "referenceOct": 136991
+    },
+    "2443040": {
+      "name": "Prepaid Income Tax 23",
+      "rowId": "prepaidTaxes",
+      "sourceLabel": "PREPAID TAXES",
+      "referenceSep": 7391,
+      "referenceOct": 7391
+    },
+    "2443050": {
+      "name": "Prepaid Income Tax 25",
+      "rowId": "prepaidTaxes",
+      "sourceLabel": "PREPAID TAXES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2443060": {
+      "name": "Prepaid Income Tax 28",
+      "rowId": "prepaidTaxes",
+      "sourceLabel": "PREPAID TAXES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2443070": {
+      "name": "Claim For VAT Restitution",
+      "rowId": "prepaidTaxes",
+      "sourceLabel": "PREPAID TAXES",
+      "referenceSep": 229682,
+      "referenceOct": 229682
+    },
+    "2443080": {
+      "name": "Income Tax Refund 2021",
+      "rowId": "prepaidTaxes",
+      "sourceLabel": "PREPAID TAXES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2443090": {
+      "name": "Income Tax Refund 2022",
+      "rowId": "prepaidTaxes",
+      "sourceLabel": "PREPAID TAXES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "2450010": {
+      "name": "Derivative Financial Asset - CCC",
+      "rowId": "derivativeAsset",
+      "sourceLabel": "Derivative Financial Asset",
+      "referenceSep": 9873,
+      "referenceOct": 105649
+    },
+    "3000010": {
+      "name": "Coal Sales Export Coking Coal",
+      "rowId": "coalSales",
+      "sourceLabel": "COAL SALES",
+      "referenceSep": 13027502,
+      "referenceOct": 13027502
+    },
+    "3000020": {
+      "name": "Coal Sales Export Non Coking Coal",
+      "rowId": "coalSales",
+      "sourceLabel": "COAL SALES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "3000030": {
+      "name": "Coal Sales Domestic Coking Coal",
+      "rowId": "coalSales",
+      "sourceLabel": "COAL SALES",
+      "referenceSep": 3740227,
+      "referenceOct": 3740227
+    },
+    "3000040": {
+      "name": "Coal Sales Domestic Non Coking Coal",
+      "rowId": "coalSales",
+      "sourceLabel": "COAL SALES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "3100010": {
+      "name": "Sales Return Coking Coal",
+      "rowId": "coalSales",
+      "sourceLabel": "COAL SALES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "3100020": {
+      "name": "Sales Return Non Coking Coal",
+      "rowId": "coalSales",
+      "sourceLabel": "COAL SALES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "3200010": {
+      "name": "Sales - Others Items",
+      "rowId": "coalSales",
+      "sourceLabel": "COAL SALES",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "4000010": {
+      "name": "COGM - BUA",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 13100724,
+      "referenceOct": 15802109
+    },
+    "4000020": {
+      "name": "COGM - Wash Plant",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 1571012,
+      "referenceOct": 1783505
+    },
+    "4000030": {
+      "name": "COGM - ISP Road",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "4000040": {
+      "name": "COGM - Port",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 4382807,
+      "referenceOct": 5343842
+    },
+    "4000050": {
+      "name": "COGM - ISP MGM",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "4000051": {
+      "name": "COGM - ISP BAT/KUNZ",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "4100010": {
+      "name": "Cost of Good Sold - Coking Coal Export",
+      "rowId": "costOfCoalSold",
+      "sourceLabel": "COST OF COAL SOLD",
+      "referenceSep": -7993609,
+      "referenceOct": -7993609
+    },
+    "4100020": {
+      "name": "Cost of Good Sold - Non Coking Coal Export",
+      "rowId": "costOfCoalSold",
+      "sourceLabel": "COST OF COAL SOLD",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "4100030": {
+      "name": "Cost of Good Sold - Coking Coal Domestic",
+      "rowId": "costOfCoalSold",
+      "sourceLabel": "COST OF COAL SOLD",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "4100040": {
+      "name": "Cost of Good Sold - Non Coking Coal Domestic",
+      "rowId": "costOfCoalSold",
+      "sourceLabel": "COST OF COAL SOLD",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "5000051": {
+      "name": "Salaries",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -1701479,
+      "referenceOct": -1894928
+    },
+    "5000052": {
+      "name": "Overtime",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -53089,
+      "referenceOct": -56778
+    },
+    "5000053": {
+      "name": "Insentif / Bonus/ THR",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -70499,
+      "referenceOct": -83295
+    },
+    "5000054": {
+      "name": "Allowance & Compensation",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -184268,
+      "referenceOct": -208010
+    },
+    "5000055": {
+      "name": "Severence Pay",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -28906,
+      "referenceOct": -29258
+    },
+    "5000056": {
+      "name": "Medical",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -53352,
+      "referenceOct": -60767
+    },
+    "5000057": {
+      "name": "Employee Insurance (BPJS TK)",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -120974,
+      "referenceOct": -135091
+    },
+    "5000058": {
+      "name": "Employee Insurance (BPJS Health)",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -35970,
+      "referenceOct": -40207
+    },
+    "5000059": {
+      "name": "Employee Insurance (Pension)",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "5000060": {
+      "name": "Employee Wellfare (Natura)",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "5000061": {
+      "name": "Provision Employee Retirement Benefit",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -194617,
+      "referenceOct": -218181
+    },
+    "5000101": {
+      "name": "Equipment Rent",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -3290,
+      "referenceOct": -6680
+    },
+    "5000102": {
+      "name": "Vehicle Rent",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -227028,
+      "referenceOct": -262659
+    },
+    "5000103": {
+      "name": "Tug and Barge Hire",
+      "rowId": "sellingExpense",
+      "sourceLabel": "Selling Expense",
+      "referenceSep": -1261433,
+      "referenceOct": -1350149
+    },
+    "5000104": {
+      "name": "Barge Loading Conveyor Rent",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -174480,
+      "referenceOct": -189463
+    },
+    "5000105": {
+      "name": "Wash Plant Rent",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -1388919,
+      "referenceOct": -1583562
+    },
+    "5000108": {
+      "name": "ISP Rent",
+      "rowId": "sellingExpense",
+      "sourceLabel": "Selling Expense",
+      "referenceSep": -887321,
+      "referenceOct": -908238
+    },
+    "5000109": {
+      "name": "Land And Road Rent",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -100818,
+      "referenceOct": -122006
+    },
+    "5000201": {
+      "name": "Building Rent Expense",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -118841,
+      "referenceOct": -138741
+    },
+    "5000301": {
+      "name": "Freight & Handling Heavy Equipment",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "5000302": {
+      "name": "Freight & Handling Fuel",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -411334,
+      "referenceOct": -454203
+    },
+    "5000303": {
+      "name": "Freight & Handling Sparepart",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -14058,
+      "referenceOct": -14562
+    },
+    "5000304": {
+      "name": "Freight & Handling Others Material",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -52213,
+      "referenceOct": -52896
+    },
+    "5000402": {
+      "name": "Labour Outsourcing Expense",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -482906,
+      "referenceOct": -572256
+    },
+    "5000403": {
+      "name": "Security Expenses",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -343423,
+      "referenceOct": -378851
+    },
+    "5000404": {
+      "name": "OB Removal",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -7161868,
+      "referenceOct": -8666128
+    },
+    "5000405": {
+      "name": "Coal Getting",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -250840,
+      "referenceOct": -290431
+    },
+    "5000406": {
+      "name": "Coal Hauling pit to BUA/stockpile",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -41112,
+      "referenceOct": -49090
+    },
+    "5000407": {
+      "name": "Coal Hauling BUA to WP",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -74548,
+      "referenceOct": -83261
+    },
+    "5000408": {
+      "name": "Coal Hauling WP to Port",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -631692,
+      "referenceOct": -687140
+    },
+    "5000409": {
+      "name": "Coal hauling BUA to Port",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -1090545,
+      "referenceOct": -1378737
+    },
+    "5000410": {
+      "name": "Road Maintenance",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "5000411": {
+      "name": "Coal Loading",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -55963,
+      "referenceOct": -66957
+    },
+    "5000501": {
+      "name": "Consultant Fee",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -315740,
+      "referenceOct": -342204
+    },
+    "5000502": {
+      "name": "Survey Expenses - Production",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "5000601": {
+      "name": "Fuel",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -6730111,
+      "referenceOct": -8414547
+    },
+    "5000602": {
+      "name": "Explosive & Accessories",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "5000603": {
+      "name": "Wash Plant Stores",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -174,
+      "referenceOct": -174
+    },
+    "5000604": {
+      "name": "Stores",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -177596,
+      "referenceOct": -201143
+    },
+    "5000605": {
+      "name": "Tools",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -20860,
+      "referenceOct": -22240
+    },
+    "5000606": {
+      "name": "Office Supplies",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -23194,
+      "referenceOct": -23885
+    },
+    "5000607": {
+      "name": "IT Consumables",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -4224,
+      "referenceOct": -5820
+    },
+    "5000701": {
+      "name": "Land & Building Tax",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -218332,
+      "referenceOct": -218332
+    },
+    "5000801": {
+      "name": "Repair & Maintenance-Service",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -829,
+      "referenceOct": -2533
+    },
+    "5000802": {
+      "name": "Repair & Maintenance-Sparepart",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -312709,
+      "referenceOct": -366335
+    },
+    "5000803": {
+      "name": "Repair & Maintenance-Oil & Lubricants",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -58155,
+      "referenceOct": -71290
+    },
+    "5000804": {
+      "name": "Repair & Maintenance-Tyre & Accessories",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -146013,
+      "referenceOct": -179493
+    },
+    "5000805": {
+      "name": "Repair & Maintenance Building",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -11206,
+      "referenceOct": -11206
+    },
+    "5000806": {
+      "name": "Repair & Maintenance Office Equipment",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -20,
+      "referenceOct": -20
+    },
+    "5000807": {
+      "name": "Repair & Maintenance Vehicle",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 95,
+      "referenceOct": 95
+    },
+    "5000808": {
+      "name": "Repair & Maintenance Hauling Road",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -253,
+      "referenceOct": -253
+    },
+    "5000901": {
+      "name": "Depreciation of Building Permanent",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "5000902": {
+      "name": "Depreciation of Building Non Permanent",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -329500,
+      "referenceOct": -365245
+    },
+    "5000903": {
+      "name": "Depreciation of Machine-Own",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -115053,
+      "referenceOct": -128556
+    },
+    "5000904": {
+      "name": "Depreciation Wheel &Track Equipment Own",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -439226,
+      "referenceOct": -487453
+    },
+    "5000905": {
+      "name": "Depreciation of Machine-leasing",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "5000906": {
+      "name": "Depreciation Wheel &Track Equipment Leasing",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -249616,
+      "referenceOct": -277351
+    },
+    "5000907": {
+      "name": "Depreciation of Office Equipment",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -61737,
+      "referenceOct": -68395
+    },
+    "5000908": {
+      "name": "Depreciation of Furniture & Fixture",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -6893,
+      "referenceOct": -7659
+    },
+    "5000909": {
+      "name": "Depreciation of Motor Vehicle-Own",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -613,
+      "referenceOct": -640
+    },
+    "5000910": {
+      "name": "Depreciation of Motor Vehicle-Leasing",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "5000911": {
+      "name": "Depreciation of Project Equipment",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -6760,
+      "referenceOct": -7512
+    },
+    "5000912": {
+      "name": "Depreciation of Infrastructure",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -610012,
+      "referenceOct": -700636
+    },
+    "5000913": {
+      "name": "Amortization of Right of Use Assets-Vehicle",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "5000914": {
+      "name": "Amortization of Right of Use Assets-Building",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -50939,
+      "referenceOct": -56323
+    },
+    "5000915": {
+      "name": "Amortization Mining Properties",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -360179,
+      "referenceOct": -407860
+    },
+    "5000916": {
+      "name": "Amortization Land Compensation",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -5345,
+      "referenceOct": -6032
+    },
+    "5000917": {
+      "name": "Amortization of Asset Retirement Obligation",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "5000918": {
+      "name": "Amortization Expense",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -277540,
+      "referenceOct": -308378
+    },
+    "5000919": {
+      "name": "Reclamation and Mine Closure Expense",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -801,
+      "referenceOct": -3496
+    },
+    "5001001": {
+      "name": "Licence & Permit",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -126966,
+      "referenceOct": -133880
+    },
+    "5001101": {
+      "name": "Coal Sampling Analysis",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -41040,
+      "referenceOct": -41040
+    },
+    "5001201": {
+      "name": "Electricity",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -6630,
+      "referenceOct": -7139
+    },
+    "5001203": {
+      "name": "Water",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 229,
+      "referenceOct": -163
+    },
+    "5001301": {
+      "name": "Telephone & Fax",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -617,
+      "referenceOct": -670
+    },
+    "5001302": {
+      "name": "Network",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -37657,
+      "referenceOct": -40772
+    },
+    "5001401": {
+      "name": "Printing & Stationery",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -4655,
+      "referenceOct": -4871
+    },
+    "5001402": {
+      "name": "Mess Expense",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -18254,
+      "referenceOct": -21060
+    },
+    "5001403": {
+      "name": "Postage & Courier",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -9883,
+      "referenceOct": -9930
+    },
+    "5001404": {
+      "name": "Office Expense",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -4281,
+      "referenceOct": -4510
+    },
+    "5001501": {
+      "name": "Travel Exp Domestic",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -138289,
+      "referenceOct": -153193
+    },
+    "5001502": {
+      "name": "Travel Exp International",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -19418,
+      "referenceOct": -21744
+    },
+    "5001503": {
+      "name": "Hotels & Accommodation",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -9656,
+      "referenceOct": -10536
+    },
+    "5001601": {
+      "name": "Insurance Building",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "5001602": {
+      "name": "Insurance Equipment",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "5001603": {
+      "name": "Insurance Coal",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "5001604": {
+      "name": "Insurance Vehicle",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "5001605": {
+      "name": "Credit Insurance",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "5001606": {
+      "name": "Insurance - Health Insurance",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "5001701": {
+      "name": "Catering",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -450806,
+      "referenceOct": -501934
+    },
+    "5001702": {
+      "name": "Local Tax",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -45395,
+      "referenceOct": -51845
+    },
+    "5001703": {
+      "name": "PNBP Expenses",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "5001704": {
+      "name": "PSDH-DR",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "5001705": {
+      "name": "Dead Rent",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "5001709": {
+      "name": "Training Expense",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -3095,
+      "referenceOct": -3095
+    },
+    "5001712": {
+      "name": "Safety & Environmental",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -82836,
+      "referenceOct": -91044
+    },
+    "5001714": {
+      "name": "Extracomptable",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -12635,
+      "referenceOct": -12635
+    },
+    "5001801": {
+      "name": "Entertainment",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -102304,
+      "referenceOct": -120995
+    },
+    "5001802": {
+      "name": "Donation & Gift",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -800,
+      "referenceOct": -995
+    },
+    "5001901": {
+      "name": "Channel Fee",
+      "rowId": "sellingExpense",
+      "sourceLabel": "Selling Expense",
+      "referenceSep": -28133,
+      "referenceOct": -28133
+    },
+    "5999999": {
+      "name": "Heavy Equipment Rent - Contra",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": 54941,
+      "referenceOct": 74107
+    },
+    "6000001": {
+      "name": "Advertaising and Promotion",
+      "rowId": "generalAdmin",
+      "sourceLabel": "General & Admin Expense",
+      "referenceSep": -28,
+      "referenceOct": -60
+    },
+    "6000002": {
+      "name": "Demurage",
+      "rowId": "sellingExpense",
+      "sourceLabel": "Selling Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "6000003": {
+      "name": "Royalty Coal Sales Export",
+      "rowId": "royaltyCoalSales",
+      "sourceLabel": "Royalty Coal Sales",
+      "referenceSep": -2129719,
+      "referenceOct": -2129719
+    },
+    "6000004": {
+      "name": "Royalty Coal Sales Domestic",
+      "rowId": "royaltyCoalSales",
+      "sourceLabel": "Royalty Coal Sales",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "6000005": {
+      "name": "Survey Expenses - Sales",
+      "rowId": "sellingExpense",
+      "sourceLabel": "Selling Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "6000010": {
+      "name": "DMO Penalty",
+      "rowId": "sellingExpense",
+      "sourceLabel": "Selling Expense",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "7000001": {
+      "name": "Interest Income Bank",
+      "rowId": "financeIncome",
+      "sourceLabel": "FINANCE INCOME",
+      "referenceSep": 11050,
+      "referenceOct": 11869
+    },
+    "7000002": {
+      "name": "Interest Deposit Bank",
+      "rowId": "financeIncome",
+      "sourceLabel": "FINANCE INCOME",
+      "referenceSep": 19684,
+      "referenceOct": 19685
+    },
+    "7000003": {
+      "name": "Tax On Bank Interest",
+      "rowId": "financeIncome",
+      "sourceLabel": "FINANCE INCOME",
+      "referenceSep": -1472,
+      "referenceOct": -1551
+    },
+    "7001001": {
+      "name": "Interest Expenses Lease Financing",
+      "rowId": "financeCost",
+      "sourceLabel": "FINANCE COST AND INTEREST ON LOANS",
+      "referenceSep": -6957,
+      "referenceOct": -7106
+    },
+    "7001002": {
+      "name": "Interest Expense Loan",
+      "rowId": "financeCost",
+      "sourceLabel": "FINANCE COST AND INTEREST ON LOANS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "7001003": {
+      "name": "Bank Charges",
+      "rowId": "financeCost",
+      "sourceLabel": "FINANCE COST AND INTEREST ON LOANS",
+      "referenceSep": -2653,
+      "referenceOct": -3129
+    },
+    "7001004": {
+      "name": "Interest Expense Bank",
+      "rowId": "financeCost",
+      "sourceLabel": "FINANCE COST AND INTEREST ON LOANS",
+      "referenceSep": -119850,
+      "referenceOct": -131537
+    },
+    "7001005": {
+      "name": "Amortisation on Loan Modification",
+      "rowId": "financeCost",
+      "sourceLabel": "FINANCE COST AND INTEREST ON LOANS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "7001006": {
+      "name": "Round Off",
+      "rowId": "financeCost",
+      "sourceLabel": "FINANCE COST AND INTEREST ON LOANS",
+      "referenceSep": -2,
+      "referenceOct": -2
+    },
+    "7001007": {
+      "name": "Provision of inventory (P/L)",
+      "rowId": "financeCost",
+      "sourceLabel": "FINANCE COST AND INTEREST ON LOANS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "7001008": {
+      "name": "Interest Expense Perpetual Loan",
+      "rowId": "financeCost",
+      "sourceLabel": "FINANCE COST AND INTEREST ON LOANS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "7001009": {
+      "name": "Distribtuions on Perpetual Loans",
+      "rowId": "financeCost",
+      "sourceLabel": "FINANCE COST AND INTEREST ON LOANS",
+      "referenceSep": -12314,
+      "referenceOct": -315079
+    },
+    "7001011": {
+      "name": "Interest Advance From Customer",
+      "rowId": "financeCost",
+      "sourceLabel": "FINANCE COST AND INTEREST ON LOANS",
+      "referenceSep": -415328,
+      "referenceOct": -415328
+    },
+    "7001013": {
+      "name": "Interest Expense Bank - CCC",
+      "rowId": "financeCost",
+      "sourceLabel": "FINANCE COST AND INTEREST ON LOANS",
+      "referenceSep": -1057,
+      "referenceOct": -3145
+    },
+    "7002001": {
+      "name": "Forex (Gain)/Losses Unrealised",
+      "rowId": "unrealisedFX",
+      "sourceLabel": "UNREALISED FX",
+      "referenceSep": 130216,
+      "referenceOct": 170539
+    },
+    "7002002": {
+      "name": "Forex (Gain)/Losses Realised",
+      "rowId": "realisedFX",
+      "sourceLabel": "REALISED FX",
+      "referenceSep": 432461,
+      "referenceOct": 439089
+    },
+    "7003001": {
+      "name": "(Gain) & Loss-Asset",
+      "rowId": "financeCost",
+      "sourceLabel": "FINANCE COST AND INTEREST ON LOANS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "7003003": {
+      "name": "Gain / (Loss) on Fair Value of Derivative",
+      "rowId": "financeCost",
+      "sourceLabel": "FINANCE COST AND INTEREST ON LOANS",
+      "referenceSep": 6633,
+      "referenceOct": 105649
+    },
+    "7004001": {
+      "name": "Provision",
+      "rowId": "financeCost",
+      "sourceLabel": "FINANCE COST AND INTEREST ON LOANS",
+      "referenceSep": -59502,
+      "referenceOct": -156790
+    },
+    "7004002": {
+      "name": "Inventory Adjustment",
+      "rowId": "financeCost",
+      "sourceLabel": "FINANCE COST AND INTEREST ON LOANS",
+      "referenceSep": 1960,
+      "referenceOct": 1960
+    },
+    "7006001": {
+      "name": "Other Comprehensive Income",
+      "rowId": "financeIncome",
+      "sourceLabel": "FINANCE INCOME",
+      "referenceSep": 11444,
+      "referenceOct": 11444
+    },
+    "7006002": {
+      "name": "Forward point expense / OCI",
+      "rowId": "financeIncome",
+      "sourceLabel": "FINANCE INCOME",
+      "referenceSep": 6238,
+      "referenceOct": 12430
+    },
+    "7007001": {
+      "name": "Other income",
+      "rowId": "financeIncome",
+      "sourceLabel": "FINANCE INCOME",
+      "referenceSep": 59,
+      "referenceOct": 59
+    },
+    "8000001": {
+      "name": "Current Income Tax Expense/(Benefit)",
+      "rowId": "financeCost",
+      "sourceLabel": "FINANCE COST AND INTEREST ON LOANS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "8000002": {
+      "name": "Deferred Income Tax Expense/(Benefit)",
+      "rowId": "financeCost",
+      "sourceLabel": "FINANCE COST AND INTEREST ON LOANS",
+      "referenceSep": 25335,
+      "referenceOct": 25335
+    },
+    "8000003": {
+      "name": "Other Tax Expense",
+      "rowId": "financeCost",
+      "sourceLabel": "FINANCE COST AND INTEREST ON LOANS",
+      "referenceSep": -250729,
+      "referenceOct": -250729
+    },
+    "9999998": {
+      "name": "Inventory Movement",
+      "rowId": "financeCost",
+      "sourceLabel": "FINANCE COST AND INTEREST ON LOANS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    },
+    "9999999": {
+      "name": "Balance Account",
+      "rowId": "financeCost",
+      "sourceLabel": "FINANCE COST AND INTEREST ON LOANS",
+      "referenceSep": 0,
+      "referenceOct": 0
+    }
+  }
+}

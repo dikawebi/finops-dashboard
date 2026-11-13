@@ -13,6 +13,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call([CostAccountSeeder::class, DashboardSeeder::class]);
+        $this->call([CostAccountSeeder::class, DashboardSeeder::class, FinancialAccountMappingSeeder::class]);
     }
 }

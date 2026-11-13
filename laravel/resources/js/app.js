@@ -583,13 +583,64 @@ async function financial(period, mode) {
     const diagnostics = data.diagnostics || {};
     const accountRows = (data.accountBalances || []).map(row => `<tr><td>${esc(row.code)}</td><td>${esc(row.name)}</td><td>${esc(row.mapping)}</td><td class="num">${formatStatementAmount(row.baseUSD)}</td><td class="num">${formatStatementAmount(row.glMovementUSD)}</td><td class="num">${formatStatementAmount(row.closingUSD)}</td></tr>`);
     $('#pageContent').innerHTML = `
-        ${sectionHeader('Financial Statements', 'Synced D365 GL movements are used when available. Historical opening balances remain based on the approved financial baseline. Amounts in USD.', `<label>Month <input type="month" value="${period}" disabled></label>`)}
+        ${sectionHeader('Financial Statements', 'Synced D365 GL movements are used when available. Historical opening balances remain based on the approved financial baseline. Amounts in USD.', `<button id="financialMappingToggle" class="btn btn-outline" type="button">Account Mapping</button><label>Month <input type="month" value="${period}" disabled></label>`)}
         <p class="financial-notice">${mode === 'ytd' ? `YTD P&amp;L through ${esc(period)}; balance sheet is the closing position as of that month.` : `MTD P&amp;L for ${esc(period)}; balance sheet is the closing position as of that month.`}</p>
         <p class="financial-notice">${esc(period)} GL rows. Accounts requiring mapping: ${(diagnostics.unmappedAccounts || []).length}. Baseline difference: ${money(diagnostics.baselineDifferenceUSD ?? diagnostics.balanceDifferenceUSD)}.</p>
         <p class="source-row">${data.dataSource?.startsWith('d365-gl') ? `${badge('D365 synced GL')} ${badge('Financial baseline opening balances')}` : badge('financial_baseline.json')}</p>
+        <section id="financialMappingPanel" class="financial-mapping-panel" hidden></section>
         ${card(`${esc(companyName)} — Profit & Loss Statement (USD)`, reportTable(report.profitLoss || data.sections?.profitLoss), 'financial-reference-card')}
         ${card(`${esc(companyName)} — Balance Sheet (USD)`, reportTable(report.balanceSheet || data.sections?.balanceSheet), 'financial-reference-card')}
         <details class="stage-card financial-accounts-card"><summary><strong>Balances by Account</strong><p>September balance, subsequent GL movements, and closing balance. Debit positive, credit negative.</p></summary>${table(['COA', 'Account Name', 'Balance Sheet Mapping', 'September Base Balance', 'GL Movement', 'Closing Balance'], accountRows)}</details>`;
+
+    const toggle = $('#financialMappingToggle');
+    const panel = $('#financialMappingPanel');
+    toggle.addEventListener('click', async () => {
+        toggle.disabled = true;
+        try {
+            const payload = await api('/api/financial-mappings');
+            const accounts = payload.accounts || {};
+            const choices = payload.choices || [];
+            const renderMappings = (filter = '') => {
+                const query = filter.trim().toLowerCase();
+                const matches = Object.entries(accounts).filter(([code, item]) => !query || `${code} ${item.name || ''} ${item.rowId || ''}`.toLowerCase().includes(query));
+                panel.querySelector('#financialMappingRows').innerHTML = matches.map(([code, item]) => {
+                    const section = /^[3-9]/.test(code) ? 'Profit &amp; Loss' : 'Balance Sheet';
+                    const validChoices = choices.filter(choice => choice.section === (section.includes('Profit') ? 'Profit & Loss' : 'Balance Sheet'));
+                    const options = validChoices.map(choice => `<option value="${esc(choice.id)}" ${choice.id === item.rowId ? 'selected' : ''}>${esc(choice.label)} (${esc(choice.id)})</option>`).join('');
+                    return `<tr data-account-code="${esc(code)}"><td>${esc(code)}</td><td>${esc(item.name)}</td><td>${section}</td><td class="num">${item.referenceSep == null ? '—' : formatStatementAmount(item.referenceSep)}</td><td class="num">${item.referenceOct == null ? '—' : formatStatementAmount(item.referenceOct)}</td><td><select aria-label="Financial statement row for ${esc(code)}">${options}</select></td><td><button class="btn btn-primary financial-mapping-save" type="button">Save</button></td></tr>`;
+                }).join('') || `<tr><td colspan="7">No account mapping found.</td></tr>`;
+                panel.querySelector('#financialMappingCount').textContent = `${matches.length.toLocaleString('en-US')} of ${Object.keys(accounts).length.toLocaleString('en-US')} accounts`;
+            };
+            panel.innerHTML = `<div class="financial-mapping-heading"><div><h3>Financial Account Mapping</h3><p>Assign each account to its statement row. September and October reference amounts are retained for comparison.</p></div><button id="financialMappingClose" class="btn btn-outline" type="button">Close</button></div><div class="financial-mapping-tools"><input id="financialMappingSearch" type="search" placeholder="Search account code, name, or mapped row"><span id="financialMappingCount"></span><span id="financialMappingStatus" role="status"></span></div><div class="table-responsive financial-mapping-table"><table class="table-accounting"><thead><tr><th>Account</th><th>Account Name</th><th>Statement</th><th>Sep Reference</th><th>Oct Reference</th><th>Mapped Row</th><th></th></tr></thead><tbody id="financialMappingRows"></tbody></table></div>`;
+            panel.hidden = false;
+            renderMappings();
+            panel.querySelector('#financialMappingClose').addEventListener('click', () => { panel.hidden = true; });
+            panel.querySelector('#financialMappingSearch').addEventListener('input', event => renderMappings(event.currentTarget.value));
+            panel.querySelector('#financialMappingRows').addEventListener('click', async event => {
+                const button = event.target.closest('.financial-mapping-save');
+                if (!button) return;
+                const row = button.closest('tr');
+                button.disabled = true;
+                const status = panel.querySelector('#financialMappingStatus');
+                status.textContent = `Saving ${row.dataset.accountCode}…`;
+                try {
+                    const result = await fetch(`/api/financial-mappings/${encodeURIComponent(row.dataset.accountCode)}`, { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }, body: JSON.stringify({ rowId: row.querySelector('select').value }) });
+                    const response = await result.json();
+                    if (!result.ok) throw new Error(response.error || response.message || `Request failed: ${result.status}`);
+                    status.textContent = `Saved ${row.dataset.accountCode}. Refreshing statements…`;
+                    await financial(period, mode);
+                } catch (error) {
+                    status.textContent = `Save failed: ${error.message}`;
+                    button.disabled = false;
+                }
+            });
+        } catch (error) {
+            panel.hidden = false;
+            panel.innerHTML = `<p class="financial-mapping-error">Could not load account mappings: ${esc(error.message)}</p>`;
+        } finally {
+            toggle.disabled = false;
+        }
+    });
 }
 
 async function integration() {
