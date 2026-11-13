@@ -163,7 +163,9 @@ class FinancialStatementService
         if ($period < $start) return [];
         $end = $period;
         return DB::table('gl_entries')->where('source_type', 'd365')->whereBetween('period', [$start, $end])
-            ->selectRaw('period, main_account, costing_to, SUM(COALESCE(amount_reporting, amount, 0)) as amount, COUNT(*) as row_count')
+            // The reference financial engine reads only the reporting-currency
+            // amount. Falling back to transaction-currency `amount` mixes currencies.
+            ->selectRaw('period, main_account, costing_to, SUM(amount_reporting) as amount, COUNT(*) as row_count')
             ->groupBy('period', 'main_account', 'costing_to')->orderBy('period')->get()
             ->groupBy('period')->map(static function ($rows): array {
                 $accounts = [];
