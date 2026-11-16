@@ -26,6 +26,24 @@ class DashboardController extends Controller
         return response()->json(['success' => true, 'data' => $service->build($period, $mode)]);
     }
 
+    public function updateReportCostClosing(Request $request): JsonResponse
+    {
+        $payload = $request->validate([
+            'period' => ['required', 'date_format:Y-m'],
+            'closed' => ['required', 'boolean'],
+        ]);
+        $overrides = SystemConfig::get('report_cost_closing_overrides', []);
+        if (is_string($overrides)) $overrides = json_decode($overrides, true) ?? [];
+        if (!is_array($overrides)) $overrides = [];
+        $overrides[$payload['period']] = (bool) $payload['closed'];
+        SystemConfig::put('report_cost_closing_overrides', $overrides);
+
+        return response()->json(['success' => true, 'data' => [
+            'period' => $payload['period'],
+            'closed' => (bool) $payload['closed'],
+        ]]);
+    }
+
     public function financialStatements(Request $request, FinancialStatementService $service): JsonResponse
     {
         [$period, $mode] = $this->periodMode($request);

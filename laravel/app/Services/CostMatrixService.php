@@ -275,6 +275,12 @@ class CostMatrixService
         $referencePeriods = is_file($path)
             ? (json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR)['periods'] ?? [])
             : [];
+        $overrides = SystemConfig::get('report_cost_closing_overrides', []);
+        if (is_string($overrides)) $overrides = json_decode($overrides, true) ?? [];
+        if (!is_array($overrides)) $overrides = [];
+        foreach ($overrides as $period => $isClosed) {
+            $referencePeriods[(string) $period] = (bool) $isClosed;
+        }
         $configured = SystemConfig::query()->where('key', 'locked_periods')->first()?->value ?? [];
         if (is_string($configured)) $configured = json_decode($configured, true) ?? [];
         if (!is_array($configured)) $configured = [];

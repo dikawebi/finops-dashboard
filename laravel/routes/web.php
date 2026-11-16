@@ -27,6 +27,7 @@ Route::prefix('api')->group(function () {
     Route::post('/upload-gl', [OperationsController::class, 'uploadGl'])->middleware(['auth', EnsurePeriodOpen::class]);
     Route::delete('/gl-data', [OperationsController::class, 'deleteGl'])->middleware(['auth', EnsurePeriodOpen::class]);
     Route::get('/cost-matrix', [DashboardController::class, 'costMatrix']);
+    Route::put('/report-cost-closing', [DashboardController::class, 'updateReportCostClosing']);
     Route::get('/financial-statements', [DashboardController::class, 'financialStatements']);
     Route::get('/financial-mappings', [FinancialAccountMappingController::class, 'index']);
     Route::put('/financial-mappings/{accountCode}', [FinancialAccountMappingController::class, 'update']);
