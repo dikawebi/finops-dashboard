@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\MonthlyMetric;
 use App\Models\DailyProduction;
 use App\Models\CostVarianceRemark;
+use App\Models\DbCostSummary;
+use App\Models\DbCostRemark;
 use App\Models\GlEntry;
+use App\Models\SystemConfig;
 use App\Services\CostMatrixService;
 use App\Services\FinancialStatementService;
 use App\Services\InventoryValuationService;
@@ -128,9 +131,52 @@ class DashboardController extends Controller
         ]]);
     }
 
-    public function dbCostSummary(Request $request): JsonResponse
+    public function dbCostSummary(Request $request, CostMatrixService $costs): JsonResponse
     {
         [$period, $mode] = $this->periodMode($request);
+        $sync = SystemConfig::get('sheetsSync', []);
+        $syncedPeriods = $sync['db_cost_periods'] ?? [];
+        if (in_array($period, $syncedPeriods, true)) {
+            $periods = $mode === 'ytd'
+                ? array_map(static fn (int $month): string => substr($period, 0, 4).'-'.str_pad((string) $month, 2, '0', STR_PAD_LEFT), range(1, (int) substr($period, 5, 2)))
+                : [$period];
+            $records = DbCostSummary::query()->whereIn('period', $periods)->get();
+            $groups = [];
+            foreach ($records as $record) {
+                $key = json_encode([$record->entity, $record->activity], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                if (!isset($groups[$key])) $groups[$key] = ['entity'=>$record->entity,'activity'=>$record->activity,'months'=>[]];
+                $groups[$key]['months'][$record->period] = (float) ($groups[$key]['months'][$record->period] ?? 0) + (float) $record->amount;
+            }
+            $glPeriods = GlEntry::query()->whereIn('period', $periods)->where('period', '>=', '2026-10')->distinct()->pluck('period')->all();
+            foreach ($glPeriods as $glPeriod) {
+                $grand = $costs->build($glPeriod, 'mtd')['grandTotal'];
+                foreach ([['Overhead BUA', (float) $grand['valMining'], false], ['OVH JKT & PC', (float) $grand['directGA'], false], ['Washplant', (float) $grand['valWP'], true], ['Loading BLC', (float) $grand['valPort'], true]] as [$activity, $amount, $add]) {
+                    foreach ($groups as &$group) {
+                        if ($group['entity'] !== 'BP' || $group['activity'] !== $activity) continue;
+                        $existing = (float) ($group['months'][$glPeriod] ?? 0);
+                        $group['months'][$glPeriod] = $add ? $existing + $amount : $amount;
+                        break;
+                    }
+                    unset($group);
+                }
+            }
+            $remarks = DbCostRemark::query()->where('period', $period)->get()->keyBy('entity_activity_key');
+            $remarkValues = [];
+            $rows = [];
+            foreach ($groups as $key => $group) {
+                $amount = array_sum(array_map('floatval', $group['months']));
+                $id = json_encode(['entity', $group['entity'], $group['activity']], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                $remark = $remarks->get($id)?->remark;
+                if ($remark !== null) $remarkValues[$id] = $remark;
+                $rows[] = ['id'=>$id,'entity'=>$group['entity'],'activity'=>$group['activity'],'component'=>1,'amount'=>$amount,'months'=>$group['months']];
+            }
+            $rowPeriodsWithGl = array_values($glPeriods);
+            return response()->json(['success'=>true,'data'=>[
+                'period'=>$period,'mode'=>$mode,'dataSource'=>'Google Sheets DB sync','rows'=>$rows,
+                'remarks'=>$remarkValues,'glOverheadPeriods'=>$rowPeriodsWithGl,'syncedPeriods'=>$syncedPeriods,
+            ]]);
+        }
+
         $path = base_path("../baseline/reference_dump/db-cost-summary_{$period}_{$mode}.json");
         if (!is_file($path)) {
             return response()->json(['success' => true, 'data' => ['period' => $period, 'mode' => $mode, 'dataSource' => 'baseline', 'rows' => [], 'remarks' => []]]);
@@ -168,8 +214,13 @@ class DashboardController extends Controller
     {
         $validated = $request->validate([
             'id' => ['required', 'string', 'max:500'],
+            'period' => ['required', 'date_format:Y-m'],
             'remark' => ['required', 'string', 'max:2000'],
         ]);
+        DbCostRemark::updateOrCreate(
+            ['period'=>$validated['period'], 'entity_activity_key'=>$validated['id']],
+            ['remark'=>$validated['remark']]
+        );
         return response()->json(['success' => true, 'data' => $validated]);
     }
 

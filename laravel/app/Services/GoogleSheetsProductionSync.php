@@ -11,27 +11,35 @@ class GoogleSheetsProductionSync
     public function sync(): array
     {
         $parsed = $this->readAndParse();
-        $rows = $parsed['rows']; $details = $parsed['details']; $monthlyMetrics = $parsed['monthlyMetrics']; $productionPeriods = $parsed['productionPeriods']; $inventoryMovements = $parsed['inventoryMovements'];
-        DB::transaction(function () use ($rows, $details, $monthlyMetrics, $productionPeriods, $inventoryMovements): void {
+        $rows = $parsed['rows']; $details = $parsed['details']; $monthlyMetrics = $parsed['monthlyMetrics']; $productionPeriods = $parsed['productionPeriods']; $inventoryMovements = $parsed['inventoryMovements']; $dbCostSummary = $parsed['dbCostSummary'];
+        DB::transaction(function () use ($rows, $details, $monthlyMetrics, $productionPeriods, $inventoryMovements, $dbCostSummary): void {
             $dates = array_column($rows, 'production_date');
             DB::table('production_activity_details')->where('source', 'google_sheets')->whereIn('production_date', $dates)->delete();
             DB::table('inventory_movements')->where('source', 'google_sheets')->whereIn('period', array_keys($productionPeriods))->delete();
             DB::table('daily_production')->upsert($rows, ['production_date'], ['period','coal_getting_mt','routes','source','updated_at']);
             DB::table('production_activity_details')->insert($details);
             if ($inventoryMovements) DB::table('inventory_movements')->insert($inventoryMovements);
-            $metricLabels = ['coalGetting'=>'Coal Getting','haulingBuaWp'=>'Hauling BUA to Washing Plant','haulingBuaPort'=>'Hauling BUA to Port','haulingWpPort'=>'Hauling Washing Plant to Port','loadingBuaWp'=>'Loading BUA to Washing Plant','loadingBuaPort'=>'Loading BUA to Port','loadingWpPort'=>'Loading Washing Plant to Port','washFeed'=>'Washing Plant Feed','portLoading'=>'Barging / Port Loading'];
+            $metricLabels = ['coalGetting'=>'Coal Getting','haulingBuaWp'=>'Hauling BUA to Washing Plant','haulingBuaPort'=>'Hauling BUA to Port','haulingWpPort'=>'Hauling Washing Plant to Port','loadingBuaWp'=>'Loading BUA to Washing Plant','loadingBuaPort'=>'Loading BUA to Port','loadingWpPort'=>'Loading Washing Plant to Port','washFeed'=>'Washing Plant Feed','washReject'=>'Washing Plant Reject','washCoal'=>'Washed Coal','portLoading'=>'Barging / Port Loading','portToIsp'=>'Port to ISP','ispToTaboneo'=>'ISP to Taboneo','portToTaboneo'=>'Port to Taboneo','wasteRemoval'=>'Waste Removal','topsoil'=>'Topsoil','mud'=>'Mud','blasting'=>'Blasting','freedig'=>'Freedig','miningOperationCost'=>'Mining Operation Cost'];
+            $metricUnits = ['wasteRemoval'=>'Bcm','topsoil'=>'Bcm','mud'=>'Bcm','blasting'=>'Bcm','freedig'=>'Bcm','miningOperationCost'=>'USD'];
             foreach ($monthlyMetrics as $period => $metrics) foreach ($metricLabels as $key => $label) {
-                DB::table('monthly_metrics')->updateOrInsert(['metric_key'=>$key,'period'=>$period], ['label'=>$label,'unit'=>'MT','value'=>$metrics[$key] ?? null,'updated_at'=>now(),'created_at'=>now()]);
+                DB::table('monthly_metrics')->updateOrInsert(['metric_key'=>$key,'period'=>$period], ['label'=>$label,'unit'=>$metricUnits[$key] ?? 'MT','value'=>$metrics[$key] ?? null,'updated_at'=>now(),'created_at'=>now()]);
             }
-            DB::table('system_configs')->updateOrInsert(['key'=>'sheetsSync'], ['value'=>json_encode(['last_synced_at'=>now()->toIso8601String(),'rows'=>count($rows),'details'=>count($details)]),'updated_at'=>now(),'created_at'=>now()]);
+            $summaryPeriods = array_keys($monthlyMetrics);
+            DB::table('db_cost_summary')->whereIn('period', $summaryPeriods)->delete();
+            $summaryRows = [];
+            foreach ($dbCostSummary as $period => $items) foreach ($items as $item) {
+                $summaryRows[] = ['period'=>$period,'entity'=>$item['entity'],'activity'=>$item['activity'],'amount'=>$item['amount'],'currency'=>'USD','created_at'=>now(),'updated_at'=>now()];
+            }
+            foreach (array_chunk($summaryRows, 500) as $chunk) DB::table('db_cost_summary')->insert($chunk);
+            DB::table('system_configs')->updateOrInsert(['key'=>'sheetsSync'], ['value'=>json_encode(['last_synced_at'=>now()->toIso8601String(),'rows'=>count($rows),'details'=>count($details),'db_cost_periods'=>$summaryPeriods]),'updated_at'=>now(),'created_at'=>now()]);
         });
-        return ['rows'=>count($rows),'details'=>count($details),'inventory_movements'=>count($inventoryMovements),'metrics'=>count($monthlyMetrics, COUNT_RECURSIVE) - count($monthlyMetrics),'periods'=>array_keys($productionPeriods),'synced_at'=>now()->toIso8601String()];
+        return ['rows'=>count($rows),'details'=>count($details),'inventory_movements'=>count($inventoryMovements),'metrics'=>count($monthlyMetrics, COUNT_RECURSIVE) - count($monthlyMetrics),'db_cost_rows'=>array_sum(array_map('count', $dbCostSummary)),'periods'=>array_keys($productionPeriods),'synced_at'=>now()->toIso8601String()];
     }
 
     public function preview(): array
     {
         $data = $this->readAndParse();
-        return ['rows'=>count($data['rows']),'details'=>count($data['details']),'metric_periods'=>array_keys($data['monthlyMetrics']),'periods'=>array_keys($data['productionPeriods']),'monthly_metrics'=>$data['monthlyMetrics'],'samples'=>array_slice($data['rows'],0,5),'sample_details'=>array_slice($data['details'],0,12)];
+        return ['rows'=>count($data['rows']),'details'=>count($data['details']),'metric_periods'=>array_keys($data['monthlyMetrics']),'periods'=>array_keys($data['productionPeriods']),'monthly_metrics'=>$data['monthlyMetrics'],'db_cost_rows'=>array_sum(array_map('count', $data['dbCostSummary'])),'samples'=>array_slice($data['rows'],0,5),'sample_details'=>array_slice($data['details'],0,12)];
     }
 
     private function readAndParse(): array
@@ -96,7 +104,9 @@ class GoogleSheetsProductionSync
         $dbUrl = 'https://sheets.googleapis.com/v4/spreadsheets/'.rawurlencode($spreadsheet).'/values/'.rawurlencode($dbRange);
         $dbResponse = Http::withToken($token)->timeout(60)->get($dbUrl, ['valueRenderOption'=>'UNFORMATTED_VALUE']);
         if ($dbResponse->failed()) throw new RuntimeException('Google Sheets DB tab gagal dibaca: HTTP '.$dbResponse->status().' '.$dbResponse->json('error.message', ''));
-        $monthlyMetrics = $this->parseDbMetrics($dbResponse->json('values', []), $productionPeriods);
+        $dbRows = $dbResponse->json('values', []);
+        $monthlyMetrics = $this->parseDbMetrics($dbRows, $productionPeriods);
+        $dbCostSummary = $this->parseDbCostSummary($dbRows, array_keys($monthlyMetrics));
         $appendMovement = function (string $period, string $location, string $type, float $qty, array $meta = []) use (&$inventoryMovements): void {
             if (abs($qty) < 0.000001) return;
             $inventoryMovements[] = ['period'=>$period,'location'=>$location,'movement_type'=>$type,'source'=>'google_sheets','qty_mt'=>$qty,'amount_usd'=>0,'metadata'=>json_encode($meta),'created_at'=>now(),'updated_at'=>now()];
@@ -137,7 +147,7 @@ class GoogleSheetsProductionSync
             $barging = $sheet['bargingMT'] ?? null;
             if ($barging !== null && $barging > 0) $appendMovement($period, 'port', 'barging', -$barging, ['source'=>'Google Sheets Coal Wash / Barging']);
         }
-        return compact('rows','details','monthlyMetrics','productionPeriods','inventoryMovements');
+        return compact('rows','details','monthlyMetrics','dbCostSummary','productionPeriods','inventoryMovements');
     }
 
     /** Mirrors the reference parser: month-end recap values replace daily route subtotals. */
@@ -183,7 +193,17 @@ class GoogleSheetsProductionSync
             'loadingBuaPort'=>['Total Loading Bua Stock to Port','MT'],
             'loadingWpPort'=>['Total Loading Wash Plant to Port','MT'],
             'washFeed'=>['Feed','MT'],
+            'washReject'=>['Reject','MT'],
+            'washCoal'=>['Wash Coal','MT'],
             'portLoading'=>['Coal Loading Port (BLC)','MT'],
+            'portToIsp'=>['Transhipment Port to ISP','MT'],
+            'ispToTaboneo'=>['Transhipment ISP to Taboneo','MT'],
+            'portToTaboneo'=>['Transhipment Port to Taboneo','MT'],
+            'wasteRemoval'=>['Total Waste removal','Bcm'],
+            'topsoil'=>['Topsoil','Bcm'],
+            'mud'=>['Mud','Bcm'],
+            'blasting'=>['Blasting','Bcm'],
+            'freedig'=>['Freedig','Bcm'],
         ];
         $metrics = [];
         foreach ($definitions as $key => [$label, $unit]) {
@@ -195,12 +215,48 @@ class GoogleSheetsProductionSync
             $metrics[$key] = $matches[0];
         }
 
+        $miningCostRows = array_values(array_filter($rows, static fn (array $row): bool =>
+            in_array(strtolower(trim((string) ($row[2] ?? ''))), ['total mining operation cost', 'mining operation cost'], true)
+        ));
+
         $year = $productionPeriods ? (int) substr(max(array_keys($productionPeriods)), 0, 4) : (int) date('Y');
         $result = [];
         for ($month = 1; $month <= 12; $month++) {
             $period = sprintf('%04d-%02d', $year, $month);
-            foreach ($definitions as $key => $_definition) $result[$period][$key] = $this->number($metrics[$key][7 + $month] ?? null);
+            foreach ($definitions as $key => $_definition) {
+                $value = $this->number($metrics[$key][7 + $month] ?? null);
+                $result[$period][$key] = $key === 'washReject' && $value !== null ? abs($value) : $value;
+            }
+            $result[$period]['miningOperationCost'] = $this->number($miningCostRows[0][7 + $month] ?? null);
         }
+        return $result;
+    }
+
+    private function parseDbCostSummary(array $rows, array $periods): array
+    {
+        $summaryStart = null;
+        foreach ($rows as $index => $row) {
+            if (strtolower(trim((string) ($row[1] ?? ''))) === 'summary') { $summaryStart = $index + 1; break; }
+        }
+        if ($summaryStart === null) throw new RuntimeException('Google Sheets DB tab tidak memiliki bagian Summary.');
+
+        $result = [];
+        foreach (array_slice($rows, $summaryStart) as $row) {
+            $activity = trim((string) ($row[2] ?? ''));
+            $currency = strtoupper(trim((string) ($row[3] ?? '')));
+            $entity = trim((string) ($row[4] ?? ''));
+            if ($activity === '' || $currency !== 'USD' || $entity === '') break;
+            foreach ($periods as $period) {
+                $month = (int) substr($period, 5, 2);
+                $amount = $this->number($row[7 + $month] ?? null);
+                if ($amount === null) continue;
+                $identity = json_encode([$entity, $activity], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                if (!isset($result[$period][$identity])) $result[$period][$identity] = ['entity'=>$entity,'activity'=>$activity,'amount'=>0.0];
+                $result[$period][$identity]['amount'] += $amount;
+            }
+        }
+        foreach ($result as &$items) $items = array_values($items);
+        unset($items);
         return $result;
     }
 
