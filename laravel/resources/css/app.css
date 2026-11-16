@@ -116,3 +116,5 @@ body{min-height:100vh}.app-shell{display:flex;min-height:100vh;background:var(--
 .cost-report-table thead tr:nth-child(2)>th{position:static!important;left:auto!important;z-index:auto!important;background:#f5f8fc!important}.cost-report-table thead tr:first-child>th:nth-child(1){position:sticky;left:0;z-index:9;background:#f5f8fc!important}.cost-report-table thead tr:first-child>th:nth-child(2){position:sticky;left:112px;z-index:9;background:#f5f8fc!important}.cost-report-table tbody>tr>td:nth-child(1){position:sticky;left:0;z-index:3;background:#fff!important}.cost-report-table tbody>tr>td:nth-child(2){position:sticky;left:112px;z-index:3;background:#fff!important}
 
 .cost-report-table thead tr:nth-child(2)>th:nth-child(-n+2){width:auto!important;min-width:0!important;max-width:none!important;background:#ff7300!important;color:#fff!important}.cost-report-table thead tr:first-child>th:nth-child(-n+2){background:#1e293b!important;color:#fff!important}
+
+.cost-report-table thead tr:nth-child(2)>th{background:#ff7300!important;color:#fff!important}
