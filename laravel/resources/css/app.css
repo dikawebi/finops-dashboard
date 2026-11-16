@@ -118,3 +118,5 @@ body{min-height:100vh}.app-shell{display:flex;min-height:100vh;background:var(--
 .cost-report-table thead tr:nth-child(2)>th:nth-child(-n+2){width:auto!important;min-width:0!important;max-width:none!important;background:#ff7300!important;color:#fff!important}.cost-report-table thead tr:first-child>th:nth-child(-n+2){background:#1e293b!important;color:#fff!important}
 
 .cost-report-table thead tr:nth-child(2)>th{background:#ff7300!important;color:#fff!important}
+
+.cost-report-table tfoot th,.cost-report-table tfoot td{background:#1e293b!important;color:#fff!important;border:1px solid #526176!important;font-weight:800}.cost-report-table tfoot .cost-group-spacer{background:#f4f7fb!important;border:0!important}
