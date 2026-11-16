@@ -75,17 +75,34 @@ class DashboardController extends Controller
                 return response()->json(['success' => true, 'data' => $data]);
             }
         }
-        $daily = DailyProduction::period($period)->orderBy('production_date')->get();
-        $monthlyRows = MonthlyMetric::query()->where('metric_key', 'coalGetting')->where('period', '<=', $period)->where('period', '>=', $yearStart)->get();
+        $daily = DailyProduction::period($period)->whereNotNull('coal_getting_mt')->where('coal_getting_mt', '>', 0)->orderBy('production_date')->get();
         $metrics = MonthlyMetric::period($period)->get()->keyBy('metric_key');
-        if ($mode === 'ytd' && $syncedInYtd && $monthlyRows->isNotEmpty()) {
-            $metric = $metrics->get('coalGetting');
-            $ytdValue = $monthlyRows->sum(fn ($row): float => (float) $row->value);
-            if ($metric) $metric->value = (string) $ytdValue;
-            else $metrics->put('coalGetting', (object) ['metric_key'=>'coalGetting','label'=>'Coal Getting','unit'=>'MT','value'=>(string)$ytdValue]);
+        if ($mode === 'ytd') {
+            $metricRows = MonthlyMetric::query()->whereBetween('period', [$yearStart, $period])->orderBy('period')->get()->groupBy('metric_key');
+            $metrics = $metricRows->map(function ($rows, string $key): object {
+                $available = $rows->filter(fn ($row): bool => $row->value !== null);
+                $missing = $rows->filter(fn ($row): bool => $row->value === null)->pluck('period')->values()->all();
+                $sample = $rows->first();
+                return (object) [
+                    'metric_key'=>$key,'label'=>$sample->label ?? $key,'unit'=>$sample->unit,
+                    'value'=>$available->isEmpty() ? null : (string) $available->sum(fn ($row): float => (float) $row->value),
+                    'missingPeriods'=>$missing,
+                ];
+            });
         }
+        $fromDate = $mode === 'ytd' ? $yearStart.'-01' : $period.'-01';
+        $toDate = \Carbon\Carbon::createFromFormat('Y-m', $period)->endOfMonth()->toDateString();
+        $activityFlows = \Illuminate\Support\Facades\DB::table('production_activity_details')
+            ->select('activity','location','activity_type','route','contractor','equipment','metric','unit')
+            ->selectRaw('SUM(value) as value')
+            ->whereBetween('production_date', [$fromDate, $toDate])
+            ->whereNotNull('value')
+            ->groupBy('activity','location','activity_type','route','contractor','equipment','metric','unit')
+            ->orderBy('activity')->orderBy('location')->orderBy('route')->get();
         return response()->json(['success' => true, 'data' => [
             'dbMetrics' => $metrics,
+            'activityFlows' => $activityFlows,
+            'periodRange' => ['from'=>$fromDate, 'to'=>$toDate],
             'sheetLastSyncedAt' => \App\Models\SystemConfig::get('sheetsSync', [])['last_synced_at'] ?? null,
             'dataSource' => ($mode === 'ytd' ? $syncedInYtd : $syncedInPeriod) ? 'Google Sheets sync' : 'database',
             'dailyTrends' => $daily->map(fn (DailyProduction $row): array => [

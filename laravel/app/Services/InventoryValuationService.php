@@ -61,7 +61,9 @@ class InventoryValuationService
         $glRows = GlEntry::where('period', '2026-10')->where('source_type', 'd365')->count();
         if ($movementRows->isEmpty() || $productionRows === 0 || $glRows === 0) return null;
 
-        $cost = app(CostMatrixService::class)->build('2026-10', 'mtd')['grandTotal'];
+        // Inventory costing in the reference uses only synced GL rows; monthly
+        // DB-derived auto accruals belong in Report Cost/Financial Statements.
+        $cost = app(CostMatrixService::class)->build('2026-10', 'mtd', false)['grandTotal'];
         $costs = [
             'bua' => (float) ($cost['costMining'] ?? 0),
             'nonWash' => (float) ($cost['costHaulingBUAToWP'] ?? 0),

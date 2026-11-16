@@ -8,6 +8,8 @@ use App\Models\CostAccount;
 use App\Models\GlEntry;
 use App\Models\SystemConfig;
 use App\Services\D365\D365AllocationService;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 /** Laravel port of the reference project's computeCostMatrix formula. */
 class CostMatrixService
@@ -21,26 +23,44 @@ class CostMatrixService
 
     public function __construct(private readonly D365AllocationService $allocation) {}
 
-    public function build(string $period, string $mode = 'mtd'): array
+    public function build(string $period, string $mode = 'mtd', bool $includeAccruals = true): array
+    {
+        $periods = $this->periods($period, $mode);
+        $fingerprint = $this->sourceFingerprint($periods);
+        $key = 'cost-matrix:'.hash('sha256', $period.'|'.$mode.'|'.(int) $includeAccruals.'|'.$fingerprint);
+        return Cache::remember($key, now()->addSeconds(60), fn (): array => $this->compute($period, $mode, $includeAccruals));
+    }
+
+    private function compute(string $period, string $mode, bool $includeAccruals): array
     {
         @ini_set('memory_limit', '512M');
         @set_time_limit(120);
         $periods = $this->periods($period, $mode);
         $rows = $this->emptyRows();
-        $glEntries = GlEntry::whereIn('period', $periods)->get();
+        $glEntries = \Illuminate\Support\Facades\DB::table('gl_entries')->whereIn('period', $periods)->get([
+            'period','main_account','account_name','source_type','amount_reporting','valuation_to','costing_to',
+            'activity','location','department','group_activity',
+        ]);
         // As in the reference formula, any imported GL row marks that month as
         // GL-backed and replaces that month's workbook cost history.
         $monthsWithGl = array_fill_keys($glEntries->pluck('period')->filter()->unique()->all(), true);
         $history = $this->historicalEntries($periods, $monthsWithGl);
         $closedPeriods = array_fill_keys($this->closedPeriods(), true);
-        $accruals = array_values(array_filter($this->accrualEntries($periods), static fn (array $entry): bool => !isset($closedPeriods[(string) ($entry['period'] ?? '')])));
+        $accruals = $includeAccruals
+            ? array_values(array_filter($this->accrualEntries($periods), static fn (array $entry): bool => !isset($closedPeriods[(string) ($entry['period'] ?? '')])))
+            : [];
 
+        $mappingCache = [];
         foreach ($glEntries as $entry) {
             $code = trim((string) $entry->main_account);
             if (!preg_match('/^[5-9]/', $code)) continue;
             $this->ensureRow($rows, $code, (string) ($entry->account_name ?? ''));
             if ($entry->source_type === 'd365') {
-                $mapping = $this->allocation->resolveGlEntry($entry);
+                $mappingKey = implode('|', array_map('strval', [
+                    $entry->main_account, $entry->activity, $entry->location,
+                    $entry->department, $entry->group_activity,
+                ]));
+                $mapping = $mappingCache[$mappingKey] ??= $this->allocation->resolveGlEntry($entry);
                 $entry->valuation_to = $mapping['valuation_to'];
                 $entry->costing_to = $mapping['costing_to'];
             }
@@ -133,7 +153,7 @@ class CostMatrixService
         foreach (self::FIELDS as $field) $rows[$code][$field] = '0';
     }
 
-    private function allocate(array &$row, GlEntry $entry, string $amount): void
+    private function allocate(array &$row, object $entry, string $amount): void
     {
         $head = substr((string) $entry->main_account, 0, 1);
         $valuation = strtolower(trim((string) $entry->valuation_to));
@@ -193,6 +213,7 @@ class CostMatrixService
 
     private function historicalEntries(array $periods, array $monthsWithGl): array
     {
+        if (!$periods || count(array_filter($periods, static fn (string $month): bool => $month < '2026-10')) === 0) return [];
         $path = base_path('../data_snapshot/extracted/cost_report_history.json');
         if (!is_file($path)) return [];
         $source = json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
@@ -220,7 +241,46 @@ class CostMatrixService
         $historyFile = base_path('../data_snapshot/extracted/automatic_accrual_history.json');
         $historyData = is_file($historyFile) ? (json_decode(file_get_contents($historyFile), true, 512, JSON_THROW_ON_ERROR)['periods'] ?? []) : [];
         $dbHistory = AccrualHistory::whereIn('period', $periods)->get()->keyBy('period');
+        $system = SystemConfig::get('system', []);
+        $activePeriod = is_array($system) && !empty($system['periodYear']) && !empty($system['periodMonth'])
+            ? sprintf('%04d-%02d', (int) $system['periodYear'], (int) $system['periodMonth'])
+            : null;
+        $liveAccruals = $activePeriod !== null && in_array($activePeriod, $periods, true)
+            ? \Illuminate\Support\Facades\DB::table('db_accrual_items')->where('period', $activePeriod)->get()
+            : collect();
+        foreach ($liveAccruals as $row) $entries[] = [
+            'period'=>$row->period,'account_code'=>$row->account_code,'name'=>$row->name,
+            'category'=>$row->category,'amount_usd'=>$row->amount_usd,'entity'=>$row->entity,
+        ];
+        $hasLiveAccruals = $liveAccruals->isNotEmpty();
+        if ($hasLiveAccruals) {
+            $metrics = \Illuminate\Support\Facades\DB::table('monthly_metrics')->where('period', $activePeriod)->pluck('value', 'metric_key');
+            $portQty = $metrics->get('portLoading');
+            if ($portQty !== null && (float) $portQty >= 0) $entries[] = [
+                'period'=>$activePeriod,'account_code'=>'5000104','name'=>'Barge Loading Conveyor Rent',
+                'category'=>'BP PORT','amount_usd'=>max((float) $portQty * 1.332, 15000),
+            ];
+            $feedQty = $metrics->get('washFeed');
+            if ($feedQty !== null && (float) $feedQty > 0) $entries[] = [
+                'period'=>$activePeriod,'account_code'=>'5000105','name'=>'Wash Plant Rent',
+                'category'=>'Washing Plant','amount_usd'=>(float) $feedQty * 13.487,
+            ];
+            foreach ([
+                ['haulingBuaPort','Coal Hauling BUA to Port'],
+                ['haulingWpPort','Coal Hauling WP to Port'],
+            ] as [$metricKey, $category]) {
+                $qty = $metrics->get($metricKey);
+                if ($qty !== null && (float) $qty > 0) $entries[] = [
+                    'period'=>$activePeriod,'account_code'=>'5000109','name'=>'Land And Road Rent',
+                    'category'=>$category,'amount_usd'=>(float) $qty * 0.7,
+                ];
+            }
+        }
+        if ($hasLiveAccruals && count(array_filter($periods, static fn (string $month): bool => $month !== $activePeriod)) === 0) return $entries;
         foreach ($periods as $month) {
+            // The selected, synced month is recalculated from the current Sheets DB rows.
+            // Earlier months continue to use their approved automatic accrual snapshot.
+            if ($month === $activePeriod && $hasLiveAccruals) continue;
             $snapshot = $dbHistory->get($month)?->payload ?? ($historyData[$month] ?? []);
             foreach ((array) $snapshot as $row) $entries[] = $row + [
                 'period' => $month, 'account_code' => $row['code'] ?? null, 'amount_usd' => $row['amount'] ?? 0,
@@ -229,12 +289,71 @@ class CostMatrixService
         return $entries;
     }
 
+    public function financialAdjustmentRows(array $periods): array
+    {
+        $closed = array_fill_keys($this->closedPeriods(), true);
+        $rows = [];
+        foreach ($this->accrualEntries($periods) as $entry) {
+            $month = (string) ($entry['period'] ?? '');
+            $code = trim((string) ($entry['account_code'] ?? $entry['code'] ?? ''));
+            $amount = (float) ($entry['amount_usd'] ?? $entry['amount'] ?? 0);
+            if ($month === '' || $code === '' || $amount == 0 || isset($closed[$month])) continue;
+            $rows[] = [
+                'period'=>$month,'main_account'=>$code,'account_name'=>$entry['name'] ?? $entry['description'] ?? '',
+                'amount_reporting'=>$amount,'costing_to'=>$entry['category'] ?? $entry['costing_to'] ?? null,
+                'is_accrual_liability'=>false,
+            ];
+            $rows[] = [
+                'period'=>$month,'main_account'=>'1530003','account_name'=>'Accrued Expense',
+                'amount_reporting'=>-$amount,'costing_to'=>null,'is_accrual_liability'=>true,
+            ];
+        }
+        return $rows;
+    }
+
     private function sourceFilePeriods(string $relativePath, array $periods, array $monthsWithGl): array
     {
+        $eligible = array_values(array_filter($periods, static fn (string $month): bool => $month < '2026-10' && !isset($monthsWithGl[$month])));
+        if (!$eligible) return [];
         $path = base_path($relativePath);
         if (!is_file($path)) return [];
         $source = json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR)['periods'] ?? [];
-        return array_values(array_filter($periods, static fn (string $month): bool => !isset($monthsWithGl[$month]) && !empty($source[$month])));
+        return array_values(array_filter($eligible, static fn (string $month): bool => !empty($source[$month])));
+    }
+
+    private function sourceFingerprint(array $periods): string
+    {
+        $stamp = static function (string $table, array $wherePeriods = []) {
+            $query = DB::table($table);
+            if ($wherePeriods) $query->whereIn('period', $wherePeriods);
+            return $query->selectRaw('COUNT(*) as row_count, MAX(updated_at) as latest_update')->first();
+        };
+        $files = [
+            '../data_snapshot/extracted/cost_report_history.json',
+            '../data_snapshot/extracted/automatic_accrual_history.json',
+            '../data_snapshot/extracted/mining_capitalization_history.json',
+            '../data_snapshot/extracted/cost_report_adjustments.json',
+            '../data_snapshot/extracted/report_cost_closing.json',
+        ];
+        $fileStamps = [];
+        foreach ($files as $file) {
+            $path = base_path($file);
+            $fileStamps[$file] = is_file($path) ? filemtime($path) : null;
+        }
+        $payload = [
+            'periods'=>$periods,
+            'gl'=>$stamp('gl_entries', $periods),
+            'accounts'=>$stamp('cost_accounts'),
+            'allocations'=>$stamp('d365_allocation_mappings'),
+            'manual_accruals'=>$stamp('accruals', $periods),
+            'accrual_history'=>$stamp('accrual_history', $periods),
+            'sheet_accruals'=>$stamp('db_accrual_items', $periods),
+            'sheets_sync'=>SystemConfig::get('sheetsSync', []),
+            'closing_overrides'=>SystemConfig::get('report_cost_closing_overrides', []),
+            'locked_periods'=>SystemConfig::get('locked_periods', []),
+            'files'=>$fileStamps,
+        ];
+        return hash('sha256', json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_PARTIAL_OUTPUT_ON_ERROR));
     }
 
     private function haulingRoute(string $costing): ?string

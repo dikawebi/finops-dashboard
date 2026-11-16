@@ -11,8 +11,8 @@ class GoogleSheetsProductionSync
     public function sync(): array
     {
         $parsed = $this->readAndParse();
-        $rows = $parsed['rows']; $details = $parsed['details']; $monthlyMetrics = $parsed['monthlyMetrics']; $productionPeriods = $parsed['productionPeriods']; $inventoryMovements = $parsed['inventoryMovements']; $dbCostSummary = $parsed['dbCostSummary'];
-        DB::transaction(function () use ($rows, $details, $monthlyMetrics, $productionPeriods, $inventoryMovements, $dbCostSummary): void {
+        $rows = $parsed['rows']; $details = $parsed['details']; $monthlyMetrics = $parsed['monthlyMetrics']; $productionPeriods = $parsed['productionPeriods']; $inventoryMovements = $parsed['inventoryMovements']; $dbCostSummary = $parsed['dbCostSummary']; $dbAccrualItems = $parsed['dbAccrualItems'];
+        DB::transaction(function () use ($rows, $details, $monthlyMetrics, $productionPeriods, $inventoryMovements, $dbCostSummary, $dbAccrualItems): void {
             $dates = array_column($rows, 'production_date');
             DB::table('production_activity_details')->where('source', 'google_sheets')->whereIn('production_date', $dates)->delete();
             DB::table('inventory_movements')->where('source', 'google_sheets')->whereIn('period', array_keys($productionPeriods))->delete();
@@ -31,15 +31,18 @@ class GoogleSheetsProductionSync
                 $summaryRows[] = ['period'=>$period,'entity'=>$item['entity'],'activity'=>$item['activity'],'amount'=>$item['amount'],'currency'=>'USD','created_at'=>now(),'updated_at'=>now()];
             }
             foreach (array_chunk($summaryRows, 500) as $chunk) DB::table('db_cost_summary')->insert($chunk);
-            DB::table('system_configs')->updateOrInsert(['key'=>'sheetsSync'], ['value'=>json_encode(['last_synced_at'=>now()->toIso8601String(),'rows'=>count($rows),'details'=>count($details),'db_cost_periods'=>$summaryPeriods]),'updated_at'=>now(),'created_at'=>now()]);
+            $accrualPeriods = array_values(array_unique(array_column($dbAccrualItems, 'period')));
+            DB::table('db_accrual_items')->whereIn('period', $summaryPeriods)->delete();
+            foreach (array_chunk($dbAccrualItems, 500) as $chunk) DB::table('db_accrual_items')->insert($chunk);
+            DB::table('system_configs')->updateOrInsert(['key'=>'sheetsSync'], ['value'=>json_encode(['last_synced_at'=>now()->toIso8601String(),'rows'=>count($rows),'details'=>count($details),'db_cost_periods'=>$summaryPeriods,'db_accrual_periods'=>$accrualPeriods,'db_accrual_rows'=>count($dbAccrualItems)]),'updated_at'=>now(),'created_at'=>now()]);
         });
-        return ['rows'=>count($rows),'details'=>count($details),'inventory_movements'=>count($inventoryMovements),'metrics'=>count($monthlyMetrics, COUNT_RECURSIVE) - count($monthlyMetrics),'db_cost_rows'=>array_sum(array_map('count', $dbCostSummary)),'periods'=>array_keys($productionPeriods),'synced_at'=>now()->toIso8601String()];
+        return ['rows'=>count($rows),'details'=>count($details),'inventory_movements'=>count($inventoryMovements),'metrics'=>count($monthlyMetrics, COUNT_RECURSIVE) - count($monthlyMetrics),'db_cost_rows'=>array_sum(array_map('count', $dbCostSummary)),'db_accrual_rows'=>count($dbAccrualItems),'periods'=>array_keys($productionPeriods),'synced_at'=>now()->toIso8601String()];
     }
 
     public function preview(): array
     {
         $data = $this->readAndParse();
-        return ['rows'=>count($data['rows']),'details'=>count($data['details']),'metric_periods'=>array_keys($data['monthlyMetrics']),'periods'=>array_keys($data['productionPeriods']),'monthly_metrics'=>$data['monthlyMetrics'],'db_cost_rows'=>array_sum(array_map('count', $data['dbCostSummary'])),'samples'=>array_slice($data['rows'],0,5),'sample_details'=>array_slice($data['details'],0,12)];
+        return ['rows'=>count($data['rows']),'details'=>count($data['details']),'metric_periods'=>array_keys($data['monthlyMetrics']),'periods'=>array_keys($data['productionPeriods']),'monthly_metrics'=>$data['monthlyMetrics'],'db_cost_rows'=>array_sum(array_map('count', $data['dbCostSummary'])),'db_accrual_rows'=>count($data['dbAccrualItems']),'sample_accruals'=>array_slice($data['dbAccrualItems'],0,8),'samples'=>array_slice($data['rows'],0,5),'sample_details'=>array_slice($data['details'],0,12)];
     }
 
     private function readAndParse(): array
@@ -107,6 +110,7 @@ class GoogleSheetsProductionSync
         $dbRows = $dbResponse->json('values', []);
         $monthlyMetrics = $this->parseDbMetrics($dbRows, $productionPeriods);
         $dbCostSummary = $this->parseDbCostSummary($dbRows, array_keys($monthlyMetrics));
+        $dbAccrualItems = $this->parseDbAccrualItems($dbRows, array_keys($monthlyMetrics), $monthlyMetrics);
         $appendMovement = function (string $period, string $location, string $type, float $qty, array $meta = []) use (&$inventoryMovements): void {
             if (abs($qty) < 0.000001) return;
             $inventoryMovements[] = ['period'=>$period,'location'=>$location,'movement_type'=>$type,'source'=>'google_sheets','qty_mt'=>$qty,'amount_usd'=>0,'metadata'=>json_encode($meta),'created_at'=>now(),'updated_at'=>now()];
@@ -147,7 +151,7 @@ class GoogleSheetsProductionSync
             $barging = $sheet['bargingMT'] ?? null;
             if ($barging !== null && $barging > 0) $appendMovement($period, 'port', 'barging', -$barging, ['source'=>'Google Sheets Coal Wash / Barging']);
         }
-        return compact('rows','details','monthlyMetrics','dbCostSummary','productionPeriods','inventoryMovements');
+        return compact('rows','details','monthlyMetrics','dbCostSummary','dbAccrualItems','productionPeriods','inventoryMovements');
     }
 
     /** Mirrors the reference parser: month-end recap values replace daily route subtotals. */
@@ -258,6 +262,98 @@ class GoogleSheetsProductionSync
         foreach ($result as &$items) $items = array_values($items);
         unset($items);
         return $result;
+    }
+
+    /** Parse the DB sheet's Mining Operation Cost section into report accrual rows. */
+    private function parseDbAccrualItems(array $rows, array $periods, array $monthlyMetrics): array
+    {
+        $accountMap = [
+            '5000404'=>['name'=>'OB Removal','pattern'=>'/^(OB Removal|OB Overdistance|Topsoil|Mud)/i','qtyLabel'=>'Total Waste removal','unit'=>'Bcm'],
+            '5000405'=>['name'=>'Coal Getting','pattern'=>'/^Coal Getting/i','qtyLabel'=>'Coal Getting','unit'=>'MT'],
+            '5000406'=>['name'=>'Coal Hauling pit to BUA/stockpile','pattern'=>'/^Coal Hauling Overdistance/i','qtyLabel'=>'Coal Getting','unit'=>'MT'],
+            '5000407'=>['name'=>'Coal Hauling BUA to WP','pattern'=>'/^Coal Hauling ROM BUA to WP/i','qtyLabel'=>'Coal Hauling BUA To Wash Plant','unit'=>'MT'],
+            '5000408'=>['name'=>'Coal Hauling WP to Port','pattern'=>'/^Coal Hauling WP to Port/i','qtyLabel'=>'Coal hauling Wash Plant to Port','unit'=>'MT'],
+            '5000409'=>['name'=>'Coal hauling BUA to Port','pattern'=>'/^Coal Hauling ROM BUA to Port/i','qtyLabel'=>'Coal Hauling Bua Stock to Port','unit'=>'MT'],
+            '5000410'=>['name'=>'Road Maintenance','pattern'=>'/^Road Maintenance/i','qtyLabel'=>null,'unit'=>'MT'],
+            '5000411'=>['name'=>'Coal Loading','pattern'=>'/^Coal Loading/i','qtyLabel'=>null,'unit'=>'MT'],
+        ];
+        $qtyLookup = [];
+        foreach ($rows as $row) {
+            $label = strtolower(trim((string) ($row[2] ?? '')));
+            $entity = strtolower(trim((string) ($row[4] ?? '')));
+            $unit = strtolower(trim((string) ($row[3] ?? '')));
+            foreach ($accountMap as $code => $map) {
+                $code = (string) $code;
+                if ($map['qtyLabel'] === null || $label !== strtolower($map['qtyLabel']) || !in_array($unit, ['mt','bcm'], true)) continue;
+                if ($code === '5000404' ? ($entity !== '' && $entity !== 'hrs') : ($entity === '' || $entity === 'bp')) continue;
+                $qtyEntity = $code === '5000404' ? 'hrs' : $entity;
+                foreach ($periods as $period) {
+                    $month = (int) substr($period, 5, 2);
+                    $value = $this->number($row[7 + $month] ?? null);
+                    if ($value !== null) $qtyLookup[$code][$period][$qtyEntity] = ($qtyLookup[$code][$period][$qtyEntity] ?? 0) + $value;
+                }
+            }
+            if (in_array($label, ['total loading bua to wash plant','total loading bua stock to port','total loading wash plant to port'], true) && in_array($unit, ['mt','bcm'], true)) {
+                $loadingCategory = match ($label) {
+                    'total loading bua to wash plant' => 'Coal Hauling BUA to WP',
+                    'total loading bua stock to port' => 'Coal Hauling BUA to Port',
+                    default => 'Coal Hauling WP to Port',
+                };
+                if ($entity !== '' && strcasecmp($entity, 'BP') !== 0) foreach ($periods as $period) {
+                    $month = (int) substr($period, 5, 2);
+                    $value = $this->number($row[7 + $month] ?? null);
+                    if ($value !== null) $qtyLookup['5000411'][$period][$loadingCategory][$entity] = ($qtyLookup['5000411'][$period][$loadingCategory][$entity] ?? 0) + $value;
+                }
+            }
+        }
+
+        $items = [];
+        $inMiningSection = false;
+        foreach ($rows as $row) {
+            $section = trim((string) ($row[1] ?? ''));
+            if (strcasecmp($section, 'Mining Operation Cost') === 0) $inMiningSection = true;
+            elseif (strcasecmp($section, 'Fuel Mining Operation Cost') === 0) $inMiningSection = false;
+            if (!$inMiningSection) continue;
+
+            $label = trim((string) ($row[2] ?? ''));
+            $entity = trim((string) ($row[4] ?? ''));
+            $code = null; $map = null;
+            foreach ($accountMap as $candidate => $definition) {
+                if (preg_match($definition['pattern'], $label)) { $code = (string) $candidate; $map = $definition; break; }
+            }
+            if ($code === null || $entity === '' || strcasecmp($entity, 'BP') === 0) continue;
+
+            $category = 'Mining';
+            if ($code === '5000407' || ($code === '5000411' && preg_match('/(?:ROM|BUA).*to (?:WP|Wash(?:ing)? Plant)/i', $label))) $category = 'Coal Hauling BUA to WP';
+            elseif ($code === '5000408' || ($code === '5000411' && preg_match('/(?:WP|Wash(?:ing)? Plant).*to Port/i', $label))) $category = 'Coal Hauling WP to Port';
+            elseif ($code === '5000409' || ($code === '5000411' && preg_match('/(?:ROM|BUA).*to Port/i', $label))) $category = 'Coal Hauling BUA to Port';
+            elseif ($code === '5000411') continue;
+
+            foreach ($periods as $period) {
+                $month = (int) substr($period, 5, 2);
+                $amount = $this->number($row[7 + $month] ?? null);
+                if ($amount === null || abs($amount) < 0.0000001) continue;
+                $key = implode('|', [$period,$code,$category,strtolower($entity)]);
+                $loadingMetric = match ($category) {
+                    'Coal Hauling BUA to WP' => 'loadingBuaWp',
+                    'Coal Hauling BUA to Port' => 'loadingBuaPort',
+                    'Coal Hauling WP to Port' => 'loadingWpPort',
+                    default => null,
+                };
+                $qty = $code === '5000411'
+                    ? ($monthlyMetrics[$period][$loadingMetric] ?? $qtyLookup[$code][$period][$category][strtolower($entity)] ?? null)
+                    : ($map['qtyLabel'] === null ? null : ($qtyLookup[$code][$period][strtolower($entity)] ?? null));
+                if ($code === '5000404' && strcasecmp($entity, 'HRS') !== 0) $qty = null;
+                if (!isset($items[$key])) $items[$key] = [
+                    'period'=>$period,'account_code'=>$code,'name'=>$map['name'],'entity'=>$entity,
+                    'category'=>$category,'amount_usd'=>0,'qty'=>$qty,'rate_usd'=>null,'unit'=>$map['unit'],
+                    'created_at'=>now(),'updated_at'=>now(),
+                ];
+                $items[$key]['amount_usd'] += $amount;
+                if ($qty !== null && abs($qty) > 0.0000001) $items[$key]['rate_usd'] = $items[$key]['amount_usd'] / $qty;
+            }
+        }
+        return array_values($items);
     }
 
     private function token(array $credentials): string

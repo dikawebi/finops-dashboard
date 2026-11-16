@@ -37,7 +37,7 @@ class FinancialStatementService
 
     public function build(string $period, string $mode = 'mtd', ?CostMatrixService $costs = null): array
     {
-        unset($costs);
+        $costs ??= app(CostMatrixService::class);
         $mode = strtolower($mode) === 'ytd' ? 'ytd' : 'mtd';
         $baselineModel = FinancialBaseline::first();
         if (!$baselineModel) return ['period'=>$period,'mode'=>$mode,'sections'=>[]];
@@ -139,6 +139,29 @@ class FinancialStatementService
             } elseif (preg_match('/^[3-9]/', $code) && abs($amount) > 0.000001) {
                 $this->addUnmapped($unmappedAccounts ??= [], $code, $month, (string) ($entry->account_name ?? ''), $amount, 'P&L');
             }
+        }
+        foreach ($costs->financialAdjustmentRows($futurePeriods) as $entry) {
+            $month = (string) $entry['period'];
+            if (!isset($byMonth[$month])) continue;
+            $code = trim((string) $entry['main_account']);
+            $amount = (float) $entry['amount_reporting'];
+            $byMonth[$month]['adjustmentRows']++;
+            $byMonth[$month]['ledgerSum'] += $amount;
+            $byMonth[$month]['accounts'][$code] = ($byMonth[$month]['accounts'][$code] ?? 0.0) + $amount;
+
+            if ($entry['is_accrual_liability']) {
+                // The reference posts the matching credit to accrued expenses.
+                $this->add($byMonth[$month]['bs'], 'accruedExpenses', -$amount);
+                continue;
+            }
+
+            $mapping = $mappings[$code] ?? null;
+            $account = $accounts[$code] ?? null;
+            $bsId = $this->mappedBalanceSheetId($code, $mapping, $account, $balanceSheet);
+            if ($bsId !== null) $this->add($byMonth[$month]['bs'], $bsId, $amount * ($this->isCreditRow($bsId) ? -1 : 1));
+            $plId = $this->mappedProfitLossId($mapping, $profitLoss)
+                ?? $this->profitLossLine($code, (string) ($entry['costing_to'] ?? ''));
+            if ($plId !== null) $this->add($byMonth[$month]['pl'], $plId, -$amount);
         }
         $unmappedAccounts ??= [];
         foreach ($byMonth as &$monthData) {
