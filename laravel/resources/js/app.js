@@ -521,24 +521,32 @@ async function inventory(period, mode) {
     const locationCards = stages.map(stage => stage.id === 'nonWash' ? washingCard : washingIds.includes(stage.id) ? '' : renderLocationCard(stage)).join('');
     const totalQty = Number(data.totalEndingQtyMT ?? stages.reduce((total, stage) => total + Number(stage.endingQtyMT || 0), 0));
     const totalValue = Number(data.totalEndingValueUSD ?? stages.reduce((total, stage) => total + Number(stage.endingValueUSD || 0), 0));
-    const colors = ['#2563eb', '#0891b2', '#7c3aed', '#eab308', '#0f766e', '#f97316', '#64748b', '#b45309'];
+    const colors = ['#2563eb', '#0891b2', '#7c3aed', '#d97706', '#0f766e', '#ea580c', '#64748b', '#e11d48', '#0e7490', '#4f46e5', '#65a30d'];
     const includedStages = stages.filter(stage => stage.includedInQuantityTotal !== false);
     const totalIncludedQty = includedStages.reduce((sum, stage) => sum + Number(stage.endingQtyMT || 0), 0);
-    const hasNegative = includedStages.some(stage => Number(stage.endingQtyMT) < 0);
-    const chartCanDraw = totalIncludedQty > 0 && !hasNegative;
-    const share = value => { if (!chartCanDraw) return '—'; const percent = Number(value) / totalIncludedQty * 100; return percent >= 0 && percent < 0.5 ? '<1%' : signedNumber(percent, 0, 0, '%'); };
+    const positiveStages = includedStages.filter(stage => Number(stage.endingQtyMT) > 0);
+    const positiveTotalQty = positiveStages.reduce((sum, stage) => sum + Number(stage.endingQtyMT || 0), 0);
+    const negativeStages = includedStages.filter(stage => Number(stage.endingQtyMT) < 0);
+    const chartCanDraw = positiveTotalQty > 0;
+    const share = stage => {
+        if (stage.includedInQuantityTotal === false) return 'Excluded';
+        if (Number(stage.endingQtyMT) < 0) return 'Negative';
+        if (!chartCanDraw) return '—';
+        const percent = Number(stage.endingQtyMT) / positiveTotalQty * 100;
+        return percent < 0.5 ? '<1%' : signedNumber(percent, 0, 0, '%');
+    };
     let offset = 0;
     const circumference = 2 * Math.PI * 108;
-    const segments = includedStages.filter(stage => chartCanDraw && Number(stage.endingQtyMT) > 0).map((stage, index) => {
-        const length = Number(stage.endingQtyMT) / totalIncludedQty * circumference;
-        const segment = `<circle class="inventory-donut-segment" cx="140" cy="140" r="108" fill="none" stroke="${colors[index % colors.length]}" stroke-width="32" stroke-dasharray="${length} ${circumference - length}" stroke-dashoffset="${-offset}" transform="rotate(-90 140 140)"><title>${esc(stage.name)} · ${volume(stage.endingQtyMT)} MT · ${share(stage.endingQtyMT)} · USD ${number(stage.endingValueUSD)}</title></circle>`;
+    const segments = positiveStages.map(stage => {
+        const index = stages.indexOf(stage);
+        const length = Number(stage.endingQtyMT) / positiveTotalQty * circumference;
+        const segment = `<circle class="inventory-donut-segment" data-stock-id="${esc(stage.id)}" tabindex="0" role="img" aria-label="${esc(stage.name)}, ${volume(stage.endingQtyMT)} MT, ${share(stage)}, USD ${number(stage.endingValueUSD)}" cx="140" cy="140" r="108" fill="none" stroke="${colors[index % colors.length]}" stroke-width="32" stroke-dasharray="${Math.max(0,length-3)} ${circumference-length+3}" stroke-dashoffset="${-offset}" transform="rotate(-90 140 140)"><title>${esc(stage.name)} · ${volume(stage.endingQtyMT)} MT · ${share(stage)} · USD ${number(stage.endingValueUSD)}</title></circle>`;
         offset += length;
         return segment;
     }).join('');
-    const donutCenter = chartCanDraw
-        ? `<text x="140" y="123" class="inventory-donut-caption">Total volume</text><text x="140" y="153" class="inventory-donut-amount">${volume(totalIncludedQty)}</text><text x="140" y="174" class="inventory-donut-caption">MT</text>`
-        : `<text x="140" y="140" class="inventory-donut-caption">${hasNegative ? 'Check negative stock' : 'No volume available'}</text>`;
-    const donut = `<div class="inventory-donut-layout"><svg viewBox="0 0 280 280" class="inventory-donut" role="img" aria-label="Coal stock composition ${esc(period)}"><circle cx="140" cy="140" r="108" fill="none" stroke="#e2e8f0" stroke-width="32"/>${segments}${donutCenter}</svg><div class="inventory-chart-legend"><div class="inventory-chart-legend-row inventory-chart-header"><span></span><span>Location</span><span>USD/MT</span><span>Volume</span><span>Share</span></div>${stages.map((stage, index) => `<div class="inventory-chart-legend-row"><i style="background:${colors[index % colors.length]}" aria-hidden="true"></i><span>${esc(stage.name)}</span><strong>USD ${number(stage.endingRateUSD)}</strong><span>${volume(stage.endingQtyMT)} MT</span><span class="inventory-chart-percent">${stage.includedInQuantityTotal === false ? 'Excluded' : share(stage.endingQtyMT)}</span></div>`).join('')}</div></div>`;
+    const donutCenter = `<text id="inventoryDonutCenterLabel" x="140" y="113" class="inventory-donut-caption">CLOSING STOCK VALUE</text><text id="inventoryDonutCenterValue" x="140" y="143" class="inventory-donut-amount">USD ${number(totalValue)}</text><text id="inventoryDonutCenterVolume" x="140" y="164" class="inventory-donut-caption">Net ${volume(totalIncludedQty)} MT</text><text id="inventoryDonutCenterShare" x="140" y="184" class="inventory-donut-center-hint">Hover or select a location</text>`;
+    const negativeNote = negativeStages.length ? `<div class="inventory-chart-alert"><strong>Negative stock is excluded from the slices</strong><span>${negativeStages.map(stage => `${esc(stage.name)}: ${volume(stage.endingQtyMT)} MT`).join(' · ')}</span></div>` : '';
+    const donut = `<div class="inventory-donut-layout" data-positive-total="${positiveTotalQty}"><div class="inventory-donut-visual"><svg viewBox="0 0 280 280" class="inventory-donut" role="img" aria-label="Coal stock composition by positive closing tonnage, ${esc(period)}"><circle class="inventory-donut-track" cx="140" cy="140" r="108" fill="none" stroke="#e2e8f0" stroke-width="32"/>${segments}${donutCenter}</svg><div class="inventory-chart-total"><span>Positive closing stock</span><strong>${volume(positiveTotalQty)} MT</strong><small>Net stock: ${volume(totalIncludedQty)} MT</small></div></div><div class="inventory-chart-legend"><div class="inventory-chart-legend-heading"><span>LOCATION</span><span>SHARE</span><span>ENDING DETAILS</span></div>${stages.map((stage, index) => `<button type="button" class="inventory-chart-legend-item${Number(stage.endingQtyMT) < 0 ? ' is-negative' : ''}${stage.includedInQuantityTotal === false ? ' is-excluded' : ''}" data-stock-id="${esc(stage.id)}" aria-pressed="false"><i style="--stock-color:${colors[index % colors.length]}" aria-hidden="true"></i><span class="inventory-chart-location">${esc(stage.name)}</span><strong class="inventory-chart-percent">${share(stage)}</strong><span class="inventory-chart-metrics"><span><small>Closing qty</small><b>${volume(stage.endingQtyMT)} MT</b></span><span><small>Average rate</small><b>USD ${number(stage.endingRateUSD)}/MT</b></span><span><small>Inventory value</small><b>USD ${number(stage.endingValueUSD)}</b></span></span></button>`).join('')}</div></div>${negativeNote}`;
     const ledgerRows = stages.map(stage => `<tr><td><strong>${esc(stage.name)}</strong>${stage.includedInTotal === false ? '<br><small>Quantity excluded from total; USD value included</small>' : ''}</td>${['beginningQtyMT', 'beginningValueUSD', 'inflowQtyMT', 'receiptValueUSD', 'addedCostUSD', 'movingAverageRateUSD', 'outflowQtyMT', 'outflowValueUSD', 'adjustmentQtyMT', 'adjustmentValueUSD', 'endingQtyMT', 'endingValueUSD', 'endingRateUSD'].map(key => `<td class="num">${key.endsWith('MT') ? volume(stage[key]) : number(stage[key])}</td>`).join('')}</tr>`).join('');
     const buaRows = (data.buaHistory || []).map(stage => { const mined = (stage.rows || []).find(row => row.source === 'COGP BUA') || {}; return `<tr><td>${esc(stage.period)}</td><td class="num">${volume(stage.beginningQtyMT)}</td><td class="num">${number(stage.beginningValueUSD)}</td><td class="num">${volume(mined.qtyMT)}</td><td class="num">${number(mined.valueUSD)}</td><td class="num">${number(stage.adjustmentValueUSD)}</td><td class="num">${number(stage.movingAverageRateUSD)}</td><td class="num">${volume(stage.endingQtyMT)}</td><td class="num">${number(stage.endingValueUSD)}</td><td class="num">${number(stage.endingRateUSD)}</td><td>${esc(stage.costSource === 'workbook' ? 'Temporary Excel history' : stage.costSource === 'gl' ? 'GL' : 'Awaiting upload')}</td></tr>`; }).join('');
     const flowCards = stages.map(stage => `<details class="stage-card"><summary><strong>${esc(stage.name)}</strong><p>${volume(stage.endingQtyMT)} · USD ${number(stage.endingValueUSD)}</p></summary><div class="table-responsive"><table class="table-accounting"><thead><tr><th>Movement</th><th>Qty MT</th><th>Value USD</th><th>USD/MT</th></tr></thead><tbody>${(stage.rows || []).map(row => `<tr class="${['opening', 'available', 'closing'].includes(row.type) ? 'parent-row' : ''}"><td>${esc(row.label)}</td><td class="num">${volume(row.qtyMT)}</td><td class="num">${number(row.valueUSD)}</td><td class="num">${number(row.rateUSD)}</td></tr>`).join('')}</tbody></table></div></details>`).join('');
@@ -556,7 +564,7 @@ async function inventory(period, mode) {
         ${data.manualSalesQtyMT ? `<p class="inventory-notice">Manual sales this ${mode.toUpperCase()}: ${volume(data.manualSalesQtyMT)} MT · Revenue ${number(data.manualSalesRevenueUSD)} USD (memo only; excluded from GL).</p>` : ''}
         <p class="source-row">${data.dynamicSourceStatus === 'active' ? `${badge('google_sheets_production')} ${badge('d365_gl_entries')}` : `${badge('inventory_model.json')} ${badge('inventory_movements.json')} ${badge('inventory_movements_dummy.json')} ${badge('inventory_historical_costs.json')} ${badge('gl_data.json')}`}</p>
         <div class="inventory-summary"><article class="inventory-total-highlight"><div class="card-title">Total Stock Coal — ${esc(data.periodKey || period)}</div><strong>${volume(totalQty)} MT</strong><p>USD ${number(totalValue)}</p><small>${data.isProvisional ? 'Provisional value — see quantity and cost sources' : 'Includes all stock locations'}</small></article></div>
-        ${card(`Coal Stock Composition <span class="subtle">— ${esc(data.periodKey || period)}</span>`, `<p class="inventory-chart-caption">Slices represent closing stock volume (MT) by location.</p>${donut}`)}
+        ${card(`Coal Stock Composition <span class="subtle">— ${esc(data.periodKey || period)}</span>`, `<p class="inventory-chart-caption">Each slice shows a location’s share of positive closing tonnage. Hover, focus, or select a location to inspect quantity, average rate, and inventory value.</p>${donut}`)}
         <div class="inventory-location-grid">${locationCards}</div>
         <section class="table-card inventory-hauling-card"><div class="card-title">COGP Coal Hauling Routes — from Costing to</div><p>${esc(haulingStatus)}</p><p class="inventory-help">Add Cost Non Wash = Coal Hauling BUA to WP. Add Cost BP PORT = Coal Hauling BUA to Port + Coal Hauling WP to Port + COGP BP PORT. The three routes are read from Costing to in the GL.</p></section>
         ${card('Inventory Balances and Movements', table(['Stockpile', 'Opening MT', 'Opening USD', 'Inflow MT', 'Inflow Value USD', 'Add Cost USD', 'Rate Transfer USD/MT', 'Outflow MT', 'Outflow USD', 'Adj MT', 'Adj USD', 'Closing MT', 'Closing USD', 'Rate Closing USD/MT'], ledgerRows))}
@@ -593,6 +601,42 @@ async function inventory(period, mode) {
         catch (error) { window.alert(error.message); }
     }));
     $('#inventoryPeriod').addEventListener('change', event => { $('#period').value = event.target.value; render(); });
+    const donutLayout = document.querySelector('.inventory-donut-layout');
+    if (donutLayout) {
+        let hoveredId = null;
+        let selectedId = null;
+        const updateDonutDetail = () => {
+            const id = selectedId || hoveredId;
+            const stage = id ? stages.find(item => item.id === id) : null;
+            const label = $('#inventoryDonutCenterLabel');
+            const value = $('#inventoryDonutCenterValue');
+            const volumeText = $('#inventoryDonutCenterVolume');
+            const hint = $('#inventoryDonutCenterShare');
+            if (stage) {
+                label.textContent = stage.name;
+                value.textContent = `${volume(stage.endingQtyMT)} MT`;
+                volumeText.textContent = `USD ${number(stage.endingValueUSD)}`;
+                hint.textContent = `${share(stage)} of positive stock · USD ${number(stage.endingRateUSD)}/MT`;
+            } else {
+                label.textContent = 'CLOSING STOCK VALUE';
+                value.textContent = `USD ${number(totalValue)}`;
+                volumeText.textContent = `Net ${volume(totalIncludedQty)} MT`;
+                hint.textContent = 'Hover or select a location';
+            }
+            donutLayout.querySelectorAll('[data-stock-id]').forEach(item => {
+                const active = id === item.dataset.stockId;
+                item.classList.toggle('is-active', active);
+                if (item.matches('.inventory-chart-legend-item')) item.setAttribute('aria-pressed', selectedId === item.dataset.stockId ? 'true' : 'false');
+            });
+        };
+        donutLayout.querySelectorAll('[data-stock-id]').forEach(item => {
+            item.addEventListener('pointerenter', () => { hoveredId = item.dataset.stockId; updateDonutDetail(); });
+            item.addEventListener('pointerleave', () => { hoveredId = null; updateDonutDetail(); });
+            item.addEventListener('focus', () => { hoveredId = item.dataset.stockId; updateDonutDetail(); });
+            item.addEventListener('blur', () => { hoveredId = null; updateDonutDetail(); });
+            if (item.matches('.inventory-chart-legend-item')) item.addEventListener('click', () => { selectedId = selectedId === item.dataset.stockId ? null : item.dataset.stockId; updateDonutDetail(); });
+        });
+    }
 }
 
 async function equipmentCost(period, mode) {
