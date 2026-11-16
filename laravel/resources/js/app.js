@@ -48,7 +48,7 @@ const setGlReviewLoading = visible => { let overlay = document.querySelector('#g
 const esc = value => String(value ?? '—').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' })[char]);
 const companyName = document.body.dataset.companyName || 'FinOps Dashboard';
 const urlState = new URLSearchParams(location.search);
-const state = { view: urlState.get('view') || 'overview', costSearch: '', costParentOnly: false, costHideZero: false, costCollapsed: {}, accountHierarchyCollapsed: {}, voucherSummaryCollapsed: false, glReview: { account: '', search: '', dateFrom: '', dateTo: '', rowsPerPage: 100, mappingStatus: 'all', valuationTo: '', costingTo: '', headerFilters: { account: '', account_name: '', voucher: '', journal_number: '', description: '', costing_to: '', valuation_to: '', currency: '' } }, varianceSearch: '', varianceHideZero: true, varianceCategory: 'all', varianceLocation: 'allCost' };
+const state = { view: urlState.get('view') || 'overview', costSearch: '', costParentOnly: false, costHideZero: false, costCollapsed: {}, accountHierarchyCollapsed: {}, voucherSummaryCollapsed: false, glReview: { account: '', search: '', dateFrom: '', dateTo: '', rowsPerPage: 100, mappingStatus: 'all', valuationTo: '', costingTo: '', headerFilters: { account: '', account_name: '', voucher: '', journal_number: '', description: '', costing_to: '', valuation_to: '', currency: '' } }, varianceSearch: '', varianceHideZero: true, varianceMinimum: 0, varianceOrder: 'account', varianceLocation: 'allCost' };
 const initialPeriod = urlState.get('period');
 const initialMode = urlState.get('mode');
 if (/^\d{4}-\d{2}$/.test(initialPeriod || '')) $('#period').value = initialPeriod;
@@ -258,51 +258,60 @@ async function glTransactionReview(period, page = 1) {
 
 async function variance(period, mode) {
     const data = await api(`/api/cost-variance?period=${period}&mode=${mode}&location=${encodeURIComponent(state.varianceLocation)}`);
-    const search = state.varianceSearch.trim().toLowerCase();
-    const categoryValue = row => row.categories?.current?.[state.varianceCategory] ?? row.current;
-    const visibleRows = data.rows.filter(row => (!search || `${row.code} ${row.name}`.toLowerCase().includes(search)) && (!state.varianceHideZero || Number(row.previous || 0) !== 0 || Number(row.current || 0) !== 0) && (state.varianceCategory === 'all' || Number(categoryValue(row) || 0) !== 0));
-    const rows = visibleRows.map(row => `<tr class="${row.isParent ? 'parent-row' : ''}"><td>${esc(row.code)}</td><td>${esc(row.name)}</td><td class="num">${reportAmount(row.previous)}</td><td class="num">${reportAmount(row.current)}</td><td class="num ${row.change < 0 ? 'negative' : row.change > 0 ? 'positive' : ''}">${reportAmount(row.change)}</td><td class="num">${row.changePct == null ? '—' : signedNumber(row.changePct, 2, 2, '%')}</td><td><div class="variance-remark-editor"><textarea class="remark-input" rows="2" maxlength="2000" data-variance-remark="${esc(row.code)}" placeholder="Add explanation...">${esc(row.remark || '')}</textarea><button class="btn btn-outline variance-remark-save" type="button" data-variance-save="${esc(row.code)}">Save</button><span class="variance-remark-status" data-variance-status="${esc(row.code)}" role="status" aria-live="polite"></span></div></td></tr>`);
-    /*
-    $('#pageContent').innerHTML = `
-        ${sectionHeader('Cost Variance Analysis', 'Compare monthly cost by account and location; record explanations for each variance.', `<button id="varianceExcel" class="btn btn-outline" type="button">📊 Export Excel</button>`)}
-        ${card(`<div class="report-source-row">${badge('gl_data.json')} ${badge('cost_variance_remarks.json')}</div><div class="variance-controls"><label>Current month <input type="month" value="${period}" disabled></label><label>Location / category <select id="varianceLocation"><option value="">ALL Cost</option>${(data.locations || []).map(item => `<option value="${esc(item)}" ${state.varianceLocation === item ? 'selected' : ''}>${esc(item)}</option>`).join('')}</select></label><label>Search account <input id="varianceSearch" type="search" placeholder="Account code or name" value="${esc(state.varianceSearch)}"></label><label class="variance-checkbox"><input id="varianceHideZero" type="checkbox" ${state.varianceHideZero ? 'checked' : ''}> Hide zero balances</label><label class="variance-category">Category <select id="varianceCategory"><option value="all" ${state.varianceCategory === 'all' ? 'selected' : ''}>All categories</option><option value="cogp" ${state.varianceCategory === 'cogp' ? 'selected' : ''}>COGP</option><option value="direct" ${state.varianceCategory === 'direct' ? 'selected' : ''}>Direct Expense</option></select></label></div><p class="variance-note">MTD: Oct 26 vs Sep 26. Sep 26: workbook; Oct 26: GL. Variance = current − previous; % uses the absolute previous balance. Zero or unavailable base is shown as —. Remarks are saved by month, category and account.</p><p class="table-note">${visibleRows.length} rows • Comparison ${data.previousPeriod} → ${data.period}</p>`, table(['Account', 'Account Name', 'Previous month', 'Current month', 'Variance USD', 'Variance %', 'Remark'], rows, 'variance-table'))}
-    */
-    const varianceOptions = [['allCost', 'ALL Cost'], ['costMining', 'COGP - Mining'], ['costHaulingBUAToWP', 'COGP - Coal Hauling BUA to WP'], ['costHaulingBUAToPort', 'COGP - Coal Hauling Bua to Port'], ['costHaulingWPToPort', 'COGP - Coal Hauling WP to Port'], ['costWP', 'COGP - Washing Plant'], ['costPort', 'COGP - BP Port'], ['valMining', 'Direct Expense - Mining'], ['valHauling', 'Direct Expense - Coal Hauling'], ['valWP', 'Direct Expense - Washing Plant'], ['valPort', 'Direct Expense - BP PORT'], ['directGA', 'Direct Expense - GA'], ['sellingExpense', 'Selling Expense']];
-    const controls = `<div class="report-source-row">${badge('gl_data.json')} ${badge('Database: cost_variance_remarks')}</div><div class="variance-controls"><label>Current month <input id="variancePeriod" type="month" value="${period}"></label><label>Location / category <select id="varianceLocation">${varianceOptions.map(([value, label]) => `<option value="${value}" ${state.varianceLocation === value ? 'selected' : ''}>${esc(label)}</option>`).join('')}</select></label><label>Category <select id="varianceCategory"><option value="all" ${state.varianceCategory === 'all' ? 'selected' : ''}>All categories</option><option value="cogp" ${state.varianceCategory === 'cogp' ? 'selected' : ''}>COGP</option><option value="direct" ${state.varianceCategory === 'direct' ? 'selected' : ''}>Direct Expense</option></select></label><label>Search account <input id="varianceSearch" type="search" placeholder="Account code or name" value="${esc(state.varianceSearch)}"></label><label class="variance-checkbox"><input id="varianceHideZero" type="checkbox" ${state.varianceHideZero ? 'checked' : ''}> Hide zero balances</label></div><p class="variance-note">Monthly MTD comparison: ${esc(period)} vs ${esc(data.previousPeriod)}. The global MTD/YTD selection does not change this calculation. Variance = current month − previous month; % uses the absolute previous balance. Zero or unavailable base is shown as —. Save each remark to store it by month, allocation category, and account.</p><p class="table-note">${visibleRows.length} rows • MTD comparison ${data.previousPeriod} → ${data.period}</p>`;
-    const varianceTotals = { previous: Number(data.previous?.grandTotal?.[state.varianceLocation] ?? 0), current: Number(data.current?.grandTotal?.[state.varianceLocation] ?? 0) };
-    varianceTotals.change = varianceTotals.current - varianceTotals.previous;
-    const varianceTotalPct = varianceTotals.previous === 0 ? null : varianceTotals.change / Math.abs(varianceTotals.previous) * 100;
-    const varianceTable = `<div class="table-responsive"><table class="table-accounting variance-table"><thead><tr>${['Account', 'Account Name', 'Previous month', 'Current month', 'Variance USD', 'Variance %', 'Remark'].map(header => `<th>${esc(header)}</th>`).join('')}</tr></thead><tbody>${rows.length ? rows.join('') : `<tr><td colspan="7">No data available.</td></tr>`}</tbody><tfoot><tr><th colspan="2">Total</th><th class="num">${reportAmount(varianceTotals.previous)}</th><th class="num">${reportAmount(varianceTotals.current)}</th><th class="num ${varianceTotals.change < 0 ? 'negative' : varianceTotals.change > 0 ? 'positive' : ''}">${reportAmount(varianceTotals.change)}</th><th class="num">${varianceTotalPct == null ? '—' : signedNumber(varianceTotalPct, 3, 3, '%')}</th><th></th></tr></tfoot></table></div>`;
-    $('#pageContent').innerHTML = `${sectionHeader('Cost Variance Analysis', 'Compare monthly cost by account and location; record explanations for each variance.', `<button id="varianceExcel" class="btn btn-outline" type="button">📊 Export Excel</button>`)}${card(controls, varianceTable)}`;
-    $('#variancePeriod').addEventListener('change', event => { $('#period').value = event.target.value; render(); });
-    $('#varianceSearch').addEventListener('input', event => { state.varianceSearch = event.target.value; const cursor = event.target.selectionStart; variance(period, mode).then(() => { const input = $('#varianceSearch'); if (input) { input.focus(); input.setSelectionRange(cursor, cursor); } }); });
-    $('#varianceHideZero').addEventListener('change', event => { state.varianceHideZero = event.target.checked; variance(period, mode); });
-    $('#varianceCategory')?.addEventListener('change', event => { state.varianceCategory = event.target.value; variance(period, mode); });
-    $('#varianceLocation').addEventListener('change', event => { state.varianceLocation = event.target.value; variance(period, mode); });
-    $('#varianceExcel').addEventListener('click', () => downloadExcel(`cost-variance-${period}-mtd.xls`, ['Account', 'Account Name', 'Previous month', 'Current month', 'Variance USD', 'Variance %', 'Remark'], visibleRows.map(row => [row.code, row.name, row.previous, row.current, row.change, row.changePct == null ? '' : row.changePct, row.remark || ''])));
-    document.querySelectorAll('[data-variance-save]').forEach(button => button.addEventListener('click', async event => {
-        const saveButton = event.currentTarget;
-        const accountCode = saveButton.dataset.varianceSave;
-        const editor = saveButton.closest('.variance-remark-editor');
-        const input = editor.querySelector('.remark-input');
-        const status = editor.querySelector('.variance-remark-status');
-        saveButton.disabled = true;
-        status.textContent = 'Saving…';
-        status.classList.remove('is-error');
-        try {
-            await postJson('/api/cost-variance/remark', { period, category: state.varianceLocation, account_code: accountCode, remark: input.value });
-            const row = visibleRows.find(item => String(item.code) === accountCode);
-            if (row) row.remark = input.value;
-            status.textContent = 'Saved';
-        } catch (error) {
-            status.textContent = `Save failed: ${error.message}`;
-            status.classList.add('is-error');
-        } finally {
-            saveButton.disabled = false;
-        }
-    }));
+    const varianceOptions = [['allCost', 'ALL Cost'], ['costMining', 'COGP - Mining'], ['costHaulingBUAToWP', 'COGP - Coal Hauling BUA to WP'], ['costHaulingBUAToPort', 'COGP - Coal Hauling BUA to Port'], ['costHaulingWPToPort', 'COGP - Coal Hauling WP to Port'], ['costWP', 'COGP - Washing Plant'], ['costPort', 'COGP - BP PORT'], ['valMining', 'Direct Expense - Mining'], ['valHauling', 'Direct Expense - Coal Hauling'], ['valWP', 'Direct Expense - Washing Plant'], ['valPort', 'Direct Expense - BP PORT'], ['directGA', 'Direct Expense - GA'], ['sellingExpense', 'Selling Expense']];
+    const renderVariance = () => {
+        const search = state.varianceSearch.trim().toLowerCase();
+        const minimum = Math.max(0, Number(state.varianceMinimum) || 0);
+        const visibleRows = data.rows.filter(row => {
+            const matchesSearch = !search || `${row.code} ${row.name}`.toLowerCase().includes(search);
+            const matchesZero = !state.varianceHideZero || row.previous == null || row.current == null || Number(row.previous) !== 0 || Number(row.current) !== 0;
+            const matchesMinimum = minimum === 0 || (row.change != null && Math.abs(Number(row.change)) >= minimum);
+            return matchesSearch && matchesZero && matchesMinimum;
+        });
+        if (state.varianceOrder === 'largest') visibleRows.sort((a, b) => Math.abs(Number(b.change) || 0) - Math.abs(Number(a.change) || 0));
+        const fmt = value => value == null ? '—' : reportAmount(value);
+        const rowHtml = visibleRows.map(row => { const direction = row.changePct > 0 ? `<span class="variance-arrow positive" aria-label="Increase">↑</span> ` : row.changePct < 0 ? `<span class="variance-arrow negative" aria-label="Decrease">↓</span> ` : ''; return `<tr class="${row.isParent ? 'parent-row' : 'child-row'}"><td>${esc(row.code)}</td><td>${esc(row.name)}</td><td class="num">${fmt(row.previous)}</td><td class="num">${fmt(row.current)}</td><td class="num ${row.change < 0 ? 'negative' : row.change > 0 ? 'positive' : ''}">${fmt(row.change)}</td><td class="num">${row.changePct == null ? '—' : `${direction}${signedNumber(row.changePct, 3, 3, '%')}`}</td><td><div class="variance-remark-editor"><textarea class="remark-input" rows="2" maxlength="2000" data-variance-remark="${esc(row.code)}" placeholder="Add explanation...">${esc(row.remark || '')}</textarea><button class="btn btn-outline variance-remark-save" type="button" data-variance-save="${esc(row.code)}">Save</button><span class="variance-remark-status" data-variance-status="${esc(row.code)}" role="status" aria-live="polite"></span></div></td></tr>`; });
+        const hasPrevious = data.hasPrevious ?? (data.previous?.dataSource !== 'none');
+        const hasCurrent = data.hasCurrent ?? (data.current?.dataSource !== 'none');
+        const previousTotal = hasPrevious ? Number(data.previous?.grandTotal?.[state.varianceLocation] ?? 0) : null;
+        const currentTotal = hasCurrent ? Number(data.current?.grandTotal?.[state.varianceLocation] ?? 0) : null;
+        const totalChange = previousTotal == null || currentTotal == null ? null : currentTotal - previousTotal;
+        const totalPercent = previousTotal == null || previousTotal === 0 || totalChange == null ? null : totalChange / Math.abs(previousTotal) * 100;
+        const sourceName = matrix => matrix?.dataSource === 'none' ? 'no data' : matrix?.dataSource || 'unavailable';
+        const controls = `<div class="report-source-row">${badge('Cost Matrix: D365 GL / historical workbook')} ${badge('Database: cost_variance_remarks')}</div><div class="variance-controls"><label>Current month <input id="variancePeriod" type="month" value="${period}"></label><label>Location / category <select id="varianceLocation">${varianceOptions.map(([value, label]) => `<option value="${value}" ${state.varianceLocation === value ? 'selected' : ''}>${esc(label)}</option>`).join('')}</select></label><label>Search account <input id="varianceSearch" type="search" placeholder="Account code or name" value="${esc(state.varianceSearch)}"></label><label>Minimum change (USD) <input id="varianceMinimum" type="number" min="0" step="1" value="${esc(state.varianceMinimum)}"></label><label>Order <select id="varianceOrder"><option value="account" ${state.varianceOrder === 'account' ? 'selected' : ''}>Account order</option><option value="largest" ${state.varianceOrder === 'largest' ? 'selected' : ''}>Largest change first</option></select></label><label class="variance-checkbox"><input id="varianceHideZero" type="checkbox" ${state.varianceHideZero ? 'checked' : ''}> Hide zero balances</label></div><p class="variance-note">Monthly MTD comparison: ${esc(data.period)} vs ${esc(data.previousPeriod)}. ${esc(data.previousPeriod)}: ${esc(sourceName(data.previous))}; ${esc(data.period)}: ${esc(sourceName(data.current))}. Global MTD/YTD selection does not change this month-to-month comparison. Variance = current − previous; % uses the absolute previous balance. Missing data is shown as —.</p><p class="table-note">${visibleRows.length} rows • MTD comparison ${data.previousPeriod} → ${data.period}</p>`;
+        const varianceTable = `<div class="table-responsive"><table class="table-accounting variance-table"><thead><tr>${['Account', 'Account Name', 'Previous month', 'Current month', 'Variance USD', 'Variance %', 'Remark'].map(header => `<th>${esc(header)}</th>`).join('')}</tr></thead><tbody>${rowHtml.length ? rowHtml.join('') : `<tr><td colspan="7">No data available.</td></tr>`}</tbody><tfoot><tr><th colspan="2">Total</th><th class="num">${fmt(previousTotal)}</th><th class="num">${fmt(currentTotal)}</th><th class="num ${totalChange < 0 ? 'negative' : totalChange > 0 ? 'positive' : ''}">${fmt(totalChange)}</th><th class="num">${totalPercent == null ? '—' : signedNumber(totalPercent, 3, 3, '%')}</th><th></th></tr></tfoot></table></div>`;
+        $('#pageContent').innerHTML = `${sectionHeader('Cost Variance Analysis', 'Compare monthly cost by account and location; record explanations for each variance.', `<button id="varianceExcel" class="btn btn-outline" type="button">📊 Export Excel</button>`)}${card(controls, varianceTable)}`;
+        $('#variancePeriod').addEventListener('change', event => { $('#period').value = event.target.value; render(); });
+        $('#varianceSearch').addEventListener('input', event => { state.varianceSearch = event.target.value; const cursor = event.target.selectionStart; renderVariance(); const input = $('#varianceSearch'); input?.focus(); input?.setSelectionRange(cursor, cursor); });
+        $('#varianceMinimum').addEventListener('change', event => { state.varianceMinimum = event.target.value; renderVariance(); });
+        $('#varianceOrder').addEventListener('change', event => { state.varianceOrder = event.target.value; renderVariance(); });
+        $('#varianceHideZero').addEventListener('change', event => { state.varianceHideZero = event.target.checked; renderVariance(); });
+        $('#varianceLocation').addEventListener('change', event => { state.varianceLocation = event.target.value; variance(period, mode); });
+        $('#varianceExcel').addEventListener('click', () => downloadExcel(`cost-variance-${period}-mtd.xls`, ['Account', 'Account Name', 'Previous month', 'Current month', 'Variance USD', 'Variance %', 'Remark'], visibleRows.map(row => [row.code, row.name, row.previous, row.current, row.change, row.changePct == null ? '' : row.changePct, row.remark || ''])));
+        document.querySelectorAll('[data-variance-save]').forEach(button => button.addEventListener('click', async event => {
+            const saveButton = event.currentTarget;
+            const accountCode = saveButton.dataset.varianceSave;
+            const editor = saveButton.closest('.variance-remark-editor');
+            const input = editor.querySelector('.remark-input');
+            const status = editor.querySelector('.variance-remark-status');
+            saveButton.disabled = true;
+            status.textContent = 'Saving…';
+            status.classList.remove('is-error');
+            try {
+                await postJson('/api/cost-variance/remark', { period, category: state.varianceLocation, account_code: accountCode, remark: input.value });
+                const target = data.rows.find(item => String(item.code) === accountCode);
+                if (target) target.remark = input.value;
+                status.textContent = 'Saved';
+            } catch (error) {
+                status.textContent = `Save failed: ${error.message}`;
+                status.classList.add('is-error');
+            } finally {
+                saveButton.disabled = false;
+            }
+        }));
+    };
+    renderVariance();
 }
-
 async function metric(period, mode) {
     const previousPeriod = (() => { const date = new Date(`${period}-01T00:00:00Z`); date.setUTCMonth(date.getUTCMonth() - 1); return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`; })();
     const [data, dbSummary, excel, production, previousProduction] = await Promise.all([api(`/api/cost-per-mt?period=${period}&mode=${mode}`), api(`/api/db-cost-summary?period=${period}&mode=${mode}`), api('/api/excel-cost-example'), api(`/api/production-summary?period=${period}&mode=mtd`), api(`/api/production-summary?period=${previousPeriod}&mode=mtd`)]);

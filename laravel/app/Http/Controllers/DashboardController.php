@@ -240,24 +240,31 @@ class DashboardController extends Controller
         $prior = $service->build($previous, 'mtd');
         $variance = [];
         $location = trim((string) $request->query('location', 'allCost'));
+        $currentRows = collect($current['rows'])->keyBy('code');
         $priorRows = collect($prior['rows'])->keyBy('code');
+        $hasCurrent = ($current['dataSource'] ?? 'none') !== 'none' || !empty($current['accrualPeriods']);
+        $hasPrevious = ($prior['dataSource'] ?? 'none') !== 'none' || !empty($prior['accrualPeriods']);
         $varianceFields = ['allCost', 'costMining', 'costHaulingBUAToWP', 'costHaulingBUAToPort', 'costHaulingWPToPort', 'costWP', 'costPort', 'valMining', 'valHauling', 'valWP', 'valPort', 'directGA', 'sellingExpense'];
         abort_unless(in_array($location, $varianceFields, true), 422, 'Invalid variance category.');
         $remarks = CostVarianceRemark::period($period)->where('category', $location)->get()->keyBy('account_code');
-        foreach ($current['rows'] as $row) {
-            $old = $priorRows->get($row['code']);
-            $base = (float) ($old[$location] ?? 0);
-            $currentValue = (float) ($row[$location] ?? 0);
-            $delta = $currentValue - $base;
-            $cogpFields = ['costMining', 'costHaulingBUAToWP', 'costHaulingBUAToPort', 'costHaulingWPToPort', 'costWP', 'costPort'];
-            $directFields = ['directGA', 'sellingExpense'];
-            $sumFields = static fn (array $source, array $fields): float => array_sum(array_map(static fn (string $field): float => (float) ($source[$field] ?? 0), $fields));
-            $currentCategories = ['cogp' => $sumFields($row, $cogpFields), 'direct' => $sumFields($row, $directFields)];
-            $previousCategories = ['cogp' => $sumFields($old ?? [], $cogpFields), 'direct' => $sumFields($old ?? [], $directFields)];
-            $variance[] = ['code' => $row['code'], 'name' => $row['name'], 'current' => $currentValue, 'previous' => $base, 'change' => $delta, 'changePct' => $base == 0.0 ? null : $delta / abs($base) * 100, 'categories' => ['current' => $currentCategories, 'previous' => $previousCategories], 'remark' => $remarks->get($row['code'])?->remark, 'isParent' => $row['isParent']];
+        $cogpFields = ['costMining', 'costHaulingBUAToWP', 'costHaulingBUAToPort', 'costHaulingWPToPort', 'costWP', 'costPort'];
+        // Valuation allocations are Direct Expense columns. directGA already
+        // includes Not Valuated, so do not add valNotValuated a second time.
+        $directFields = ['valMining', 'valHauling', 'valWP', 'valPort', 'directGA', 'sellingExpense'];
+        $sumFields = static fn (array $source, array $fields): float => array_sum(array_map(static fn (string $field): float => (float) ($source[$field] ?? 0), $fields));
+        foreach ($currentRows->keys()->merge($priorRows->keys())->unique() as $code) {
+            $row = $currentRows->get($code);
+            $old = $priorRows->get($code);
+            $sourceRow = $row ?? $old;
+            $base = $hasPrevious ? (float) ($old[$location] ?? 0) : null;
+            $currentValue = $hasCurrent ? (float) ($row[$location] ?? 0) : null;
+            $delta = $base !== null && $currentValue !== null ? $currentValue - $base : null;
+            $variance[] = ['code' => $code, 'name' => $sourceRow['name'], 'current' => $currentValue, 'previous' => $base, 'change' => $delta, 'changePct' => $delta === null || $base == 0.0 ? null : $delta / abs($base) * 100,
+                'categories' => ['current'=>['cogp'=>$hasCurrent ? $sumFields($row ?? [], $cogpFields) : null,'direct'=>$hasCurrent ? $sumFields($row ?? [], $directFields) : null], 'previous'=>['cogp'=>$hasPrevious ? $sumFields($old ?? [], $cogpFields) : null,'direct'=>$hasPrevious ? $sumFields($old ?? [], $directFields) : null]],
+                'remark' => $remarks->get($code)?->remark, 'isParent' => $sourceRow['isParent']];
         }
         $locationOptions = $varianceFields;
-        return response()->json(['success' => true, 'data' => ['period' => $period, 'previousPeriod' => $previous, 'current' => $current, 'previous' => $prior, 'rows' => $variance, 'locations' => $locationOptions]]);
+        return response()->json(['success' => true, 'data' => ['period' => $period, 'previousPeriod' => $previous, 'current' => $current, 'previous' => $prior, 'hasCurrent'=>$hasCurrent, 'hasPrevious'=>$hasPrevious, 'rows' => $variance, 'locations' => $locationOptions]]);
     }
 
     public function saveVarianceRemark(Request $request): JsonResponse
