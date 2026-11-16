@@ -1,10 +1,46 @@
 import './bootstrap';
 
 const $ = selector => document.querySelector(selector);
-const money = value => { const amount = Number(value || 0); const formatted = Math.abs(amount).toLocaleString('en-US', { maximumFractionDigits: 0 }); return `USD ${amount < 0 ? `(${formatted})` : formatted}`; };
-const reportAmount = value => { const amount = Number(value || 0); if (Math.abs(amount) < 0.000001) return '-'; const formatted = Math.abs(amount).toLocaleString('en-US', { maximumFractionDigits: 0 }); return amount < 0 ? `(${formatted})` : formatted; };
-const detailMoney = value => { const amount = Number(value); if (!Number.isFinite(amount)) return '—'; const formatted = Math.abs(amount).toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 }); return amount < 0 ? `(${formatted})` : formatted; };
-const qty = value => Number(value || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
+const signedNumber = (value, maximumFractionDigits = 2, minimumFractionDigits = 0, suffix = '') => {
+    const amount = Number(value);
+    if (!Number.isFinite(amount)) return '—';
+    const formatted = Math.abs(amount).toLocaleString('en-US', { maximumFractionDigits, minimumFractionDigits });
+    return amount < 0 ? `(${formatted}${suffix})` : `${formatted}${suffix}`;
+};
+const money = value => `USD ${signedNumber(Number(value || 0), 0)}`;
+const reportAmount = value => { const amount = Number(value || 0); return Math.abs(amount) < 0.000001 ? '-' : signedNumber(amount, 0); };
+const detailMoney = value => signedNumber(value, 3, 3);
+const qty = value => signedNumber(Number(value || 0), 2);
+const formatNegativeNumbers = root => {
+    if (!root) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    const negativePattern = /(?:USD|IDR)\s*\([\d,]+(?:\.\d+)?%?\)|\([\d,]+(?:\.\d+)?%?\)/g;
+    nodes.forEach(node => {
+        if (!node.nodeValue || node.parentElement?.closest('input,textarea,select,button,svg,script,style,.negative-number')) return;
+        const matches = [...node.nodeValue.matchAll(negativePattern)];
+        if (!matches.length) return;
+        const fragment = document.createDocumentFragment();
+        let cursor = 0;
+        matches.forEach(match => {
+            fragment.append(document.createTextNode(node.nodeValue.slice(cursor, match.index)));
+            const value = document.createElement('span');
+            value.className = 'negative-number';
+            value.textContent = match[0];
+            fragment.append(value);
+            cursor = match.index + match[0].length;
+        });
+        fragment.append(document.createTextNode(node.nodeValue.slice(cursor)));
+        node.replaceWith(fragment);
+    });
+};
+const negativeNumbersObserver = new MutationObserver(() => formatNegativeNumbers($('#pageContent')));
+const negativeNumbersRoot = $('#pageContent');
+if (negativeNumbersRoot) {
+    formatNegativeNumbers(negativeNumbersRoot);
+    negativeNumbersObserver.observe(negativeNumbersRoot, { childList: true, characterData: true, subtree: true });
+}
 const formatDate = value => { const match = String(value ?? '').slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/); if (!match) return value ?? '—'; const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']; return `${match[3]} ${months[Number(match[2]) - 1] || match[2]} ${match[1]}`; };
 const formatSyncTimestamp = value => { if (!value) return 'Not synced'; const date = new Date(value); if (Number.isNaN(date.getTime())) return value; return `${new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Asia/Bangkok' }).format(date)}, ${new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'Asia/Bangkok' }).format(date)} UTC+7`; };
 const formatPeriod = value => { const match = String(value ?? '').match(/^(\d{4})-(\d{2})$/); if (!match) return value || '—'; return new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1)).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' }); };
@@ -129,7 +165,7 @@ async function overview(period, mode) {
         ['GROSS PROFIT', Number(financial.incomeStatement?.grossProfit || 0) === 0 ? 'USD -' : money(line('grossProfit')), 'Coal sales less cost of sales', 'blue'],
         ['OPERATING PROFIT / BEFORE INTEREST', money(line('profitBeforeInterest')), 'Operating profit for the period', 'blue'],
     ];
-    const topDrivers = (costPerMt.costByAccountGroup || []).slice().sort((a, b) => Number(b.amount) - Number(a.amount)).slice(0, 8).map(item => { const percentage = Number(cost.grandTotal.allCost) ? Number(item.amount) / Number(cost.grandTotal.allCost) * 100 : 0; return `<div class="driver-row"><div><span>${esc(item.group)}</span><div class="driver-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percentage.toFixed(1)}" aria-label="${esc(item.group)} ${percentage.toFixed(1)} percent"><i style="width:${Math.min(100, Math.max(1, percentage))}%"></i></div></div><b>${money(item.amount)} (${percentage.toFixed(0)}%)</b></div>`; }).join('');
+    const topDrivers = (costPerMt.costByAccountGroup || []).slice().sort((a, b) => Number(b.amount) - Number(a.amount)).slice(0, 8).map(item => { const percentage = Number(cost.grandTotal.allCost) ? Number(item.amount) / Number(cost.grandTotal.allCost) * 100 : 0; return `<div class="driver-row"><div><span>${esc(item.group)}</span><div class="driver-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percentage.toFixed(1)}" aria-label="${esc(item.group)} ${percentage.toFixed(1)} percent"><i style="width:${Math.min(100, Math.max(1, percentage))}%"></i></div></div><b>${money(item.amount)} ${signedNumber(percentage, 0, 0, '%')}</b></div>`; }).join('');
     const maxMT = Math.max(...daily.map(item => Number(item.nettoMT) || 0), 10);
     const chartWidth = 560, chartHeight = 200, padding = 30;
     const barWidth = Math.max(5, Math.floor((chartWidth - padding * 2) / Math.max(daily.length, 1)) - 4);
@@ -190,7 +226,7 @@ async function glTransactionReview(period, page = 1) {
     try { data = await api(`/api/gl-transaction-review?${params.toString()}`); } finally { if (loadingAll) setGlReviewLoading(false); }
     const summary = data.summary || {};
     const pagination = data.pagination || {};
-    const formatReviewNumber = value => value === null || value === undefined || value === '' ? '—' : Number(value).toLocaleString('en-US', { maximumFractionDigits: 2 });
+    const formatReviewNumber = value => value === null || value === undefined || value === '' ? '—' : signedNumber(value, 2);
     const detailFields = [['year_closed', 'Year closed'], ['fuel_quantity', 'Fuel quantity'], ['amount_txn', 'Amount in transaction currency'], ['amount', 'Amount'], ['posting_type', 'Posting type'], ['posting_layer', 'Posting layer'], ['vendor_account', 'Vendor account'], ['customer_account', 'Customer account'], ['invoice_no', 'Invoice no'], ['activity', 'Activity'], ['cash_flow', 'Cash_Flow'], ['department', 'Departmen'], ['group_activity', 'Group_Activity'], ['location', 'Location'], ['project', 'Project'], ['project_name', 'Project name'], ['cost_center', 'Cost center'], ['po_dt_number', 'PO DT Number'], ['gjae_id', 'GJAE ID'], ['created_datetime', 'Created date and time']];
     const detailHtml = row => `<tr id="gl-review-detail-${esc(row.id)}" class="gl-detail-row" hidden><td colspan="12"><div class="gl-detail-grid">${detailFields.map(([field, label]) => `<div><span>${esc(label)}</span><strong>${esc(field === 'fuel_quantity' || field === 'amount_txn' || field === 'amount' || field === 'gjae_id' ? formatReviewNumber(row[field]) : row[field])}</strong></div>`).join('')}</div></td></tr>`;
     const rows = (data.rows || []).map(row => `<tr><td>${esc(formatDate(row.entry_date))}</td><td>${esc(row.main_account)}</td><td>${esc(row.account_name)}</td><td>${esc(row.voucher)}</td><td>${esc(row.journal_number)}</td><td class="review-description">${esc(row.description)}</td><td>${esc(row.costing_to)}</td><td>${esc(row.valuation_to)}</td><td>${esc(row.currency)}</td><td class="num">${row.amount_idr === null || row.amount_idr === undefined ? '—' : `IDR ${formatReviewNumber(row.amount_idr)}`}</td><td class="num">${row.amount_reporting === null || row.amount_reporting === undefined ? '—' : `USD ${formatReviewNumber(row.amount_reporting)}`}</td><td><button type="button" class="btn btn-outline gl-detail-toggle" data-detail-id="gl-review-detail-${esc(row.id)}">View</button></td></tr>${detailHtml(row)}`).join('');
@@ -225,7 +261,7 @@ async function variance(period, mode) {
     const search = state.varianceSearch.trim().toLowerCase();
     const categoryValue = row => row.categories?.current?.[state.varianceCategory] ?? row.current;
     const visibleRows = data.rows.filter(row => (!search || `${row.code} ${row.name}`.toLowerCase().includes(search)) && (!state.varianceHideZero || Number(row.previous || 0) !== 0 || Number(row.current || 0) !== 0) && (state.varianceCategory === 'all' || Number(categoryValue(row) || 0) !== 0));
-    const rows = visibleRows.map(row => `<tr class="${row.isParent ? 'parent-row' : ''}"><td>${esc(row.code)}</td><td>${esc(row.name)}</td><td class="num">${reportAmount(row.previous)}</td><td class="num">${reportAmount(row.current)}</td><td class="num ${row.change > 0 ? 'negative' : 'positive'}">${reportAmount(row.change)}</td><td class="num">${row.changePct == null ? '—' : `${Number(row.changePct).toFixed(2)}%`}</td><td><div class="variance-remark-editor"><textarea class="remark-input" rows="2" maxlength="2000" data-variance-remark="${esc(row.code)}" placeholder="Add explanation...">${esc(row.remark || '')}</textarea><button class="btn btn-outline variance-remark-save" type="button" data-variance-save="${esc(row.code)}">Save</button><span class="variance-remark-status" data-variance-status="${esc(row.code)}" role="status" aria-live="polite"></span></div></td></tr>`);
+    const rows = visibleRows.map(row => `<tr class="${row.isParent ? 'parent-row' : ''}"><td>${esc(row.code)}</td><td>${esc(row.name)}</td><td class="num">${reportAmount(row.previous)}</td><td class="num">${reportAmount(row.current)}</td><td class="num ${row.change > 0 ? 'negative' : 'positive'}">${reportAmount(row.change)}</td><td class="num">${row.changePct == null ? '—' : signedNumber(row.changePct, 2, 2, '%')}</td><td><div class="variance-remark-editor"><textarea class="remark-input" rows="2" maxlength="2000" data-variance-remark="${esc(row.code)}" placeholder="Add explanation...">${esc(row.remark || '')}</textarea><button class="btn btn-outline variance-remark-save" type="button" data-variance-save="${esc(row.code)}">Save</button><span class="variance-remark-status" data-variance-status="${esc(row.code)}" role="status" aria-live="polite"></span></div></td></tr>`);
     /*
     $('#pageContent').innerHTML = `
         ${sectionHeader('Cost Variance Analysis', 'Compare monthly cost by account and location; record explanations for each variance.', `<button id="varianceExcel" class="btn btn-outline" type="button">📊 Export Excel</button>`)}
@@ -236,7 +272,7 @@ async function variance(period, mode) {
     const varianceTotals = { previous: Number(data.previous?.grandTotal?.[state.varianceLocation] ?? 0), current: Number(data.current?.grandTotal?.[state.varianceLocation] ?? 0) };
     varianceTotals.change = varianceTotals.current - varianceTotals.previous;
     const varianceTotalPct = varianceTotals.previous === 0 ? null : varianceTotals.change / Math.abs(varianceTotals.previous) * 100;
-    const varianceTable = `<div class="table-responsive"><table class="table-accounting variance-table"><thead><tr>${['Account', 'Account Name', 'Previous month', 'Current month', 'Variance USD', 'Variance %', 'Remark'].map(header => `<th>${esc(header)}</th>`).join('')}</tr></thead><tbody>${rows.length ? rows.join('') : `<tr><td colspan="7">No data available.</td></tr>`}</tbody><tfoot><tr><th colspan="2">Total</th><th class="num">${reportAmount(varianceTotals.previous)}</th><th class="num">${reportAmount(varianceTotals.current)}</th><th class="num ${varianceTotals.change > 0 ? 'negative' : 'positive'}">${reportAmount(varianceTotals.change)}</th><th class="num">${varianceTotalPct == null ? '—' : `${varianceTotalPct.toFixed(3)}%`}</th><th></th></tr></tfoot></table></div>`;
+    const varianceTable = `<div class="table-responsive"><table class="table-accounting variance-table"><thead><tr>${['Account', 'Account Name', 'Previous month', 'Current month', 'Variance USD', 'Variance %', 'Remark'].map(header => `<th>${esc(header)}</th>`).join('')}</tr></thead><tbody>${rows.length ? rows.join('') : `<tr><td colspan="7">No data available.</td></tr>`}</tbody><tfoot><tr><th colspan="2">Total</th><th class="num">${reportAmount(varianceTotals.previous)}</th><th class="num">${reportAmount(varianceTotals.current)}</th><th class="num ${varianceTotals.change > 0 ? 'negative' : 'positive'}">${reportAmount(varianceTotals.change)}</th><th class="num">${varianceTotalPct == null ? '—' : signedNumber(varianceTotalPct, 3, 3, '%')}</th><th></th></tr></tfoot></table></div>`;
     $('#pageContent').innerHTML = `${sectionHeader('Cost Variance Analysis', 'Compare monthly cost by account and location; record explanations for each variance.', `<button id="varianceExcel" class="btn btn-outline" type="button">📊 Export Excel</button>`)}${card(controls, varianceTable)}`;
     $('#variancePeriod').addEventListener('change', event => { $('#period').value = event.target.value; render(); });
     $('#varianceSearch').addEventListener('input', event => { state.varianceSearch = event.target.value; const cursor = event.target.selectionStart; variance(period, mode).then(() => { const input = $('#varianceSearch'); if (input) { input.focus(); input.setSelectionRange(cursor, cursor); } }); });
@@ -338,7 +374,7 @@ function renderDbSummary(summary) {
             const previous = i ? row.months[shown[i - 1]] : null;
             const percent = Number.isFinite(value) && Number.isFinite(previous) && previous !== 0 ? (value - previous) / Math.abs(previous) * 100 : null;
             const color = percent > 0 ? '#dc2626' : percent < 0 ? '#15803d' : '';
-            return `<td class="num">${Number.isFinite(value) ? Number(value).toLocaleString('en-US', { maximumFractionDigits: 0 }) : '—'}</td>${i ? `<td class="num"${color ? ` style="color:${color};font-weight:700"` : ''}>${percent === null ? '—' : `${detailMoney(percent)}%`}</td>` : ''}`;
+            return `<td class="num">${Number.isFinite(value) ? signedNumber(value, 0) : '—'}</td>${i ? `<td class="num"${color ? ` style="color:${color};font-weight:700"` : ''}>${percent === null ? '—' : signedNumber(percent, 3, 3, '%')}</td>` : ''}`;
         }).join('');
         const remark = summary.remarks?.[row.id] || '';
         return `<tr>${breakdown ? `<td>${esc(row.entity)}</td>` : ''}<td>${esc(row.activity)}</td>${cells}<td><input type="text" maxlength="2000" data-db-remark="${index}" value="${esc(remark)}" aria-label="Remark"></td><td><button type="button" class="btn btn-outline" data-db-save="${index}">Save</button></td></tr>`;
@@ -392,8 +428,8 @@ function monthlyPerformance(period, excel, dashboardSummary = null, productionBy
     };
     const formatCell = (value, percent = false, whole = false) => {
         if (value == null || !Number.isFinite(Number(value))) return '—';
-        if (whole) return Number(value).toLocaleString('en-US', { maximumFractionDigits: 0 });
-        return `${detailMoney(percent ? Number(value) * 100 : value)}${percent ? '%' : ''}`;
+        if (whole) return signedNumber(value, 0);
+        return percent ? signedNumber(Number(value) * 100, 3, 3, '%') : detailMoney(value);
     };
     const movementRows = [...new Set([...current.keys(), ...previous.keys()])].map(key => {
         const item = current.get(key) || previous.get(key);
@@ -463,7 +499,7 @@ async function inventory(period, mode) {
     const data = await api(`/api/inventory-valuation?period=${period}&mode=${mode}`);
     const stages = data.stages || [];
     const number = value => value == null || !Number.isFinite(Number(value)) ? '—' : reportAmount(value);
-    const volume = value => value == null || !Number.isFinite(Number(value)) ? '—' : Number(value).toLocaleString('en-US', { maximumFractionDigits: 0 });
+    const volume = value => value == null || !Number.isFinite(Number(value)) ? '—' : signedNumber(value, 0);
     const usesWorkbookCosts = data.costMapping?.source === 'workbook';
     const hasHaulingRoutes = ['haulingBUAToWPUSD', 'haulingBUAToPortUSD', 'haulingWPToPortUSD'].every(key => Number.isFinite(Number(data.costMapping?.[key])));
     const warnings = [];
@@ -487,7 +523,7 @@ async function inventory(period, mode) {
     const includedStages = stages.filter(stage => stage.includedInQuantityTotal !== false);
     const totalIncludedQty = includedStages.reduce((sum, stage) => sum + Number(stage.endingQtyMT || 0), 0);
     const chartCanDraw = totalIncludedQty > 0 && includedStages.every(stage => Number(stage.endingQtyMT) >= 0);
-    const share = value => !chartCanDraw ? '—' : Number(value) / totalIncludedQty * 100 < 0.5 ? '<1%' : `${(Number(value) / totalIncludedQty * 100).toLocaleString('en-US', { maximumFractionDigits: 0 })}%`;
+    const share = value => { if (!chartCanDraw) return '—'; const percent = Number(value) / totalIncludedQty * 100; return percent >= 0 && percent < 0.5 ? '<1%' : signedNumber(percent, 0, 0, '%'); };
     let offset = 0;
     const circumference = 2 * Math.PI * 108;
     const segments = includedStages.filter(stage => Number(stage.endingQtyMT) > 0 && totalIncludedQty > 0).map((stage, index) => {
@@ -565,7 +601,7 @@ async function financial(period, mode) {
     const data = await api(`/api/financial-statements?period=${period}&mode=${mode}`);
     const report = data.report || {};
     const periods = report.periods || Object.keys(report.profitLoss?.[0]?.months || {});
-    const formatStatementAmount = value => value == null ? '—' : Number(value).toLocaleString('en-US', { maximumFractionDigits: 0, minimumFractionDigits: 0 }).replace(/^-/, '(') + (Number(value) < 0 ? ')' : '');
+    const formatStatementAmount = value => value == null ? '—' : signedNumber(value, 0);
     const reportTable = lines => {
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const headers = ['Description', `YTD ${String(report.comparativeYear).slice(-2)}`, `YTD ${String(report.year).slice(-2)}`, ...periods.map(month => `${monthNames[Number(month.slice(5)) - 1]}-${month.slice(2, 4)}`)];
@@ -652,7 +688,7 @@ async function integration() {
     const connector = (name, detail, status, source, lines, button, statusClass) => `<article class="connector-card"><div><div class="connector-heading"><h3>${name}</h3>${badge(source)}</div><p>${detail}</p><div class="connector-details">${lines.map(line => `<div>${line}</div>`).join('')}</div><div class="connector-actions">${button}</div></div><div><span class="status ${statusClass}">${esc(status)}</span></div></article>`;
     const display = value => value === undefined || value === null || value === '' ? '—' : esc(value);
     const entityRows = (d365.entities || []).map(item => { const last = item.last; return `<tr><td><strong>${esc(item.label)}</strong><br><small>${esc(item.key)}</small></td><td>${esc(last?.status || 'pending')}</td><td class="num">${qty(item.staging_count)}</td><td class="num">${qty(last?.fetched || 0)}</td><td>${display(last?.message)}</td><td><button class="btn btn-outline d365-staging-view" data-entity="${esc(item.key)}" data-label="${esc(item.label)}" type="button">View Staging</button></td></tr>`; }).join('');
-    const recentRows = (production.recentTickets || []).map(ticket => `<tr><td>${display(ticket['Tgl Keluar'])} ${display(ticket['Jam Keluar'])}</td><td><strong>${display(ticket.Product)}</strong></td><td>${display(ticket['No Pol'])}</td><td>${display(ticket.Sopir)}</td><td>${display(ticket.WEIGHBRIDGE || ticket.source)}</td><td class="num">${ticket.BRUTO == null ? '—' : Number(ticket.BRUTO).toLocaleString('en-US', { maximumFractionDigits: 0 })}</td><td class="num">${ticket.TARA == null ? '—' : Number(ticket.TARA).toLocaleString('en-US', { maximumFractionDigits: 0 })}</td><td class="num">${ticket.source === 'Google Sheets' ? '—' : Number(ticket.NETTO || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</td><td class="num val-text">${qty((Number(ticket.NETTO) || 0) / 1000)} MT</td><td>${display(ticket.Operator)}</td></tr>`).join('');
+    const recentRows = (production.recentTickets || []).map(ticket => `<tr><td>${display(ticket['Tgl Keluar'])} ${display(ticket['Jam Keluar'])}</td><td><strong>${display(ticket.Product)}</strong></td><td>${display(ticket['No Pol'])}</td><td>${display(ticket.Sopir)}</td><td>${display(ticket.WEIGHBRIDGE || ticket.source)}</td><td class="num">${ticket.BRUTO == null ? '—' : signedNumber(ticket.BRUTO, 0)}</td><td class="num">${ticket.TARA == null ? '—' : signedNumber(ticket.TARA, 0)}</td><td class="num">${ticket.source === 'Google Sheets' ? '—' : signedNumber(ticket.NETTO || 0, 0)}</td><td class="num val-text">${qty((Number(ticket.NETTO) || 0) / 1000)} MT</td><td>${display(ticket.Operator)}</td></tr>`).join('');
     $('#pageContent').innerHTML = `
         ${sectionHeader('Integration & Real-Time Data Sources', 'Microsoft Dynamics 365 and Google Sheets production sources.')}
         <div class="connector-grid">${connector('Microsoft Dynamics 365 OData Connector', 'Reads D365 connection settings from the Laravel environment configuration.', data.d365.status === 'configured' ? 'Configured' : 'Not configured', 'environment', [`<b>Environment URL:</b> <code>${esc(data.d365.environmentUrl || 'Not configured')}</code>`, `<b>Sync Period:</b> <code>${esc($('#period').value)}</code>`, `<b>Auto Sync:</b> <code>${data.d365.autoSync ? 'Enabled' : 'Disabled'}</code>`, `<b>Last Sync:</b> ${esc(formatSyncTimestamp(d365LastSyncedAt))}`, `<b>Local Records:</b> ${qty(data.database.glEntries)} GL records`], `<button id="d365SyncAll" class="btn btn-primary" type="button">${Number(data.database.glEntries || 0) === 0 ? 'Initial D365 Sync' : 'Sync Selected Month'}</button><button id="viewGlData" class="btn btn-outline" type="button">View GL Data</button>`, data.d365.status === 'configured' ? 'online' : 'manual')}${connector('Google Sheets Production Connector', 'Preview and sync activity data from the Produksi tab.', data.googleSheets.status === 'configured' ? 'Configured' : 'Not configured', 'Google Sheets API', [`<b>Spreadsheet ID:</b> <code>${esc(data.googleSheets.spreadsheetId || '—')}</code>`, `<b>Sheet:</b> <code>${esc(data.googleSheets.sheetName || 'Produksi')}</code>`, `<b>Service account:</b> <code>${esc(data.googleSheets.serviceAccountEmail || '—')}</code>`, `<b>Credential:</b> ${esc(data.googleSheets.credentialStatus || 'Unavailable')}`, `<b>Last Sync:</b> ${esc(formatSyncTimestamp(data.googleSheets.lastSyncedAt))}`], `<button id="googleSheetsSync" class="btn btn-primary" type="button">Sync Production Now</button><button id="googleSheetsPreview" class="btn btn-outline" type="button">Preview Sheet</button><div id="googleSheetsSyncStatus" class="integration-note" role="status"></div>`, data.googleSheets.status === 'configured' ? 'online' : 'manual')}</div>
