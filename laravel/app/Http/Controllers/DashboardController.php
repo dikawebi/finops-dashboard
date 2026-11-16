@@ -137,9 +137,13 @@ class DashboardController extends Controller
         $sync = SystemConfig::get('sheetsSync', []);
         $syncedPeriods = $sync['db_cost_periods'] ?? [];
         if (in_array($period, $syncedPeriods, true)) {
-            $periods = $mode === 'ytd'
-                ? array_map(static fn (int $month): string => substr($period, 0, 4).'-'.str_pad((string) $month, 2, '0', STR_PAD_LEFT), range(1, (int) substr($period, 5, 2)))
-                : [$period];
+            // This endpoint also feeds the month-range table, so return every
+            // synchronized month through the selected period for both modes.
+            $periods = array_values(array_filter($syncedPeriods, static fn (string $month): bool =>
+                str_starts_with($month, substr($period, 0, 4).'-') && $month <= $period
+            ));
+            sort($periods);
+            if (!$periods) $periods = [$period];
             $records = DbCostSummary::query()->whereIn('period', $periods)->get();
             $groups = [];
             foreach ($records as $record) {
@@ -164,7 +168,9 @@ class DashboardController extends Controller
             $remarkValues = [];
             $rows = [];
             foreach ($groups as $key => $group) {
-                $amount = array_sum(array_map('floatval', $group['months']));
+                $amount = $mode === 'ytd'
+                    ? array_sum(array_map('floatval', $group['months']))
+                    : (float) ($group['months'][$period] ?? 0);
                 $id = json_encode(['entity', $group['entity'], $group['activity']], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 $remark = $remarks->get($id)?->remark;
                 if ($remark !== null) $remarkValues[$id] = $remark;
