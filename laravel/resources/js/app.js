@@ -609,14 +609,14 @@ async function financial(period, mode) {
             if (line.kind === 'heading') return `<tr class="parent-row"><td colspan="${headers.length}">${esc(line.label || line.id)}</td></tr>`;
             const classes = [line.kind === 'total' ? 'financial-final' : ''].filter(Boolean).join(' ');
             const cells = [
-                `<td>${esc(line.label || line.id)}</td>`,
-                `<td class="num financial-ytd">${formatStatementAmount(line.comparative)}</td>`,
-                `<td class="num financial-ytd">${formatStatementAmount(line.ytd)}</td>`,
+                `<td class="financial-description">${esc(line.label || line.id)}</td>`,
+                `<td class="num financial-ytd financial-ytd-first">${formatStatementAmount(line.comparative)}</td>`,
+                `<td class="num financial-ytd financial-ytd-second">${formatStatementAmount(line.ytd)}</td>`,
                 ...periods.map(month => `<td class="num ${month === period ? 'selected-period' : ''}">${formatStatementAmount(line.months?.[month])}</td>`),
             ];
             return `<tr class="${classes}">${cells.join('')}</tr>`;
         });
-        const header = `<tr><th>Description</th><th class="financial-ytd">YTD ${String(report.comparativeYear).slice(-2)}</th><th class="financial-ytd ${mode === 'ytd' ? 'selected-period' : ''}">YTD ${String(report.year).slice(-2)}</th>${periods.map(month => `<th class="${mode === 'mtd' && month === period ? 'selected-period' : ''}">${monthNames[Number(month.slice(5)) - 1]}-${month.slice(2, 4)}${month >= report.glStartPeriod ? `<br><small>${report.glMonths?.[month]?.rows ? 'GL' : 'No GL'}</small>` : ''}</th>`).join('')}</tr>`;
+        const header = `<tr><th class="financial-description">Description</th><th class="financial-ytd financial-ytd-first">YTD ${String(report.comparativeYear).slice(-2)}</th><th class="financial-ytd financial-ytd-second ${mode === 'ytd' ? 'selected-period' : ''}">YTD ${String(report.year).slice(-2)}</th>${periods.map(month => `<th class="${mode === 'mtd' && month === period ? 'selected-period' : ''}">${monthNames[Number(month.slice(5)) - 1]}-${month.slice(2, 4)}${month >= report.glStartPeriod ? `<br><small>${report.glMonths?.[month]?.rows ? 'GL' : 'No GL'}</small>` : ''}</th>`).join('')}</tr>`;
         return `<div class="table-responsive"><table class="table-accounting financial-report-table"><thead>${header}</thead><tbody>${rows.length ? rows.join('') : `<tr><td colspan="${headers.length}">No data available.</td></tr>`}</tbody></table></div>`;
     };
     const diagnostics = data.diagnostics || {};
