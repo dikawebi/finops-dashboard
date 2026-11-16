@@ -96,6 +96,8 @@ class InventoryValuationService
             })->sum(fn ($row) => abs((float) $row->qty_mt));
         };
         $mined = max(0, $sum(fn ($r) => $r->location === 'bua' && $r->movement_type === 'coalMined'));
+        // The same route quantity is recorded once at each location: out at BUA,
+        // in at Non Wash. It is a single transfer in the stock flow.
         $buaToWp = $routeQty('bua', 'BUA to Washing Plant', 'transfer_out');
         $buaLoadedPort = $routeQty('bua', 'BUA to Port', 'transfer_out');
         $buaArrivedPort = $routeQty('transitBuaPort', 'BUA to Port', 'transfer_out');
@@ -115,10 +117,9 @@ class InventoryValuationService
         $amount['bua'] -= $activity['bua']['outValue'];
         $qty['bua'] -= $buaOut;
 
-        // The sheet records this route as dispatched and received within the month.
+        // BUA→Non Wash is a direct stockpile transfer, not a separate transit stage.
         $qty['transitBuaWp'] = 0.0;
         $amount['transitBuaWp'] = 0.0;
-        $activity['transitBuaWp']['in'] = $buaToWp; $activity['transitBuaWp']['receipt'] = $buaToWp * $buaRate; $activity['transitBuaWp']['out'] = $buaToWp; $activity['transitBuaWp']['outValue'] = $buaToWp * $buaRate;
         $qty['nonWash'] += $directBuaWpIn;
         $amount['nonWash'] += $directBuaWpIn * $buaRate + $costs['nonWash'];
         $activity['nonWash']['in'] = $directBuaWpIn; $activity['nonWash']['receipt'] = $directBuaWpIn * $buaRate; $activity['nonWash']['cost'] = $costs['nonWash'];
@@ -187,7 +188,7 @@ class InventoryValuationService
                 'washed' => [$openingRow,$movement('Feed received from Non Wash',$feed,$feedValue,'receipt','Google Sheets'),$movement('Reject to High Ash',-$reject,0,'adjustment','Google Sheets'),$movement('Add cost — COGP Washing Plant',0,$costs['washed'],'cost','D365 GL'),$availableRow,$movement('Loaded to BP PORT',-$washedOut,-$washedValue,'outflow','Google Sheets'),$closingRow],
                 'highAsh' => [$openingRow,$movement('Reject received', $reject,0,'adjustment','Google Sheets'),$closingRow],
                 'port' => [$openingRow,$movement('Received from BUA to Port',$buaArrivedPort,$buaArrivedPort*$buaRate,'receipt','Google Sheets'),$movement('Received from Washing Plant to Port',$wpArrivedPort,$wpArrivedPort*$washedRate,'receipt','Google Sheets'),$movement('Add cost — hauling routes + COGP BP PORT',0,$costs['port'],'cost','D365 GL'),$availableRow,$movement('Barging',-$barging,-$bargingValue,'outflow','Google Sheets'),$closingRow],
-                'transitBuaWp' => [$openingRow,$movement('Dispatched BUA → WP',$buaToWp,$buaToWp*$buaRate,'receipt','Google Sheets'),$movement('Received at Non Wash',-$buaToWp,-$buaToWp*$buaRate,'outflow','Google Sheets'),$closingRow],
+                'transitBuaWp' => [$openingRow,$closingRow],
                 'transitBuaPort' => [$openingRow,$movement('Loaded at BUA',$buaLoadedPort,$buaLoadedPort*$buaRate,'receipt','Google Sheets'),$movement('Arrived at BP PORT',-$buaArrivedPort,-$buaArrivedPort*$buaRate,'outflow','Google Sheets'),$closingRow],
                 'transitWpPort' => [$openingRow,$movement('Loaded at Washing Plant',$wpLoadedPort,$wpLoadedPort*$washedRate,'receipt','Google Sheets'),$movement('Arrived at BP PORT',-$wpArrivedPort,-$wpArrivedPort*$washedRate,'outflow','Google Sheets'),$closingRow],
                 default => [$openingRow,$closingRow],

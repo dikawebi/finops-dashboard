@@ -19,7 +19,7 @@ class GoogleSheetsProductionSync
             DB::table('daily_production')->upsert($rows, ['production_date'], ['period','coal_getting_mt','routes','source','updated_at']);
             DB::table('production_activity_details')->insert($details);
             if ($inventoryMovements) DB::table('inventory_movements')->insert($inventoryMovements);
-            $metricLabels = ['coalGetting'=>'Coal Getting','haulingBuaWp'=>'Hauling BUA to Washing Plant','haulingBuaPort'=>'Hauling BUA to Port','haulingWpPort'=>'Hauling Washing Plant to Port','washFeed'=>'Washing Plant Feed','portLoading'=>'Barging / Port Loading'];
+            $metricLabels = ['coalGetting'=>'Coal Getting','haulingBuaWp'=>'Hauling BUA to Washing Plant','haulingBuaPort'=>'Hauling BUA to Port','haulingWpPort'=>'Hauling Washing Plant to Port','loadingBuaWp'=>'Loading BUA to Washing Plant','loadingBuaPort'=>'Loading BUA to Port','loadingWpPort'=>'Loading Washing Plant to Port','washFeed'=>'Washing Plant Feed','portLoading'=>'Barging / Port Loading'];
             foreach ($monthlyMetrics as $period => $metrics) foreach ($metricLabels as $key => $label) {
                 DB::table('monthly_metrics')->updateOrInsert(['metric_key'=>$key,'period'=>$period], ['label'=>$label,'unit'=>'MT','value'=>$metrics[$key] ?? null,'updated_at'=>now(),'created_at'=>now()]);
             }
@@ -58,6 +58,7 @@ class GoogleSheetsProductionSync
         $rows = $details = $productionPeriods = $inventoryMovements = [];
         $washMetricColumns = [];
         foreach (['Feed', 'Reject', 'Clean Cooking', 'Barging'] as $metric) $washMetricColumns[$metric] = $this->findHeaderColumn($values[1] ?? [], $metric);
+        $sheetMovements = $this->summarizeProductionMovements($values, $washMetricColumns);
         foreach (array_slice($values, 3, null, true) as $offset => $cells) {
             $date = $this->date($cells[0] ?? null);
             if (!$date) continue;
@@ -88,37 +89,7 @@ class GoogleSheetsProductionSync
                 $details[] = $detail;
             }
             foreach ($washMetricColumns as $metric => $column) if ($column) $details[] = $this->detail($date, ['activity'=>'Coal Wash','metric'=>$metric,'unit'=>'MT'], $this->number($get($column)));
-            $appendMovement = function (string $location, string $type, float $qty, array $meta = []) use (&$inventoryMovements, $period): void {
-                if (abs($qty) < 0.000001) return;
-                $inventoryMovements[] = ['period'=>$period,'location'=>$location,'movement_type'=>$type,'source'=>'google_sheets','qty_mt'=>$qty,'amount_usd'=>0,'metadata'=>json_encode($meta),'created_at'=>now(),'updated_at'=>now()];
-            };
-            $transfer = function (string $from, string $to, float $qty, string $route) use ($appendMovement): void {
-                if ($qty <= 0) return;
-                $appendMovement($from, 'transfer_out', -$qty, ['route'=>$route,'counterpart'=>$to]);
-                $appendMovement($to, 'transfer_in', $qty, ['route'=>$route,'counterpart'=>$from]);
-            };
-            if ($coal !== null) $appendMovement('bua', 'coalMined', $coal, ['source_column'=>'S']);
-            $transfer('bua','nonWash',array_sum(array_map(fn (int $column): float => $this->number($get($column)) ?? 0, [36,37,38])),'BUA to Washing Plant');
-            $transferThroughTransit = function (string $from, string $transit, string $to, float $loaded, float $arrived, string $route) use ($appendMovement): void {
-                if ($loaded > 0) {
-                    $appendMovement($from, 'transfer_out', -$loaded, ['route'=>$route,'counterpart'=>$transit,'phase'=>'loading']);
-                    $appendMovement($transit, 'transfer_in', $loaded, ['route'=>$route,'counterpart'=>$from,'phase'=>'loading']);
-                }
-                if ($arrived > 0) {
-                    $appendMovement($transit, 'transfer_out', -$arrived, ['route'=>$route,'counterpart'=>$to,'phase'=>'hauling']);
-                    $appendMovement($to, 'transfer_in', $arrived, ['route'=>$route,'counterpart'=>$transit,'phase'=>'hauling']);
-                }
-            };
-            $transferThroughTransit('bua','transitBuaPort','port',$this->number($get(34)) ?? 0,array_sum(array_map(fn (int $column): float => $this->number($get($column)) ?? 0, [28,30,32])),'BUA to Port');
-            $transferThroughTransit('washed','transitWpPort','port',$this->number($get(35)) ?? 0,array_sum(array_map(fn (int $column): float => $this->number($get($column)) ?? 0, [29,31,33])),'Washing Plant to Port');
-            $feed = $this->number($get($washMetricColumns['Feed'] ?? null)) ?? 0;
-            $clean = $this->number($get($washMetricColumns['Clean Cooking'] ?? null)) ?? 0;
-            $reject = $this->number($get($washMetricColumns['Reject'] ?? null)) ?? 0;
-            if ($feed > 0) $appendMovement('nonWash','washFeed',-$feed,['output_clean_mt'=>$clean,'output_reject_mt'=>$reject,'reconciliation_delta_mt'=>round($feed-$clean-$reject,6)]);
-            if ($clean > 0) $appendMovement('washed','washOutput',$clean,['source'=>'Clean Cooking']);
-            if ($reject > 0) $appendMovement('highAsh','washReject',$reject,['source'=>'Reject']);
-            $barging = $this->number($get($washMetricColumns['Barging'] ?? null)) ?? 0;
-            if ($barging > 0) $appendMovement('port','barging',-$barging,['source_column'=>'Google Sheets Coal Wash / Barging']);
+            if ($coal !== null) $inventoryMovements[] = ['period'=>$period,'location'=>'bua','movement_type'=>'coalMined','source'=>'google_sheets','qty_mt'=>$coal,'amount_usd'=>0,'metadata'=>json_encode(['source_column'=>'S']),'created_at'=>now(),'updated_at'=>now()];
         }
         if (!$rows) throw new RuntimeException('Tidak ditemukan baris bertanggal yang dapat disinkronkan.');
         $dbRange = "'DB'!A:T";
@@ -126,7 +97,79 @@ class GoogleSheetsProductionSync
         $dbResponse = Http::withToken($token)->timeout(60)->get($dbUrl, ['valueRenderOption'=>'UNFORMATTED_VALUE']);
         if ($dbResponse->failed()) throw new RuntimeException('Google Sheets DB tab gagal dibaca: HTTP '.$dbResponse->status().' '.$dbResponse->json('error.message', ''));
         $monthlyMetrics = $this->parseDbMetrics($dbResponse->json('values', []), $productionPeriods);
+        $appendMovement = function (string $period, string $location, string $type, float $qty, array $meta = []) use (&$inventoryMovements): void {
+            if (abs($qty) < 0.000001) return;
+            $inventoryMovements[] = ['period'=>$period,'location'=>$location,'movement_type'=>$type,'source'=>'google_sheets','qty_mt'=>$qty,'amount_usd'=>0,'metadata'=>json_encode($meta),'created_at'=>now(),'updated_at'=>now()];
+        };
+        foreach ($productionPeriods as $period => $_) {
+            $sheet = $sheetMovements[$period] ?? [];
+            $db = $monthlyMetrics[$period] ?? [];
+            $pick = static function (array $source, string $key, array $fallback, ?float $default = null): ?float {
+                if (array_key_exists($key, $source) && $source[$key] !== null) return (float) $source[$key];
+                foreach ($fallback as $value) if ($value !== null) return (float) $value;
+                return $default;
+            };
+            $arriveBuaWp = $pick($sheet, 'buaToWpMT', [$db['haulingBuaWp'] ?? null], 0) ?? 0;
+            $arriveBuaPort = $pick($sheet, 'buaToPortMT', [$db['haulingBuaPort'] ?? null], 0) ?? 0;
+            $arriveWpPort = $pick($sheet, 'wpToPortMT', [$db['haulingWpPort'] ?? null], 0) ?? 0;
+            $loadBuaPort = $pick($sheet, 'loadingBuaMT', [$db['loadingBuaPort'] ?? null]);
+            $loadWpPort = $pick($sheet, 'loadingWpMT', [$db['loadingWpPort'] ?? null]);
+            if ($arriveBuaWp > 0) {
+                $appendMovement($period, 'bua', 'transfer_out', -$arriveBuaWp, ['route'=>'BUA to Washing Plant','counterpart'=>'nonWash','phase'=>'hauling']);
+                $appendMovement($period, 'nonWash', 'transfer_in', $arriveBuaWp, ['route'=>'BUA to Washing Plant','counterpart'=>'bua','phase'=>'arrival']);
+            }
+            foreach ([['bua','transitBuaPort','port',$loadBuaPort,$arriveBuaPort,'BUA to Port'],['washed','transitWpPort','port',$loadWpPort,$arriveWpPort,'Washing Plant to Port']] as [$from,$transit,$to,$loaded,$arrived,$route]) {
+                if ($loaded !== null && $loaded > 0) {
+                    $appendMovement($period, $from, 'transfer_out', -$loaded, ['route'=>$route,'counterpart'=>$transit,'phase'=>'loading']);
+                    $appendMovement($period, $transit, 'transfer_in', $loaded, ['route'=>$route,'counterpart'=>$from,'phase'=>'loading']);
+                }
+                if ($arrived > 0) {
+                    $appendMovement($period, $transit, 'transfer_out', -$arrived, ['route'=>$route,'counterpart'=>$to,'phase'=>'hauling']);
+                    $appendMovement($period, $to, 'transfer_in', $arrived, ['route'=>$route,'counterpart'=>$transit,'phase'=>'hauling']);
+                }
+            }
+            $feed = $pick($sheet, 'washFeedMT', [$db['washFeed'] ?? null], 0) ?? 0;
+            $reject = $pick($sheet, 'washRejectMT', [$db['washReject'] ?? null], 0) ?? 0;
+            $clean = $sheet['cleanCookingMT'] ?? null;
+            if ($feed > 0) $appendMovement($period, 'nonWash', 'washFeed', -$feed, ['output_clean_mt'=>$clean,'output_reject_mt'=>$reject,'reconciliation_delta_mt'=>$clean === null ? null : round($feed-$clean-$reject,6)]);
+            if ($clean !== null && $clean > 0) $appendMovement($period, 'washed', 'washOutput', $clean, ['source'=>'Clean Cooking']);
+            if ($reject > 0) $appendMovement($period, 'highAsh', 'washReject', $reject, ['source'=>'Reject']);
+            $barging = $sheet['bargingMT'] ?? null;
+            if ($barging !== null && $barging > 0) $appendMovement($period, 'port', 'barging', -$barging, ['source'=>'Google Sheets Coal Wash / Barging']);
+        }
         return compact('rows','details','monthlyMetrics','productionPeriods','inventoryMovements');
+    }
+
+    /** Mirrors the reference parser: month-end recap values replace daily route subtotals. */
+    private function summarizeProductionMovements(array $values, array $washMetricColumns): array
+    {
+        $headers = array_map(static fn ($value): string => strtolower(trim((string) $value)), $values[0] ?? []);
+        $columns = [];
+        foreach (['buaToPortMT'=>'Coal Hauling BUA to Port','wpToPortMT'=>'Coal Hauling WP to Port','buaToWpMT'=>'Coal Hauling BUA to WP','loadingBuaMT'=>'Coal Loading BUA','loadingWpMT'=>'Coal Loading WP to Port'] as $key=>$header) {
+            $columns[$key] = array_keys($headers, strtolower($header), true);
+        }
+        $monthly = $observed = [];
+        foreach (array_slice($values, 3, null, true) as $cells) {
+            $date = $this->date($cells[0] ?? null);
+            if (!$date) continue;
+            $period = substr($date, 0, 7);
+            $totals = [];
+            foreach ($columns as $key=>$indexes) $totals[$key] = array_sum(array_map(fn ($index): float => $this->number($cells[$index] ?? null) ?? 0, $indexes));
+            $before = $observed[$period] ?? [];
+            $matches = 0;
+            foreach (['buaToPortMT','wpToPortMT','buaToWpMT'] as $key) if (($totals[$key] ?? 0) > 0 && ($before[$key] ?? 0) > 0 && $totals[$key] >= $before[$key] * 0.7 && $totals[$key] <= $before[$key] * 1.5) $matches++;
+            $lastDay = (int) substr($date, 8, 2) === (int) gmdate('t', strtotime($date.' 00:00:00 UTC'));
+            $rawCoal = trim((string) ($cells[18] ?? ''));
+            $isRecap = array_sum($totals) > 0 && $lastDay && (($rawCoal === '' || $rawCoal === '-') || $matches >= 2);
+            if ($isRecap) {
+                foreach ($totals as $key=>$value) $monthly[$period][$key] = $value;
+                foreach ($washMetricColumns as $metric=>$column) if ($column) $monthly[$period][match ($metric) {'Feed'=>'washFeedMT','Reject'=>'washRejectMT','Clean Cooking'=>'cleanCookingMT','Barging'=>'bargingMT'}] = $this->number($cells[$column-1] ?? null) ?? 0;
+                continue;
+            }
+            foreach ($totals as $key=>$value) { $monthly[$period][$key] = ($monthly[$period][$key] ?? 0) + $value; $observed[$period][$key] = ($observed[$period][$key] ?? 0) + $value; }
+            // Wash and barging cells are month-end recap totals, not daily values.
+        }
+        return $monthly;
     }
 
     private function parseDbMetrics(array $rows, array $productionPeriods): array
@@ -136,6 +179,9 @@ class GoogleSheetsProductionSync
             'haulingBuaWp'=>['Total Hauling BUA To Wash Plant','MT'],
             'haulingBuaPort'=>['Total Hauling Bua Stock to Port','MT'],
             'haulingWpPort'=>['Total hauling Wash Plant to Port','MT'],
+            'loadingBuaWp'=>['Total Loading BUA To Wash Plant','MT'],
+            'loadingBuaPort'=>['Total Loading Bua Stock to Port','MT'],
+            'loadingWpPort'=>['Total Loading Wash Plant to Port','MT'],
             'washFeed'=>['Feed','MT'],
             'portLoading'=>['Coal Loading Port (BLC)','MT'],
         ];
