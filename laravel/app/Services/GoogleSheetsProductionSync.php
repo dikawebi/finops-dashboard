@@ -56,12 +56,14 @@ class GoogleSheetsProductionSync
         }
         if (count($values) < 4) throw new RuntimeException('Sheet Produksi tidak berisi header dan data yang cukup.');
         $rows = $details = $productionPeriods = $inventoryMovements = [];
+        $washMetricColumns = [];
+        foreach (['Feed', 'Reject', 'Clean Cooking', 'Barging'] as $metric) $washMetricColumns[$metric] = $this->findHeaderColumn($values[1] ?? [], $metric);
         foreach (array_slice($values, 3, null, true) as $offset => $cells) {
             $date = $this->date($cells[0] ?? null);
             if (!$date) continue;
             $period = substr($date, 0, 7);
             $productionPeriods[$period] = true;
-            $get = static fn (int $column): mixed => $cells[$column - 1] ?? null;
+            $get = static fn (?int $column): mixed => $column ? ($cells[$column - 1] ?? null) : null;
             $coal = $this->number($get(19));
             $routes = ['bua_to_port' => ['PT BP' => $this->number($get(28)), 'PT SMA' => $this->number($get(30)), 'PT HRS' => $this->number($get(32))], 'wp_to_port' => ['PT BP (WP)' => $this->number($get(29)), 'PT SMA (WP)' => $this->number($get(31)), 'PT HRS (WP)' => $this->number($get(33))]];
             $rows[] = ['production_date' => $date, 'period' => $period, 'coal_getting_mt' => $coal, 'routes' => json_encode($routes), 'source' => 'google_sheets', 'updated_at' => now(), 'created_at' => now()];
@@ -78,13 +80,14 @@ class GoogleSheetsProductionSync
                 $details[] = $this->detail($date, ['activity'=>$activity ?: 'Coal Hauling BUA to WP','route'=>'BUA to Washing Plant','contractor'=>$contractor ?: null,'metric'=>'quantity'], $this->number($get($column)));
             }
             foreach (range(40, 46) as $column) {
-                $activity = trim((string) ($values[0][$column - 1] ?? 'Coal Loading BUA to WP'));
+                $activity = trim((string) ($values[0][$column - 1] ?? ''));
                 $equipment = trim((string) ($values[1][$column - 1] ?? ''));
-                $detail = $this->detail($date, ['activity'=>$activity ?: 'Coal Loading BUA to WP','route'=>'BUA to Washing Plant','equipment'=>$equipment ?: null,'metric'=>'quantity'], $this->number($get($column)));
+                if ($activity === '' || $equipment === '' || strtolower($activity) === 'coal wash' || in_array(strtolower($equipment), ['feed', 'reject', 'clean cooking', 'barging'], true)) continue;
+                $detail = $this->detail($date, ['activity'=>$activity,'route'=>'BUA to Washing Plant','equipment'=>$equipment,'metric'=>'quantity'], $this->number($get($column)));
                 $detail['source_key'] = hash('sha256', $detail['source_key'].'|column:'.$column);
                 $details[] = $detail;
             }
-            foreach ([['metric'=>'Feed','column'=>47],['metric'=>'Reject','column'=>48],['metric'=>'Clean Cooking','column'=>49],['metric'=>'Barging','column'=>50]] as $item) $details[] = $this->detail($date, ['activity'=>'Coal Wash','metric'=>$item['metric'],'unit'=>'MT'], $this->number($get($item['column'])));
+            foreach ($washMetricColumns as $metric => $column) if ($column) $details[] = $this->detail($date, ['activity'=>'Coal Wash','metric'=>$metric,'unit'=>'MT'], $this->number($get($column)));
             $appendMovement = function (string $location, string $type, float $qty, array $meta = []) use (&$inventoryMovements, $period): void {
                 if (abs($qty) < 0.000001) return;
                 $inventoryMovements[] = ['period'=>$period,'location'=>$location,'movement_type'=>$type,'source'=>'google_sheets','qty_mt'=>$qty,'amount_usd'=>0,'metadata'=>json_encode($meta),'created_at'=>now(),'updated_at'=>now()];
@@ -96,16 +99,26 @@ class GoogleSheetsProductionSync
             };
             if ($coal !== null) $appendMovement('bua', 'coalMined', $coal, ['source_column'=>'S']);
             $transfer('bua','nonWash',array_sum(array_map(fn (int $column): float => $this->number($get($column)) ?? 0, [36,37,38])),'BUA to Washing Plant');
-            $transfer('bua','port',array_sum(array_map(fn (int $column): float => $this->number($get($column)) ?? 0, [28,30,32])),'BUA to Port');
-            $transfer('washed','port',array_sum(array_map(fn (int $column): float => $this->number($get($column)) ?? 0, [29,31,33])),'Washing Plant to Port');
-            $feed = $this->number($get(47)) ?? 0;
-            $clean = $this->number($get(49)) ?? 0;
-            $reject = $this->number($get(48)) ?? 0;
+            $transferThroughTransit = function (string $from, string $transit, string $to, float $loaded, float $arrived, string $route) use ($appendMovement): void {
+                if ($loaded > 0) {
+                    $appendMovement($from, 'transfer_out', -$loaded, ['route'=>$route,'counterpart'=>$transit,'phase'=>'loading']);
+                    $appendMovement($transit, 'transfer_in', $loaded, ['route'=>$route,'counterpart'=>$from,'phase'=>'loading']);
+                }
+                if ($arrived > 0) {
+                    $appendMovement($transit, 'transfer_out', -$arrived, ['route'=>$route,'counterpart'=>$to,'phase'=>'hauling']);
+                    $appendMovement($to, 'transfer_in', $arrived, ['route'=>$route,'counterpart'=>$transit,'phase'=>'hauling']);
+                }
+            };
+            $transferThroughTransit('bua','transitBuaPort','port',$this->number($get(34)) ?? 0,array_sum(array_map(fn (int $column): float => $this->number($get($column)) ?? 0, [28,30,32])),'BUA to Port');
+            $transferThroughTransit('washed','transitWpPort','port',$this->number($get(35)) ?? 0,array_sum(array_map(fn (int $column): float => $this->number($get($column)) ?? 0, [29,31,33])),'Washing Plant to Port');
+            $feed = $this->number($get($washMetricColumns['Feed'] ?? null)) ?? 0;
+            $clean = $this->number($get($washMetricColumns['Clean Cooking'] ?? null)) ?? 0;
+            $reject = $this->number($get($washMetricColumns['Reject'] ?? null)) ?? 0;
             if ($feed > 0) $appendMovement('nonWash','washFeed',-$feed,['output_clean_mt'=>$clean,'output_reject_mt'=>$reject,'reconciliation_delta_mt'=>round($feed-$clean-$reject,6)]);
             if ($clean > 0) $appendMovement('washed','washOutput',$clean,['source'=>'Clean Cooking']);
             if ($reject > 0) $appendMovement('highAsh','washReject',$reject,['source'=>'Reject']);
-            $barging = $this->number($get(50)) ?? 0;
-            if ($barging > 0) $appendMovement('port','barging',-$barging,['source_column'=>'AX']);
+            $barging = $this->number($get($washMetricColumns['Barging'] ?? null)) ?? 0;
+            if ($barging > 0) $appendMovement('port','barging',-$barging,['source_column'=>'Google Sheets Coal Wash / Barging']);
         }
         if (!$rows) throw new RuntimeException('Tidak ditemukan baris bertanggal yang dapat disinkronkan.');
         $dbRange = "'DB'!A:T";
@@ -162,6 +175,14 @@ class GoogleSheetsProductionSync
         if (is_numeric($value)) return (float) $value;
         $clean = preg_replace('/[^0-9.\-]/', '', str_replace(',', '', (string) $value));
         return $clean !== '' && is_numeric($clean) ? (float) $clean : null;
+    }
+
+    private function findHeaderColumn(array $headers, string $wanted): ?int
+    {
+        $normalize = static fn (mixed $value): string => strtolower(preg_replace('/\s+/', ' ', trim((string) $value)));
+        $needle = $normalize($wanted);
+        foreach ($headers as $index => $header) if ($normalize($header) === $needle) return $index + 1;
+        return null;
     }
 
     private function date(mixed $value): ?string
