@@ -7,6 +7,7 @@ use App\Http\Controllers\AccrualController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\D365Controller;
 use App\Http\Controllers\FinancialAccountMappingController;
+use App\Http\Controllers\InventoryManualInputController;
 use App\Http\Middleware\EnsurePeriodOpen;
 
 Route::get('/', function () {
@@ -30,6 +31,9 @@ Route::prefix('api')->group(function () {
     Route::get('/financial-mappings', [FinancialAccountMappingController::class, 'index']);
     Route::put('/financial-mappings/{accountCode}', [FinancialAccountMappingController::class, 'update']);
     Route::get('/inventory-valuation', [DashboardController::class, 'inventory']);
+    Route::get('/inventory-inputs', [InventoryManualInputController::class, 'index']);
+    Route::post('/inventory-inputs', [InventoryManualInputController::class, 'store']);
+    Route::post('/inventory-inputs/{id}/void', [InventoryManualInputController::class, 'void']);
     Route::get('/production-summary', [DashboardController::class, 'production']);
     Route::get('/equipment-cost', [DashboardController::class, 'equipmentCost']);
     Route::get('/cost-per-mt', [DashboardController::class, 'costPerMt']);

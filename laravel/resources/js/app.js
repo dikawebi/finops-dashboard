@@ -497,6 +497,7 @@ function monthlyPerformance(period, excel, dashboardSummary = null, productionBy
 
 async function inventory(period, mode) {
     const data = await api(`/api/inventory-valuation?period=${period}&mode=${mode}`);
+    const manualInputs = await api(`/api/inventory-inputs?period=${encodeURIComponent(period)}&mode=${encodeURIComponent(mode)}`);
     const stages = data.stages || [];
     const number = value => value == null || !Number.isFinite(Number(value)) ? '—' : reportAmount(value);
     const volume = value => value == null || !Number.isFinite(Number(value)) ? '—' : signedNumber(value, 0);
@@ -541,10 +542,16 @@ async function inventory(period, mode) {
     const flowCards = stages.map(stage => `<details class="stage-card"><summary><strong>${esc(stage.name)}</strong><p>${volume(stage.endingQtyMT)} · USD ${number(stage.endingValueUSD)}</p></summary><div class="table-responsive"><table class="table-accounting"><thead><tr><th>Movement</th><th>Qty MT</th><th>Value USD</th><th>USD/MT</th></tr></thead><tbody>${(stage.rows || []).map(row => `<tr class="${['opening', 'available', 'closing'].includes(row.type) ? 'parent-row' : ''}"><td>${esc(row.label)}</td><td class="num">${volume(row.qtyMT)}</td><td class="num">${number(row.valueUSD)}</td><td class="num">${number(row.rateUSD)}</td></tr>`).join('')}</tbody></table></div></details>`).join('');
     const historyRows = (data.history || []).map(item => `<tr><td>${esc(item.period)}</td><td class="num">${volume(item.totalEndingQtyMT)}</td><td class="num">${number(item.totalEndingValueUSD)}</td><td class="num">${number(item.cogsShippedValUSD)}</td><td>${item.costSource === 'workbook' ? 'Temporary Excel history' : item.costSource === 'gl' || item.hasCostData ? 'GL' : 'Awaiting upload'}</td></tr>`).join('');
     const haulingStatus = hasHaulingRoutes ? `BUA to WP: USD ${number(data.costMapping.haulingBUAToWPUSD)} · BUA to Port: USD ${number(data.costMapping.haulingBUAToPortUSD)} · WP to Port: USD ${number(data.costMapping.haulingWPToPortUSD)}.` : usesWorkbookCosts ? `Excel history: Add Cost Non Wash USD ${number(data.costMapping.haulingToWPUSD)} · Add Cost BP PORT USD ${number(data.costMapping.portAddedCostUSD)} (combined value in Excel).` : 'The three routes are unavailable on the current server.';
+    const locationNames = { bua: 'BUA / Mine Site', nonWash: 'Wash Plant — Non Wash', washed: 'Wash Plant — Wash', highAsh: 'Reject (High Ash)', port: 'BP PORT', transitPort: 'In Transit to Port', kunz: 'Kunz', transitKunz: 'In Transit to Kunz', transitBuaWp: 'In Transit BUA to WP', transitBuaPort: 'In Transit BUA to Port', transitWpPort: 'In Transit WP to Port' };
+    const manualInputRows = (manualInputs || []).map(input => `<tr><td>${esc(input.period)}</td><td>${esc(input.input_type)}</td><td>${esc(locationNames[input.location] || input.location)}</td><td>${esc(input.reference)}</td><td class="num">${volume(input.qty_mt)}</td><td class="num">${number(input.adjustment_usd)}</td><td>${input.status === 'voided' ? `Voided${input.voided_at ? ` · ${esc(formatSyncTimestamp(input.voided_at))}` : ''}` : 'Active'}</td><td>${input.status === 'active' ? `<button class="btn btn-outline inventory-input-void" data-id="${input.id}" type="button">Void</button>` : '—'}</td></tr>`).join('');
+    const inputLocations = Object.entries(locationNames).map(([id, label]) => `<option value="${id}">${esc(label)}</option>`).join('');
+    const manualInputsSection = `<section class="table-card inventory-manual-input-card"><div class="card-title">Sales &amp; Inventory Adjustment Input</div><p class="integration-note">Inputs are saved in the database and affect inventory valuation. Sales reduce stock at the snapshot closing weighted-average rate; sale revenue is tracked separately and is not posted to GL or Financial Statements. Adjustments use signed quantity and USD value. Add a unique reference to prevent duplicate entry.</p><form id="inventoryManualInputForm" class="inventory-manual-input-form"><label>Type<select name="input_type"><option value="sale">Sale</option><option value="adjustment">Adjustment</option></select></label><label>Location<select name="location">${inputLocations}</select></label><label>Reference<input name="reference" required maxlength="100" placeholder="Invoice / adjustment ref"></label><label>Qty MT<input name="qty_mt" type="number" step="0.001" required value="0"></label><label class="inventory-sale-price">Sale price USD/MT<input name="sale_price_usd_per_mt" type="number" min="0" step="0.01"></label><label class="inventory-adjustment-value">Adjustment USD<input name="adjustment_usd" type="number" step="0.01" value="0"></label><label class="inventory-input-reason">Reason<textarea name="reason" rows="2" maxlength="2000"></textarea></label><button class="btn btn-primary" type="submit">Save input</button></form><p id="inventoryInputStatus" class="integration-note" aria-live="polite"></p>${table(['Period', 'Type', 'Location', 'Reference', 'Qty MT', 'Adjustment USD', 'Status', 'Action'], manualInputRows)}</section>`;
     $('#pageContent').innerHTML = `
         ${sectionHeader('Monthly Inventory Valuation', 'Eight locations • Qty MT • Value USD • Monthly weighted average per stock.', `<label class="inventory-period-control">Period <input id="inventoryPeriod" type="month" value="${period}" aria-label="Inventory valuation period"></label>${unavailable('First Period Opening Balance')}`)}
         <p class="inventory-notice">${mode === 'ytd' ? `YTD movements: ${data.rangeStart || period} through ${data.periodKey || period}. Closing balances and composition are as of ${data.periodKey || period}; transfer rate is weighted by total outflow.` : `MTD movements and closing balances for ${data.periodKey || period}.`}</p>
         <p class="inventory-notice">${warnings.join(' ') || 'Cost and tonnage data are available; all values are in USD.'}</p>
+        ${manualInputsSection}
+        ${data.manualSalesQtyMT ? `<p class="inventory-notice">Manual sales this ${mode.toUpperCase()}: ${volume(data.manualSalesQtyMT)} MT · Revenue ${number(data.manualSalesRevenueUSD)} USD (memo only; excluded from GL).</p>` : ''}
         <p class="source-row">${badge('inventory_model.json')} ${badge('inventory_movements.json')} ${badge('inventory_movements_dummy.json')} ${badge('inventory_historical_costs.json')} ${badge('gl_data.json')}</p>
         <div class="inventory-summary"><article class="inventory-total-highlight"><div class="card-title">Total Stock Coal — ${esc(data.periodKey || period)}</div><strong>${volume(totalQty)} MT</strong><p>USD ${number(totalValue)}</p><small>${data.isProvisional ? 'Provisional value — see quantity and cost sources' : 'Includes all stock locations'}</small></article></div>
         ${card(`Coal Stock Composition <span class="subtle">— ${esc(data.periodKey || period)}</span>`, `<p class="inventory-chart-caption">Slices represent closing stock volume (MT) by location.</p>${donut}`)}
@@ -554,6 +561,35 @@ async function inventory(period, mode) {
         <details class="stage-card inventory-bua-details"><summary><strong>Mining BUA Monthly History</strong><p>Opening, coal mined, adjustments, transfer rate, and closing.</p></summary>${table(['Month', 'Opening MT', 'Opening USD', 'Coal mined MT', 'Coal mined USD', 'Adj USD', 'Rate Transfer USD/MT', 'Closing MT', 'Closing USD', 'Rate Closing USD/MT', 'Cost Source'], buaRows)}</details>
         <div class="stockpile-flow">${flowCards}</div>
         ${card('Closing Balance History — rolled forward from the first period', table(['Month', 'Total Stock MT', 'Stock Value USD', 'COGS USD', 'Cost Data'], historyRows))}`;
+    const form = $('#inventoryManualInputForm');
+    const typeSelect = form.elements.input_type;
+    const updateInputFields = () => {
+        const sale = typeSelect.value === 'sale';
+        form.querySelector('.inventory-sale-price').hidden = !sale;
+        form.querySelector('.inventory-adjustment-value').hidden = sale;
+        form.elements.sale_price_usd_per_mt.required = sale;
+        if (sale && !['port', 'transitPort', 'kunz', 'transitKunz'].includes(form.elements.location.value)) form.elements.location.value = 'port';
+    };
+    typeSelect.addEventListener('change', updateInputFields);
+    form.elements.location.addEventListener('change', () => { if (typeSelect.value === 'sale' && !['port', 'transitPort', 'kunz', 'transitKunz'].includes(form.elements.location.value)) form.elements.location.value = 'port'; });
+    updateInputFields();
+    form.addEventListener('submit', async event => {
+        event.preventDefault();
+        const status = $('#inventoryInputStatus');
+        const payload = Object.fromEntries(new FormData(form));
+        payload.period = period;
+        status.textContent = 'Saving and refreshing valuation…';
+        try {
+            await postJson('/api/inventory-inputs', payload);
+            await inventory(period, mode);
+        } catch (error) { status.textContent = error.message; }
+    });
+    document.querySelectorAll('.inventory-input-void').forEach(button => button.addEventListener('click', async () => {
+        const reason = window.prompt('Reason for voiding this inventory input:');
+        if (!reason?.trim()) return;
+        try { await postJson(`/api/inventory-inputs/${button.dataset.id}/void`, { reason }); await inventory(period, mode); }
+        catch (error) { window.alert(error.message); }
+    }));
     $('#inventoryPeriod').addEventListener('change', event => { $('#period').value = event.target.value; render(); });
 }
 
