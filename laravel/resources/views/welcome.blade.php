@@ -11,7 +11,7 @@
     <title>{{ $companyName }} — Coal Mining Accounting &amp; Cost Dashboard</title>
     <link rel="icon" href="{{ e($logoPath) }}">
     <link rel="apple-touch-icon" href="{{ e($logoPath) }}">
-            @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/language.js'])
+            @vite(['resources/css/app.css', 'resources/css/account.css', 'resources/js/app.js', 'resources/js/language.js', 'resources/js/account-menu.js'])
     <style>
         .content { max-width: 1550px; margin: 0 auto; }
         .overview-kpi-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
@@ -65,7 +65,6 @@
             <div class="sidebar-account">
                 <span class="sidebar-account-avatar" title="{{ auth()->user()->name }} · {{ auth()->user()->isAdministrator() ? 'Administrator' : 'Pengguna' }}">{{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}</span>
                 <span class="sidebar-account-copy"><b>{{ auth()->user()->name }}</b><span>{{ auth()->user()->email }}</span><small>{{ auth()->user()->isAdministrator() ? 'Administrator' : 'Pengguna' }}</small></span>
-                <form method="post" action="{{ route('logout') }}">@csrf<button type="submit" aria-label="Keluar dari akun" title="Keluar">↪</button></form>
             </div>
         </aside>
         <div class="app-main">
@@ -75,10 +74,12 @@
                 <div class="mode-control-group"><span class="filterbar-label">View</span><div class="mode-toggle" role="group" aria-label="Reporting view"><button type="button" class="active" data-mode="mtd">MTD</button><button type="button" data-mode="ytd">YTD</button></div><select id="mode" class="visually-hidden" tabindex="-1" aria-hidden="true"><option value="mtd">MTD</option><option value="ytd">YTD</option></select></div>
                 <span id="viewText" class="active-period">MTD · October 2026</span>
                 <div class="language-switch" role="group" aria-label="Language"><button type="button" data-locale-switch="id">ID</button><button type="button" data-locale-switch="en">EN</button></div>
+                @include('components.account-menu')
             </div>
             <main id="pageContent" class="content" aria-live="polite"></main>
             <footer>{{ $companyName }} • Coal Production Accounting &amp; Cost Dashboard · Data freeze 2026-10-30</footer>
         </div>
     </div>
+    @include('components.change-password-dialog')
 </body>
 </html>

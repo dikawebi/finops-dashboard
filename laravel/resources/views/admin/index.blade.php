@@ -9,7 +9,7 @@
     @php($logoPath = $system['logoPath'] ?? '/images/logo-bp.svg')
     <title>Administrator — {{ $companyName }} FinOps</title>
     <link rel="icon" href="{{ e($logoPath) }}">
-    @vite(['resources/css/app.css', 'resources/css/portal.css', 'resources/css/admin-shell.css', 'resources/js/language.js'])
+    @vite(['resources/css/app.css', 'resources/css/portal.css', 'resources/css/account.css', 'resources/css/admin-shell.css', 'resources/js/language.js', 'resources/js/account-menu.js'])
 </head>
 <body class="portal-page admin-page">
     <div class="app-shell admin-app-shell">
@@ -37,14 +37,13 @@
             <div class="sidebar-account">
                 <span class="sidebar-account-avatar" title="{{ auth()->user()->name }} · Administrator">{{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}</span>
                 <span class="sidebar-account-copy"><b>{{ auth()->user()->name }}</b><span>{{ auth()->user()->email }}</span><small>Administrator</small></span>
-                <form method="post" action="{{ route('logout') }}">@csrf<button type="submit" aria-label="Sign out" title="Keluar">↪</button></form>
             </div>
         </aside>
         <div class="app-main admin-app-main">
             <header class="app-header admin-topbar">
                 <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="Toggle navigation" aria-controls="appSidebar" aria-expanded="true"><span></span><span></span><span></span></button>
                 <div class="admin-header-title"><b>Administrator</b><small>USER &amp; ACCESS MANAGEMENT</small></div>
-                <div class="admin-top-actions"><div class="language-switch" role="group" aria-label="Language"><button type="button" data-locale-switch="id">ID</button><button type="button" data-locale-switch="en">EN</button></div><span class="admin-user"><i>{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</i><span>{{ auth()->user()->name }}<small>Administrator</small></span></span><a class="soft-button" href="{{ route('dashboard') }}">← Dashboard</a></div>
+                <div class="admin-top-actions"><div class="language-switch" role="group" aria-label="Language"><button type="button" data-locale-switch="id">ID</button><button type="button" data-locale-switch="en">EN</button></div>@include('components.account-menu')<a class="soft-button" href="{{ route('dashboard') }}">← Dashboard</a></div>
             </header>
             <main class="admin-main">
         <div class="admin-heading"><div><span class="admin-eyebrow">PENGATURAN SISTEM</span><h1>Administrator</h1><p>Kelola akun pengguna dan akses ke FinOps Dashboard.</p></div><span class="admin-secure">◈ Admin workspace</span></div>
@@ -108,6 +107,7 @@
             </main>
         </div>
     </div>
+    @include('components.change-password-dialog')
     <script>
         (() => {
             const toggle = document.getElementById('sidebarToggle');

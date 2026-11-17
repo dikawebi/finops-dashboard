@@ -20,7 +20,6 @@
                     <img src="{{ e($logoPath) }}" alt="">
                     <span><b>{{ mb_strtoupper($companyName) }}</b><small>FINANCE &amp; OPERATIONS</small></span>
                 </a>
-                <span class="portal-badge"><i></i> Portal internal karyawan</span>
                 <h1>Selamat Datang</h1>
                 <p class="login-intro">Masuk untuk melihat laporan biaya, produksi, persediaan, dan kinerja keuangan perusahaan.</p>
 
@@ -45,14 +44,14 @@
             </div>
         </section>
         <aside class="login-visual-side" aria-label="Informasi FinOps Dashboard">
-            <div class="login-visual-image"></div><div class="login-visual-shade"></div>
+            <img class="login-visual-image" src="/images/login-side.jpg" alt="Operasi tambang PT Borneo Prima" fetchpriority="high" decoding="async"><div class="login-visual-shade"></div>
             <div class="login-visual-content">
-                <div class="visual-eyebrow">COAL PRODUCTION ACCOUNTING</div>
-                <h2>Keputusan operasional,<br>berdasarkan data yang terhubung.</h2>
-                <p class="visual-lead">Satu dashboard untuk melihat kondisi produksi dan keuangan secara menyeluruh.</p>
-                <div class="visual-feature"><span>↗</span><div><b>Biaya operasional terpantau</b><small>COGP, direct expense, dan analisis varians.</small></div></div>
-                <div class="visual-feature"><span>▤</span><div><b>Data operasional terhubung</b><small>Sinkronisasi D365, Google Sheets, dan transaksi GL.</small></div></div>
-                <div class="visual-feature"><span>◉</span><div><b>Informasi produksi dan stok</b><small>Volume harian, alur produksi, dan valuasi persediaan.</small></div></div>
+                <div class="visual-eyebrow">INFORMASI OPERASIONAL &amp; KEUANGAN</div>
+                <h2>Visibilitas menyeluruh atas kinerja operasional dan keuangan.</h2>
+                <p class="visual-lead">Dapatkan informasi untuk mendukung keputusan terkait produksi, biaya, persediaan, dan hasil keuangan.</p>
+                <div class="visual-feature"><span>↗</span><div><b>Kinerja biaya dan keuangan</b><small>Tinjau COGP, beban langsung, varians biaya, dan laporan keuangan.</small></div></div>
+                <div class="visual-feature"><span>▤</span><div><b>Data perusahaan terintegrasi</b><small>Konsolidasi General Ledger D365 dan data produksi Google Sheets.</small></div></div>
+                <div class="visual-feature"><span>◉</span><div><b>Visibilitas produksi dan persediaan</b><small>Pantau pergerakan produksi, posisi stok, dan valuasi persediaan.</small></div></div>
                 <a class="company-link" href="https://borneoprima.com/" target="_blank" rel="noopener">borneoprima.com ↗</a>
             </div>
         </aside>

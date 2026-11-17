@@ -14,6 +14,7 @@ use App\Http\Middleware\EnsurePeriodOpen;
 Route::get('/login', [AuthController::class, 'showLogin'])->middleware('guest')->name('login');
 Route::post('/login', [AuthController::class, 'login'])->middleware('guest')->name('login.store');
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
+Route::post('/account/password', [AuthController::class, 'updatePassword'])->middleware('auth')->name('account.password');
 Route::post('/api/login', [AuthController::class, 'login'])->middleware('guest');
 Route::post('/api/logout', [AuthController::class, 'logout'])->middleware('auth');
 

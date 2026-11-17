@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
@@ -47,5 +48,17 @@ class AuthController extends Controller
         return $request->expectsJson()
             ? response()->json(['success' => true])
             : redirect()->route('login')->with('status', 'Anda sudah keluar dari dashboard.');
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $data = $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'string', 'min:12', 'confirmed', 'different:current_password'],
+        ]);
+
+        $request->user()->forceFill(['password' => Hash::make($data['password'])])->save();
+
+        return response()->json(['success' => true, 'message' => 'Kata sandi berhasil diperbarui.']);
     }
 }
