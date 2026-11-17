@@ -215,3 +215,39 @@ body{min-height:100vh}.app-shell{display:flex;min-height:100vh;background:var(--
 @media(max-width:760px){.overview-detail-card{min-height:230px}.overview-bypass{top:calc(118px + 230px)}.route-bua-port{top:calc(118px + 230px + 44px)}}
 @media(max-width:760px){.overview-lower,.allocation-grid{grid-template-columns:1fr}.overview-driver-tools{align-items:flex-start}.driver-row{grid-template-columns:1fr}.driver-row>b{text-align:right}.overview-flow-map{min-width:1200px}}
 @media(max-width:760px){.overview-flow-panel{padding:16px}.overview-date-controls{align-items:flex-start;flex-wrap:wrap}.overview-flow-detail{min-width:100%}.overview-allocation-tile[aria-pressed=true]{outline-offset:1px}}
+
+/* Production flow as one connected process map, with locations anchored to the landscape. */
+.overview-flow-panel{padding:18px;border-color:#d9e4eb;border-radius:13px;background:#fff}
+.overview-flow-scroll{overflow-x:auto;padding:4px 0 14px}
+.overview-flow-map{position:relative;display:block;width:1400px;min-width:1400px;height:520px;overflow:hidden;padding:0;border:1px solid #dbe7eb;border-radius:12px;background:#f1f7fa}
+.overview-flow-map::before{position:absolute;inset:0;z-index:0;background:radial-gradient(circle at 92% 13%,#f5dc98 0 12px,transparent 13px),radial-gradient(ellipse at 12% 79%,#dce7da 0 18%,transparent 18.3%),radial-gradient(ellipse at 38% 82%,#e3ebdf 0 20%,transparent 20.3%),radial-gradient(ellipse at 72% 78%,#e5ecdf 0 17%,transparent 17.3%),linear-gradient(180deg,#edf6fa 0%,#f6f9f7 64%,#e4ecdf 64%,#dcece9 77%,#d8edf1 77%,#cde8ed 100%);content:"";pointer-events:none}
+.overview-flow-cards{position:absolute;inset:0;z-index:2;display:block}
+.overview-detail-card{position:absolute;width:220px;min-width:220px;min-height:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;overflow:visible}
+.overview-detail-card:nth-child(1){left:40px;top:126px}.overview-detail-card:nth-child(2){left:315px;top:126px}.overview-detail-card:nth-child(3){left:590px;top:126px}.overview-detail-card:nth-child(4){left:865px;top:126px}.overview-detail-card:nth-child(5){left:1140px;top:126px}
+.overview-detail-card summary{display:grid;grid-template-rows:auto 74px auto auto;justify-items:center;gap:4px;text-align:center;cursor:pointer}
+.overview-detail-card summary>span{color:#304d62;font-size:.78rem;letter-spacing:.06em;text-shadow:0 1px 0 #fff}
+.overview-scene{display:block!important;width:100%;height:74px;margin:0;overflow:visible;border:0;border-radius:0;background:transparent}
+.overview-scene svg{width:100%;height:100%;filter:drop-shadow(0 3px 2px #526b6b18)}
+.overview-card-values{display:flex;flex-direction:column;align-items:center;gap:1px;margin:0;padding:0;background:transparent}
+.overview-card-values strong{margin:0;color:#173b5a;font-size:.92rem;line-height:1.35}
+.overview-card-values .overview-stage-rate{color:#4f697b;font-size:.76rem;font-weight:700}
+.overview-detail-card summary small{max-width:210px;margin:2px 0 0;color:#526c7c;font-size:.68rem;line-height:1.35;text-shadow:0 1px 0 #fff}
+.overview-detail-card[open] summary{filter:drop-shadow(0 2px 5px #2777a62a)}
+.overview-flow-cards>.overview-detail-card:not(:last-child)::after{position:absolute;top:174px;right:-58px;left:auto;z-index:1;width:55px;height:3px;background:#3286d2;color:#3286d2;content:"➜";font-size:17px;line-height:2px;text-align:right}
+.overview-bypass{top:calc(126px + 216px);z-index:1;height:90px}
+.overview-bypass path{stroke:#0b9a91;stroke-width:3}
+.overview-vessel-direct{top:34px;z-index:1}
+.overview-vessel-direct path{stroke-width:3}
+.overview-vessel-direct span{top:0;padding:3px 9px;border:1px solid #e1d9f3;border-radius:999px;background:#fff;color:#684caf;font-size:.68rem}
+.overview-route{z-index:3;width:180px;overflow:visible;border:0;border-radius:0;background:transparent;box-shadow:none}
+.overview-route summary{display:grid;justify-items:center;gap:3px}
+.overview-route summary>span{padding:0;background:transparent;color:#315573;font-size:.7rem}
+.overview-route summary>div{display:flex;justify-content:center;gap:8px;padding:4px 8px;border-radius:999px;background:#ffffffd9;white-space:nowrap}
+.overview-route summary strong{color:#193b61;font-size:.7rem}
+.overview-route summary b{color:#60798a;font-size:.66rem}
+.route-bua-wp{top:62px;left:17.6%}.route-wp-port{top:62px;left:39.2%}
+.route-bua-port{top:calc(126px + 216px + 43px);left:28.4%}
+.route-bua-port summary>span{color:#087d80}
+.overview-flow-map .overview-detail-card>div:not(.overview-scene),.overview-flow-map .overview-route>p{display:none}
+.overview-flow-detail{position:relative;z-index:4;width:min(680px,100%);min-width:0;margin:8px 0 0;padding:14px 16px;border:1px solid #d5e2e9;border-radius:10px;background:#fff;box-shadow:0 3px 12px #21486b10}
+@media(max-width:760px){.overview-flow-panel{padding:14px}.overview-flow-map{width:1400px;min-width:1400px;height:520px}.overview-detail-card{width:210px;min-width:210px}.overview-detail-card:nth-child(1){left:30px}.overview-detail-card:nth-child(2){left:305px}.overview-detail-card:nth-child(3){left:580px}.overview-detail-card:nth-child(4){left:855px}.overview-detail-card:nth-child(5){left:1130px}.overview-flow-cards>.overview-detail-card:not(:last-child)::after{right:-65px;width:62px}.overview-bypass{top:calc(126px + 216px)}.route-bua-port{top:calc(126px + 216px + 43px)}}
