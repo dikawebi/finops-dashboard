@@ -211,23 +211,8 @@ async function overview(period, mode) {
     $('#pageContent').innerHTML = `${sectionHeader('Operations & Financial Overview', 'Microsoft Dynamics 365 General Ledger and Google Sheets weighbridge data', overviewActions)}${flowMarkup}<div class="grid-2 overview-lower"><section class="card"><div class="card-title"><span>Cost Allocation: COGP &amp; Direct Expense</span>${badge(mode === 'ytd' ? 'D365 GL Oct + Jan–Sep history' : 'D365 GL sync')}<small>USD</small></div><div class="allocation-grid"><button type="button" id="overview-filter-expense" class="allocation-val overview-allocation-tile" aria-pressed="false"><b>DIRECT EXPENSE, GA &amp; SELLING</b><strong>${money(cost.grandTotal.totalExpense)}</strong><span>Direct Expense by Valuation to; Not Valuated is included in GA. Selling Expense has its own column.</span></button><button type="button" id="overview-filter-cogp" class="allocation-cost overview-allocation-tile" aria-pressed="true"><b>COGP</b><strong>${money(cost.grandTotal.totalCOGP)}</strong><span>From Costing to: Mining, 3 Coal Hauling routes, Washing Plant, BP PORT</span></button></div><div class="overview-driver-tools"><b>Top Cost Drivers</b><button type="button" id="overview-filter-all" class="btn btn-outline overview-filter-all" aria-pressed="false">All Cost</button><label>Group by<select id="overview-allocation-group"><option value="account">Account</option><option value="location">Location</option><option value="activity">Activity</option><option value="department">Department</option></select></label></div><p id="overview-allocation-note" class="integration-note"></p><div id="overview-top-drivers"></div></section><section class="card"><div class="card-title"><span>Daily Production Volume (MT)</span>${badge('Google Sheets Data')}</div><p class="chart-caption">Daily recorded coal volume (MT):</p><label class="overview-production-control">Production view<select id="overview-production-view"><option value="production">Coal Production</option><option value="hauling">Coal Hauling</option><option value="selling">Selling</option></select></label><div id="chart-daily-production"></div><div class="card-title overview-daily-cost-title">Daily Cost — COGP &amp; GA</div><p id="overview-direct-note" class="integration-note"></p><div id="overview-direct-chart"></div><details class="overview-daily-details"><summary><strong>View daily cost details</strong></summary>${table(['Date','COGP GL (USD)','GA GL (USD)'],'<tr><td colspan="3">Loading daily details…</td></tr>')}</details><div class="chart-footer"><span>Production: Google Sheets · Produksi</span><span>Dated costs: D365 GL</span></div></section></div>`;
     const flowPanel = $('.overview-flow-panel');
     mountProductionMap(flowPanel, { card, buaStock, stockLine, siteBreakdown, flowSitesAvailable });
-    const detailPanel = flowPanel.querySelector('.overview-flow-detail');
     const vesselCard = $('[data-overview-card="Mother Vessel"]');
     if (vesselCard && !soldQty) vesselCard.querySelector('.overview-card-sub').textContent = 'No sales quantity in live October inventory source · Select for details';
-    flowPanel.querySelectorAll('.overview-flow-map details').forEach(item => item.addEventListener('toggle', () => {
-        if (!item.open) {
-            if (detailPanel.dataset.owner === (item.dataset.overviewCard || item.dataset.overviewRoute)) {
-                detailPanel.hidden = true;
-                delete detailPanel.dataset.owner;
-            }
-            return;
-        }
-        flowPanel.querySelectorAll('.overview-flow-map details[open]').forEach(other => { if (other !== item) other.open = false; });
-        const summary = item.querySelector('summary');
-        detailPanel.dataset.owner = item.dataset.overviewCard || item.dataset.overviewRoute;
-        detailPanel.innerHTML = `<strong>${esc(summary.querySelector('span')?.textContent || 'Production')} — Details</strong><div>${item.querySelector(':scope > div')?.innerHTML || item.querySelector(':scope > p')?.outerHTML || ''}</div>`;
-        detailPanel.hidden = false;
-    }));
     const renderAllocation = async () => {
         const group = $('#overview-allocation-group').value;
         const active = document.querySelector('.overview-allocation-tile[aria-pressed="true"]')?.id;
