@@ -231,8 +231,7 @@ async function overview(period, mode) {
         entries.sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
         const top = entries.slice(0, 10);
         $('#overview-top-drivers').innerHTML = top.map(([name, value]) => {
-            const percent = Number(cost.grandTotal.allCost) ? Math.abs(value) / Number(cost.grandTotal.allCost) * 100 : 0;
-            return `<div class="driver-row"><div><span>${esc(name)}</span><div class="driver-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent.toFixed(1)}" aria-label="${esc(name)} ${percent.toFixed(1)} percent"><i style="width:${Math.min(100, Math.max(1, percent))}%"></i><em style="left:100%" aria-hidden="true"></em></div></div><b>${money(value)} ${signedNumber(percent, 0, 0, '%')}</b></div>`;
+            return `<div class="driver-row"><span>${esc(name)}</span><b>${money(value)}</b></div>`;
         }).join('') || '<p>No data for this selection.</p>';
     };
     document.querySelectorAll('.overview-allocation-tile').forEach(button => button.addEventListener('click', () => {
@@ -313,13 +312,15 @@ async function overview(period, mode) {
             }).join('');
             const summary = view === 'hauling' ? `${isDaily ? 'Daily' : mode.toUpperCase()} hauling ${qty(totalHauling)} MT` : `${isDaily ? 'Daily' : mode.toUpperCase()} coal ${qty(totalCoal)} MT · OB ${dailyRows.every(row => row.ob !== null) ? `${qty(totalOb)} Bcm` : '—'} · SR ${totalCoal && dailyRows.every(row => row.ob !== null) ? (totalOb / totalCoal).toFixed(2) : '—'}`;
             const note = mode === 'ytd' && !isDaily ? '<p class="overview-daily-note">Grafik memakai baris harian yang tersedia dari Google Sheets. Total YTD pada diagram produksi memakai DB sheet; bulan tanpa rincian harian tidak dibuat dari baseline Oktober.</p>' : '';
-            $('#chart-daily-production').innerHTML = `${note}<div class="overview-production-summary">${summary}</div><div class="overview-graph-legend">${view === 'hauling' ? '<span>● Coal Hauling (MT) — all recorded routes</span>' : '<span>● Coal Getting (MT)</span><span>● OB Removal (BCM; labels in thousands)</span><span>Different units are stacked for visual comparison only.</span>'}</div><div class="overview-graph-scroll"><svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="Daily production chart"><line x1="${pad}" y1="${height-pad}" x2="${width-20}" y2="${height-pad}" stroke="#cbd5e1"/>${bars}</svg></div>`;
+            $('#chart-daily-production').innerHTML = `${note}<div class="overview-production-summary">${summary}</div><div class="overview-graph-legend">${view === 'hauling' ? '<span><i class="legend-swatch hauling"></i>Coal Hauling (MT) — all recorded routes</span>' : '<span><i class="legend-swatch coal"></i>Coal Getting (MT)</span><span><i class="legend-swatch ob"></i>OB Removal (Bcm)</span><span>Units are shown on a shared visual scale.</span>'}</div><div class="overview-graph-scroll"><svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="Daily production chart"><line x1="${pad}" y1="${height-pad}" x2="${width-20}" y2="${height-pad}" stroke="#cbd5e1"/>${bars}</svg></div>`;
         }
         const costRows = (dailyData.costs || []).filter(row => !isDaily || row.date === chosenDate);
-        $('#overview-direct-note').textContent = `${isDaily ? `Daily ${formatDate(chosenDate)}` : mode.toUpperCase()} · D365 GL postings grouped by posting date. Google Sheets operating accruals remain monthly and are not spread across days.`;
+        $('#overview-direct-note').textContent = `${isDaily ? `Daily ${formatDate(chosenDate)}` : mode.toUpperCase()} · ${mode === 'ytd' && !isDaily ? 'Daily D365 GL values summed from January through the selected month.' : 'D365 GL postings grouped by posting date.'} Google Sheets operating accruals remain monthly and are not spread across days.`;
         if (!costRows.length) {
             $('#overview-direct-chart').innerHTML = '<p class="chart-empty">No dated D365 GL costs for this selection.</p>';
         } else {
+            const totalCogp = costRows.reduce((sum, row) => sum + Number(row.cogp || 0), 0);
+            const totalGa = costRows.reduce((sum, row) => sum + Number(row.ga || 0), 0);
             const width = Math.max(550, costRows.length * 38 + 136), height = 230, pad = 68;
             const values = costRows.flatMap(row => [Number(row.cogp || 0), Number(row.ga || 0)]).filter(Number.isFinite);
             const low = Math.min(0, ...values), high = Math.max(0, ...values), range = high - low || 1;
@@ -327,7 +328,7 @@ async function overview(period, mode) {
             const path = key => costRows.map((row, index) => `${index ? 'L' : 'M'}${x(index).toFixed(1)},${y(Number(row[key] || 0)).toFixed(1)}`).join(' ');
             const grid = Array.from({length:5},(_,index)=>{const value=low+range*index/4,yy=y(value);return `<line x1="${pad}" y1="${yy}" x2="${width-pad}" y2="${yy}" stroke="#e2e8f0"/><text x="${pad-7}" y="${yy+3}" text-anchor="end" font-size="9" fill="#64748b">${number(value)}</text>`;}).join('');
             const marks = costRows.map((row,index)=>`${[ ['cogp','#2563eb'],['ga','#f59e0b'] ].map(([key,color])=>`<circle cx="${x(index)}" cy="${y(Number(row[key]||0))}" r="3" fill="${color}"><title>${esc(row.date)} ${key.toUpperCase()} ${money(row[key])}</title></circle>`).join('')}${index%Math.max(1,Math.ceil(costRows.length/12))===0?`<text x="${x(index)}" y="${height-14}" text-anchor="middle" font-size="9" fill="#64748b">${esc(row.date.slice(5))}</text>`:''}`).join('');
-            $('#overview-direct-chart').innerHTML = `<div class="overview-graph-legend"><span>● COGP GL</span><span>● GA GL</span><span>USD by posting date</span></div><div class="overview-graph-scroll"><svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="Daily D365 GL COGP and GA costs">${grid}<path d="${path('cogp')}" fill="none" stroke="#2563eb" stroke-width="2.5"/><path d="${path('ga')}" fill="none" stroke="#f59e0b" stroke-width="2.5"/>${marks}</svg></div>`;
+            $('#overview-direct-chart').innerHTML = `<div class="overview-graph-legend overview-cost-legend"><span><i class="legend-swatch coal"></i>COGP net · ${money(totalCogp)}</span><span><i class="legend-swatch ga"></i>GA net · ${money(totalGa)}</span><span>${costRows.length} posting dates · USD</span></div><div class="overview-graph-scroll"><svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="Daily D365 GL COGP and GA costs">${grid}<path d="${path('cogp')}" fill="none" stroke="#2563eb" stroke-width="2.5"/><path d="${path('ga')}" fill="none" stroke="#f59e0b" stroke-width="2.5"/>${marks}</svg></div>`;
         }
         const body = $('#overview-daily-cost-details tbody');
         if (body) body.innerHTML = costRows.map(row => `<tr><td>${esc(formatDate(row.date))}</td><td class="num">${money(row.cogp)}</td><td class="num">${money(row.ga)}</td></tr>`).join('') || '<tr><td colspan="3">No dated GL rows for this selection.</td></tr>';
