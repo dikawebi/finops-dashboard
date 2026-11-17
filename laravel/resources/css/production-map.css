@@ -3,7 +3,7 @@
 .production-geography .production-landscape{display:block;width:100%;height:auto;aspect-ratio:1672/941;object-fit:cover}
 .production-geography .production-map-heading{position:absolute;left:2%;top:2%;color:#fff;font-size:1.2rem;font-weight:700;text-shadow:0 2px 6px #000}
 .production-map-heading small{display:block;font-size:.7rem;font-weight:400;margin-top:3px}
-.production-geography .overview-flow-cards{position:absolute;inset:0 0 100px;display:block;pointer-events:none}
+.production-geography .overview-flow-cards{position:absolute;inset:0;display:block;pointer-events:none}
 .production-geography .overview-detail-card{pointer-events:auto;position:absolute;min-width:0;width:clamp(116px,12%,154px);min-height:0;left:auto;top:auto;padding:0;border:0;background:transparent;transform:translateX(-50%)}
 .production-geography .overview-detail-card::after{display:none!important}
 .production-geography .overview-detail-card summary{display:flex;flex-direction:column;gap:4px;padding:7px 9px;border:1px solid #ffffff60;border-radius:7px;background:#15222ceF;color:#fff;box-shadow:0 3px 9px #0004;cursor:pointer;text-align:center;list-style:none}
@@ -40,10 +40,16 @@
 .production-geography .overview-route summary>div{display:flex;justify-content:center;gap:5px;flex-wrap:wrap;white-space:normal;padding:0;background:transparent}
 .production-geography .overview-route summary strong{font-size:12px;color:#fff}
 .production-geography .overview-route summary b{font-size:10px;color:#f4cb80}
-.production-geography .overview-route.route-bua-wp{left:32%;top:43%}
+.production-geography .overview-route.route-bua-wp{left:34%;top:54%}
 .production-geography .overview-route.route-wp-port{left:49%;top:58%}
 .production-geography .overview-route.route-bua-port{left:37%;top:73%}
 .production-geography .overview-route[open]{background:#233b48}
 .production-geography .overview-route p{display:none}
+.production-geography [data-overview-card][hidden]{display:none!important}
+.production-geography .production-port-routes{position:absolute;left:49%;top:60%;transform:translateX(-50%);width:clamp(166px,17%,220px);border:1px solid #f1a447;border-radius:8px;background:#15222cf2;box-shadow:0 3px 9px #0005;pointer-events:auto;overflow:hidden}
+.production-geography .production-port-heading{display:block;padding:7px 9px;color:#f4cb80;font-size:11px;text-align:center;border-bottom:1px solid #ffffff25}
+.production-geography .production-port-routes .overview-route{position:static;width:auto;transform:none;border:0;border-radius:0;box-shadow:none;background:transparent}
+.production-geography .production-port-routes .overview-route+ .overview-route{border-top:1px solid #ffffff25}
+@media(max-width:900px){.production-geography .production-port-routes{position:static;transform:none;width:auto;background:#15222c}.production-geography .production-port-routes .overview-route summary>span{color:#fff}}
 @media(max-width:900px){.production-geography .production-route-strip{position:relative;inset:auto;display:grid;grid-template-columns:1fr;gap:5px;padding:12px;background:#edf3f6}.production-geography .overview-route{position:static;width:auto;transform:none;background:transparent;box-shadow:none}.production-geography .overview-route summary>span{color:#284357}.production-geography .overview-route summary>div{background:#fff;border-radius:999px}.production-geography .overview-route summary strong{color:#193b61}.production-geography .overview-route summary b{color:#60798a}}
 @media(max-width:900px){.production-geography .overview-flow-cards{position:relative;inset:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px;background:#202b32}.production-geography .overview-detail-card[data-overview-card]{position:static;transform:none;width:auto;min-width:0}.production-geography .overview-detail-card summary{height:100%;min-height:90px}.production-geography .production-route-strip{grid-template-columns:1fr;gap:5px}.production-geography .production-map-heading{font-size:1rem}.production-geography .production-map-heading small{max-width:230px;font-size:.65rem}.production-geography .overview-detail-card summary small{font-size:.72rem}.production-geography .overview-stage-qty{font-size:1rem}}
