@@ -11,8 +11,8 @@ class GoogleSheetsProductionSync
     public function sync(): array
     {
         $parsed = $this->readAndParse();
-        $rows = $parsed['rows']; $details = $parsed['details']; $monthlyMetrics = $parsed['monthlyMetrics']; $productionPeriods = $parsed['productionPeriods']; $inventoryMovements = $parsed['inventoryMovements']; $dbCostSummary = $parsed['dbCostSummary']; $dbAccrualItems = $parsed['dbAccrualItems'];
-        DB::transaction(function () use ($rows, $details, $monthlyMetrics, $productionPeriods, $inventoryMovements, $dbCostSummary, $dbAccrualItems): void {
+        $rows = $parsed['rows']; $details = $parsed['details']; $monthlyMetrics = $parsed['monthlyMetrics']; $productionPeriods = $parsed['productionPeriods']; $inventoryMovements = $parsed['inventoryMovements']; $dbCostSummary = $parsed['dbCostSummary']; $dbAccrualItems = $parsed['dbAccrualItems']; $dbDailyCogpParameters = $parsed['dbDailyCogpParameters'];
+        DB::transaction(function () use ($rows, $details, $monthlyMetrics, $productionPeriods, $inventoryMovements, $dbCostSummary, $dbAccrualItems, $dbDailyCogpParameters): void {
             $dates = array_column($rows, 'production_date');
             DB::table('production_activity_details')->where('source', 'google_sheets')->whereIn('production_date', $dates)->delete();
             DB::table('inventory_movements')->where('source', 'google_sheets')->whereIn('period', array_keys($productionPeriods))->delete();
@@ -34,15 +34,17 @@ class GoogleSheetsProductionSync
             $accrualPeriods = array_values(array_unique(array_column($dbAccrualItems, 'period')));
             DB::table('db_accrual_items')->whereIn('period', $summaryPeriods)->delete();
             foreach (array_chunk($dbAccrualItems, 500) as $chunk) DB::table('db_accrual_items')->insert($chunk);
+            DB::table('db_daily_cogp_parameters')->whereIn('period', $summaryPeriods)->delete();
+            foreach (array_chunk($dbDailyCogpParameters, 500) as $chunk) DB::table('db_daily_cogp_parameters')->insert($chunk);
             DB::table('system_configs')->updateOrInsert(['key'=>'sheetsSync'], ['value'=>json_encode(['last_synced_at'=>now()->toIso8601String(),'rows'=>count($rows),'details'=>count($details),'db_cost_periods'=>$summaryPeriods,'db_accrual_periods'=>$accrualPeriods,'db_accrual_rows'=>count($dbAccrualItems)]),'updated_at'=>now(),'created_at'=>now()]);
         });
-        return ['rows'=>count($rows),'details'=>count($details),'inventory_movements'=>count($inventoryMovements),'metrics'=>count($monthlyMetrics, COUNT_RECURSIVE) - count($monthlyMetrics),'db_cost_rows'=>array_sum(array_map('count', $dbCostSummary)),'db_accrual_rows'=>count($dbAccrualItems),'periods'=>array_keys($productionPeriods),'synced_at'=>now()->toIso8601String()];
+        return ['rows'=>count($rows),'details'=>count($details),'inventory_movements'=>count($inventoryMovements),'metrics'=>count($monthlyMetrics, COUNT_RECURSIVE) - count($monthlyMetrics),'db_cost_rows'=>array_sum(array_map('count', $dbCostSummary)),'db_accrual_rows'=>count($dbAccrualItems),'daily_cogp_parameters'=>count($dbDailyCogpParameters),'periods'=>array_keys($productionPeriods),'synced_at'=>now()->toIso8601String()];
     }
 
     public function preview(): array
     {
         $data = $this->readAndParse();
-        return ['rows'=>count($data['rows']),'details'=>count($data['details']),'metric_periods'=>array_keys($data['monthlyMetrics']),'periods'=>array_keys($data['productionPeriods']),'monthly_metrics'=>$data['monthlyMetrics'],'db_cost_rows'=>array_sum(array_map('count', $data['dbCostSummary'])),'db_accrual_rows'=>count($data['dbAccrualItems']),'sample_accruals'=>array_slice($data['dbAccrualItems'],0,8),'samples'=>array_slice($data['rows'],0,5),'sample_details'=>array_slice($data['details'],0,12)];
+        return ['rows'=>count($data['rows']),'details'=>count($data['details']),'metric_periods'=>array_keys($data['monthlyMetrics']),'periods'=>array_keys($data['productionPeriods']),'monthly_metrics'=>$data['monthlyMetrics'],'db_cost_rows'=>array_sum(array_map('count', $data['dbCostSummary'])),'db_accrual_rows'=>count($data['dbAccrualItems']),'daily_cogp_parameters'=>count($data['dbDailyCogpParameters']),'sample_accruals'=>array_slice($data['dbAccrualItems'],0,8),'samples'=>array_slice($data['rows'],0,5),'sample_details'=>array_slice($data['details'],0,12)];
     }
 
     private function readAndParse(): array
@@ -111,6 +113,7 @@ class GoogleSheetsProductionSync
         $monthlyMetrics = $this->parseDbMetrics($dbRows, $productionPeriods);
         $dbCostSummary = $this->parseDbCostSummary($dbRows, array_keys($monthlyMetrics));
         $dbAccrualItems = $this->parseDbAccrualItems($dbRows, array_keys($monthlyMetrics), $monthlyMetrics);
+        $dbDailyCogpParameters = $this->parseDbDailyCogpParameters($dbRows, array_keys($monthlyMetrics));
         $appendMovement = function (string $period, string $location, string $type, float $qty, array $meta = []) use (&$inventoryMovements): void {
             if (abs($qty) < 0.000001) return;
             $inventoryMovements[] = ['period'=>$period,'location'=>$location,'movement_type'=>$type,'source'=>'google_sheets','qty_mt'=>$qty,'amount_usd'=>0,'metadata'=>json_encode($meta),'created_at'=>now(),'updated_at'=>now()];
@@ -151,7 +154,7 @@ class GoogleSheetsProductionSync
             $barging = $sheet['bargingMT'] ?? null;
             if ($barging !== null && $barging > 0) $appendMovement($period, 'port', 'barging', -$barging, ['source'=>'Google Sheets Coal Wash / Barging']);
         }
-        return compact('rows','details','monthlyMetrics','dbCostSummary','dbAccrualItems','productionPeriods','inventoryMovements');
+        return compact('rows','details','monthlyMetrics','dbCostSummary','dbAccrualItems','dbDailyCogpParameters','productionPeriods','inventoryMovements');
     }
 
     /** Mirrors the reference parser: month-end recap values replace daily route subtotals. */
@@ -234,6 +237,55 @@ class GoogleSheetsProductionSync
             $result[$period]['miningOperationCost'] = $this->number($miningCostRows[0][7 + $month] ?? null);
         }
         return $result;
+    }
+
+    /** Store the live DB-sheet inputs required by the reference daily COGP formula. */
+    private function parseDbDailyCogpParameters(array $rows, array $periods): array
+    {
+        $monthlyLabels = [
+            'fuel price including transport',
+            'base coal getting distance',
+            'actual coal getting distance',
+            'base hauling distance ob',
+            'ob hauling distance actual',
+        ];
+        $parameters = [];
+        $section = '';
+        foreach ($rows as $row) {
+            $heading = strtolower(trim((string) ($row[1] ?? '')));
+            if ($heading === 'mining operation cost') $section = 'operation';
+            elseif ($heading === 'fuel mining operation cost') $section = 'fuel';
+            elseif ($heading !== '') $section = '';
+
+            $label = strtolower(trim((string) ($row[2] ?? '')));
+            if ($section !== '' && $label !== '' && strtoupper(trim((string) ($row[4] ?? ''))) === 'HRS') {
+                $value = $this->number($row[6] ?? null);
+                if ($value !== null) foreach ($periods as $period) {
+                    $key = implode('|', [$period, $section, $label, 'HRS']);
+                    $parameters[$key] = [
+                        'period'=>$period,'section'=>$section,'label'=>$label,'entity'=>'HRS',
+                        'value'=>$value,'unit'=>trim((string) ($row[3] ?? '')) ?: null,
+                        'created_at'=>now(),'updated_at'=>now(),
+                    ];
+                }
+            }
+
+            if (!in_array($label, $monthlyLabels, true)) continue;
+            if ($label === 'fuel price including transport' && strtolower(trim((string) ($row[3] ?? ''))) !== 'us$/litre') continue;
+            foreach ($periods as $period) {
+                $month = (int) substr($period, 5, 2);
+                $value = $this->number($row[7 + $month] ?? null);
+                if ($value === null) continue;
+                $key = implode('|', [$period, 'monthly', $label, '']);
+                $parameters[$key] = [
+                    'period'=>$period,'section'=>'monthly','label'=>$label,'entity'=>'',
+                    'value'=>$value,'unit'=>trim((string) ($row[3] ?? '')) ?: null,
+                    'created_at'=>now(),'updated_at'=>now(),
+                ];
+            }
+        }
+
+        return array_values($parameters);
     }
 
     private function parseDbCostSummary(array $rows, array $periods): array

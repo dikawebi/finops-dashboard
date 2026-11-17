@@ -16,6 +16,7 @@ use App\Services\CostPerMtService;
 use App\Services\EquipmentCostService;
 use App\Services\GoogleSheetsProductionSync;
 use App\Services\D365\D365AllocationService;
+use App\Services\DailyCogpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -133,7 +134,7 @@ class DashboardController extends Controller
         ]]);
     }
 
-    public function overviewDaily(Request $request, D365AllocationService $allocation): JsonResponse
+    public function overviewDaily(Request $request, D365AllocationService $allocation, DailyCogpService $dailyCogp): JsonResponse
     {
         [$period, $mode] = $this->periodMode($request);
         if ($period === '2026-10' && !DailyProduction::query()->where('period', $period)->where('source', 'google_sheets')->exists()) {
@@ -145,7 +146,7 @@ class DashboardController extends Controller
         $daily = DailyProduction::query()->whereBetween('period', [$fromPeriod, $period])->where('source', 'google_sheets')
             ->whereNotNull('coal_getting_mt')->orderBy('production_date')->get(['production_date','coal_getting_mt']);
         $activities = \Illuminate\Support\Facades\DB::table('production_activity_details')->whereBetween('production_date', [$fromDate, $toDate])
-            ->where('source', 'google_sheets')->whereNotNull('value')->get(['production_date','activity','metric','value']);
+            ->where('source', 'google_sheets')->whereNotNull('value')->get(['production_date','activity','activity_type','contractor','metric','value']);
         $dailyMap = [];
         foreach ($daily as $row) {
             $date = $row->production_date->format('Y-m-d');
@@ -166,27 +167,39 @@ class DashboardController extends Controller
             $date = $entry->entry_date?->format('Y-m-d');
             if (!$date) continue;
             $code = (string) $entry->main_account;
+            if (!preg_match('/^[5-9]/', $code)) continue;
             $key = implode('|', [(string)$entry->main_account,(string)$entry->activity,(string)$entry->location,(string)$entry->department,(string)$entry->group_activity]);
             $mapping = $mappingCache[$key] ??= $allocation->resolveGlEntry($entry);
             $costing = strtolower(trim((string) ($mapping['costing_to'] ?? $entry->costing_to)));
-            $valuation = strtolower(trim((string) ($mapping['valuation_to'] ?? $entry->valuation_to)));
+            $valuation = strtolower(preg_replace('/[\s_-]+/', '', trim((string) ($mapping['valuation_to'] ?? $entry->valuation_to))));
             $head = substr($code, 0, 1);
             $isDirect = preg_replace('/[\s_-]+/', '', $costing) === 'directexpense';
-            $isExpense = in_array($head, ['7','8','9'], true) || $isDirect || str_contains($costing, 'admin') || str_contains($costing, 'overhead') || $costing === 'ga';
-            $isCogp = !$isExpense && preg_match('/^[5-6]/', $code) && (str_contains($costing, 'mining') || str_contains($costing, 'pit') || str_contains($costing, 'haul') || str_contains($costing, 'wash') || str_contains($costing, 'port') || str_contains($costing, 'jetty'));
-            $costs[$date] ??= ['date'=>$date,'cogp'=>0.0,'ga'=>0.0,'gaAvailable'=>true];
-            if ($isCogp) $costs[$date]['cogp'] += (float) $entry->amount_reporting;
-            elseif ($isExpense) $costs[$date]['ga'] += (float) $entry->amount_reporting;
+            $isExpense = in_array($head, ['7','8','9'], true) || preg_match('/^ga$|admin|overhead/', $costing) || ($isDirect && $valuation === 'notvaluated');
+            $costs[$date] ??= ['date'=>$date,'ga'=>0.0];
+            if ($isExpense) $costs[$date]['ga'] += (float) $entry->amount_reporting;
         }
-        ksort($costs);
+        $accrualItems = \Illuminate\Support\Facades\DB::table('db_accrual_items')->whereBetween('period', [$fromPeriod, $period])->get();
+        $cogpParameters = \Illuminate\Support\Facades\DB::table('db_daily_cogp_parameters')->whereBetween('period', [$fromPeriod, $period])->get();
+        $calculatedCogp = $dailyCogp->calculate($daily, $activities, $accrualItems, $cogpParameters);
+        $costDates = array_values(array_unique([...array_keys($costs), ...array_keys($calculatedCogp)]));
+        sort($costDates);
+        $costSeries = array_map(static fn (string $date): array => [
+            'date'=>$date,
+            'cogp'=>$calculatedCogp[$date]['cogp'] ?? null,
+            'operation'=>$calculatedCogp[$date]['operation'] ?? null,
+            'fuel'=>$calculatedCogp[$date]['fuel'] ?? null,
+            'cogpAvailable'=>isset($calculatedCogp[$date]) && $calculatedCogp[$date]['cogp'] !== null,
+            'ga'=>$costs[$date]['ga'] ?? 0.0,
+            'gaAvailable'=>isset($costs[$date]),
+        ], $costDates);
         $haulingEntities = \Illuminate\Support\Facades\DB::table('db_accrual_items')
             ->whereBetween('period', [$fromPeriod, $period])
             ->whereIn('account_code', ['5000407', '5000408', '5000409'])
             ->get(['period', 'account_code', 'entity', 'qty']);
         return response()->json(['success'=>true,'data'=>[
             'haulingEntities'=>$haulingEntities,
-            'daily'=>array_values($dailyMap),'costs'=>array_values($costs),
-            'source'=>'Google Sheets daily production + D365 dated GL','mode'=>$mode,'period'=>$period,
+            'daily'=>array_values($dailyMap),'costs'=>$costSeries,
+            'source'=>'Synced Google Sheets production + DB accrual inputs for COGP; D365 dated GL for GA','mode'=>$mode,'period'=>$period,
             'sheetsLastSyncedAt'=>SystemConfig::get('sheetsSync', [])['last_synced_at'] ?? null,
         ]]);
     }
