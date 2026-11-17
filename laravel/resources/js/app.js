@@ -42,14 +42,19 @@ if (negativeNumbersRoot) {
     formatNegativeNumbers(negativeNumbersRoot);
     negativeNumbersObserver.observe(negativeNumbersRoot, { childList: true, characterData: true, subtree: true });
 }
-const formatDate = value => { const match = String(value ?? '').slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/); if (!match) return value ?? '—'; const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']; return `${match[3]} ${months[Number(match[2]) - 1] || match[2]} ${match[1]}`; };
-const formatSyncTimestamp = value => { if (!value) return 'Not synced'; const date = new Date(value); if (Number.isNaN(date.getTime())) return value; return `${new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Asia/Bangkok' }).format(date)}, ${new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'Asia/Bangkok' }).format(date)} UTC+7`; };
-const formatPeriod = value => { const match = String(value ?? '').match(/^(\d{4})-(\d{2})$/); if (!match) return value || '—'; return new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1)).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' }); };
+const currentLocale = () => document.documentElement.lang === 'en' ? 'en-US' : 'id-ID';
+const formatDate = value => { const match = String(value ?? '').slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/); if (!match) return value ?? '—'; return new Intl.DateTimeFormat(currentLocale(), { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])))); };
+const formatSyncTimestamp = value => { if (!value) return document.documentElement.lang === 'en' ? 'Not synced' : 'Belum disinkronkan'; const date = new Date(value); if (Number.isNaN(date.getTime())) return value; const locale = document.documentElement.lang === 'en' ? 'en-GB' : 'id-ID'; return `${new Intl.DateTimeFormat(locale, { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Asia/Bangkok' }).format(date)}, ${new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'Asia/Bangkok' }).format(date)} UTC+7`; };
+const formatPeriod = value => { const match = String(value ?? '').match(/^(\d{4})-(\d{2})$/); if (!match) return value || '—'; return new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1)).toLocaleDateString(currentLocale(), { month: 'long', year: 'numeric', timeZone: 'UTC' }); };
 const setGlReviewLoading = visible => { let overlay = document.querySelector('#glReviewLoading'); if (visible && !overlay) { overlay = document.createElement('div'); overlay.id = 'glReviewLoading'; overlay.className = 'gl-review-loading'; overlay.innerHTML = '<div class="gl-review-loading-card"><i></i><strong>Loading GL transactions</strong><span>Preparing all rows. Please wait…</span></div>'; document.body.appendChild(overlay); } if (!visible) overlay?.remove(); };
 const esc = value => String(value ?? '—').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' })[char]);
 const companyName = document.body.dataset.companyName || 'FinOps Dashboard';
 const urlState = new URLSearchParams(location.search);
 const state = { view: urlState.get('view') || 'overview', costSearch: '', costParentOnly: false, costHideZero: false, costCollapsed: {}, accountHierarchyCollapsed: {}, voucherSummaryCollapsed: false, glReview: { account: '', search: '', dateFrom: '', dateTo: '', rowsPerPage: 100, mappingStatus: 'all', valuationTo: '', costingTo: '', headerFilters: { account: '', account_name: '', voucher: '', journal_number: '', description: '', costing_to: '', valuation_to: '', currency: '' } }, varianceSearch: '', varianceHideZero: true, varianceMinimum: 0, varianceOrder: 'account', varianceLocation: 'allCost' };
+let pageAccess = {};
+try { pageAccess = JSON.parse(document.body.dataset.pageAccess || '{}'); } catch { pageAccess = {}; }
+const administratorAccess = Object.keys(pageAccess).length > 0 && Object.values(pageAccess).every(permission => permission === 'edit');
+const canEditCurrentPage = () => administratorAccess || pageAccess[state.view] === 'edit';
 const initialPeriod = urlState.get('period');
 const initialMode = urlState.get('mode');
 if (/^\d{4}-\d{2}$/.test(initialPeriod || '')) $('#period').value = initialPeriod;
@@ -1219,6 +1224,39 @@ async function render() {
         console.error(error);
         $('#pageContent').innerHTML = `<section class="table-card error-card"><h2>Data cannot be loaded</h2><p>${esc(error.message)}</p></section>`;
     }
+    applyReadOnlyPageMode();
+}
+
+function applyReadOnlyPageMode() {
+    if (canEditCurrentPage()) return;
+    const writeActions = {
+        cost: ['#costClosing', '#costImportGl', '#costDeleteGl'],
+        variance: ['.variance-remark-save', '[data-variance-save]'],
+        metric: ['[data-db-save]'],
+        equipmentCost: ['[data-db-save]'],
+        inventory: ['#inventoryManualInputForm button[type="submit"]', '.inventory-input-void'],
+        financial: ['.financial-mapping-save'],
+        integration: ['#d365SyncAll', '#googleSheetsSync', '#stopD365Progress'],
+        mapping: ['#mappingForm button[type="submit"]', '#mappingMasterImport', '#mappingImport', '.mapping-delete'],
+        config: ['#configSaveAll'],
+    }[state.view] || [];
+    writeActions.forEach(selector => document.querySelectorAll(selector).forEach(button => { button.disabled = true; button.title = 'This role has read-only access.'; button.setAttribute('aria-disabled', 'true'); }));
+    const readOnlyFields = {
+        cost: ['#costClosing'],
+        variance: ['[data-variance-remark]'],
+        metric: ['[data-db-remark]'],
+        equipmentCost: ['[data-db-remark]'],
+        inventory: ['#inventoryManualInputForm input', '#inventoryManualInputForm select', '#inventoryManualInputForm textarea'],
+        financial: ['.financial-mapping-table select'],
+        integration: [],
+        mapping: ['#mappingForm input', '#mappingForm select', '#mappingForm textarea', '#mappingMasterFile'],
+        config: ['.config-editor input', '.config-editor select', '.config-editor textarea'],
+    }[state.view] || [];
+    readOnlyFields.forEach(selector => document.querySelectorAll(selector).forEach(field => { field.disabled = true; field.title = 'This role has read-only access.'; }));
+    document.querySelectorAll('#pageContent form').forEach(form => {
+        if (form.id && ['glReviewFilters', 'costFilters', 'varianceFilters'].includes(form.id)) return;
+        if (form.method.toLowerCase() !== 'get') form.querySelectorAll('button[type="submit"]').forEach(button => { button.disabled = true; button.title = 'This role has read-only access.'; });
+    });
 }
 
 document.querySelector('.tabs').addEventListener('click', event => {
@@ -1283,3 +1321,4 @@ $('#periodCurrent').addEventListener('click', () => { const now = new Date(); $(
 document.querySelectorAll('.mode-toggle [data-mode]').forEach(button => button.addEventListener('click', () => { $('#mode').value = button.dataset.mode; render(); }));
 $('#mode').addEventListener('change', render);
 render();
+window.addEventListener('finops:locale-change', () => updateNavigation($('#period').value, $('#mode').value));

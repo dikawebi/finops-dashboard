@@ -9,10 +9,11 @@
     @php($logoPath = $system['logoPath'] ?? '/images/logo-bp.svg')
     <title>Masuk — {{ $companyName }} FinOps</title>
     <link rel="icon" href="{{ e($logoPath) }}">
-    @vite('resources/css/portal.css')
+    @vite(['resources/css/portal.css', 'resources/js/language.js'])
 </head>
 <body class="portal-page login-page">
     <main class="login-layout">
+        <div class="language-switch login-language-switch" role="group" aria-label="Language"><button type="button" data-locale-switch="id">ID</button><button type="button" data-locale-switch="en">EN</button></div>
         <section class="login-form-side">
             <div class="login-form-wrap">
                 <a class="bp-brand" href="/" aria-label="PT Borneo Prima FinOps">

@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'administrator' => \App\Http\Middleware\EnsureAdministrator::class,
+            'dashboard.access' => \App\Http\Middleware\EnsureDashboardAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

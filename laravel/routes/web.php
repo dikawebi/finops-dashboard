@@ -19,15 +19,18 @@ Route::post('/api/logout', [AuthController::class, 'logout'])->middleware('auth'
 
 Route::get('/', function () {
     return view('welcome');
-})->middleware('auth')->name('dashboard');
+})->middleware(['auth', 'dashboard.access'])->name('dashboard');
 
 Route::middleware(['auth', 'administrator'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdministratorController::class, 'index'])->name('index');
     Route::post('/users', [AdministratorController::class, 'store'])->name('users.store');
     Route::put('/users/{user}', [AdministratorController::class, 'update'])->name('users.update');
+    Route::post('/roles', [AdministratorController::class, 'storeRole'])->name('roles.store');
+    Route::put('/roles/{role:slug}', [AdministratorController::class, 'updateRole'])->name('roles.update');
+    Route::delete('/roles/{role:slug}', [AdministratorController::class, 'deleteRole'])->name('roles.delete');
 });
 
-Route::middleware('auth')->prefix('api')->group(function () {
+Route::middleware(['auth', \App\Http\Middleware\EnsureDashboardAccess::class])->prefix('api')->group(function () {
     Route::post('/accruals', [AccrualController::class, 'store'])->middleware(['auth', EnsurePeriodOpen::class]);
     Route::get('/accounts', [OperationsController::class, 'accounts']);
     Route::get('/accruals', [OperationsController::class, 'accruals']);
