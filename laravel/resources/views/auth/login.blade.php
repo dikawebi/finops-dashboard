@@ -46,12 +46,12 @@
         <aside class="login-visual-side" aria-label="Informasi FinOps Dashboard">
             <img class="login-visual-image" src="/images/login-side.jpg" alt="Operasi tambang PT Borneo Prima" fetchpriority="high" decoding="async"><div class="login-visual-shade"></div>
             <div class="login-visual-content">
-                <div class="visual-eyebrow">INFORMASI OPERASIONAL &amp; KEUANGAN</div>
-                <h2>Visibilitas menyeluruh atas kinerja operasional dan keuangan.</h2>
-                <p class="visual-lead">Dapatkan informasi untuk mendukung keputusan terkait produksi, biaya, persediaan, dan hasil keuangan.</p>
-                <div class="visual-feature"><span>↗</span><div><b>Kinerja biaya dan keuangan</b><small>Tinjau COGP, beban langsung, varians biaya, dan laporan keuangan.</small></div></div>
-                <div class="visual-feature"><span>▤</span><div><b>Data perusahaan terintegrasi</b><small>Konsolidasi General Ledger D365 dan data produksi Google Sheets.</small></div></div>
-                <div class="visual-feature"><span>◉</span><div><b>Visibilitas produksi dan persediaan</b><small>Pantau pergerakan produksi, posisi stok, dan valuasi persediaan.</small></div></div>
+                <div class="visual-eyebrow">RINGKASAN OPERASIONAL &amp; KEUANGAN</div>
+                <h2>Data operasional dan keuangan dalam satu tampilan.</h2>
+                <p class="visual-lead">Dashboard ini memuat data produksi, biaya, persediaan, dan laporan keuangan perusahaan.</p>
+                <div class="visual-feature"><span>↗</span><div><b>Biaya dan laporan keuangan</b><small>COGP, beban langsung, analisis varians, dan laporan keuangan.</small></div></div>
+                <div class="visual-feature"><span>▤</span><div><b>Sumber data terintegrasi</b><small>Data General Ledger D365 dan data produksi Google Sheets.</small></div></div>
+                <div class="visual-feature"><span>◉</span><div><b>Produksi dan persediaan</b><small>Volume produksi, alur operasional, posisi stok, dan valuasi persediaan.</small></div></div>
                 <a class="company-link" href="https://borneoprima.com/" target="_blank" rel="noopener">borneoprima.com ↗</a>
             </div>
         </aside>
