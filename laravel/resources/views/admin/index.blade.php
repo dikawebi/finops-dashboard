@@ -9,14 +9,44 @@
     @php($logoPath = $system['logoPath'] ?? '/images/logo-bp.svg')
     <title>Administrator — {{ $companyName }} FinOps</title>
     <link rel="icon" href="{{ e($logoPath) }}">
-    @vite(['resources/css/portal.css', 'resources/js/language.js'])
+    @vite(['resources/css/app.css', 'resources/css/portal.css', 'resources/css/admin-shell.css', 'resources/js/language.js'])
 </head>
 <body class="portal-page admin-page">
-    <header class="admin-topbar">
-        <a class="bp-brand" href="{{ route('dashboard') }}"><img src="{{ e($logoPath) }}" alt=""><span><b>{{ mb_strtoupper($companyName) }}</b><small>FINANCE &amp; OPERATIONS</small></span></a>
-        <div class="admin-top-actions"><div class="language-switch" role="group" aria-label="Language"><button type="button" data-locale-switch="id">ID</button><button type="button" data-locale-switch="en">EN</button></div><span class="admin-user"><i>{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</i><span>{{ auth()->user()->name }}<small>Administrator</small></span></span><a class="soft-button" href="{{ route('dashboard') }}">← Dashboard</a><form method="post" action="{{ route('logout') }}">@csrf<button class="text-button" type="submit">Keluar</button></form></div>
-    </header>
-    <main class="admin-main">
+    <div class="app-shell admin-app-shell">
+        <div id="sidebarScrim" class="sidebar-scrim" aria-hidden="true"></div>
+        <aside id="appSidebar" class="app-sidebar" aria-label="Main navigation">
+            <a class="sidebar-brand" href="{{ route('dashboard') }}"><img class="logo" src="{{ e($logoPath) }}" alt=""><div><b>{{ $companyName }}</b><span>FINANCE &amp; OPERATIONS</span></div></a>
+            <nav class="tabs admin-sidebar-nav" aria-label="Dashboard navigation">
+                <span class="nav-group-label">OVERVIEW</span>
+                <a href="{{ route('dashboard', ['view' => 'overview']) }}" title="Executive Overview"><span class="nav-icon">📊</span><span class="nav-label">Executive Overview</span></a>
+                <span class="nav-group-label">COST &amp; REPORTS</span>
+                <a href="{{ route('dashboard', ['view' => 'cost']) }}" title="Report Cost (COGP)"><span class="nav-icon">📑</span><span class="nav-label">Report Cost (COGP)</span></a>
+                <a href="{{ route('dashboard', ['view' => 'variance']) }}" title="Cost Variance Analysis"><span class="nav-icon">📈</span><span class="nav-label">Cost Variance Analysis</span></a>
+                <a href="{{ route('dashboard', ['view' => 'metric']) }}" title="Cost per Metric Ton"><span class="nav-icon">⚖️</span><span class="nav-label">Cost per Metric Ton</span></a>
+                <a href="{{ route('dashboard', ['view' => 'equipmentCost']) }}" title="Equipment Cost"><span class="nav-icon">🚜</span><span class="nav-label">Equipment Cost</span></a>
+                <a href="{{ route('dashboard', ['view' => 'inventory']) }}" title="Inventory Valuation"><span class="nav-icon">📦</span><span class="nav-label">Inventory Valuation</span></a>
+                <a href="{{ route('dashboard', ['view' => 'financial']) }}" title="Financial Statements"><span class="nav-icon">📑</span><span class="nav-label">Financial Statements</span></a>
+                <span class="nav-group-label">TRANSACTIONS</span>
+                <a href="{{ route('dashboard', ['view' => 'glReview']) }}" title="GL Transaction Review"><span class="nav-icon">🧾</span><span class="nav-label">GL Transaction Review</span></a>
+                <span class="nav-group-label">DATA &amp; CONFIGURATION</span>
+                <a href="{{ route('dashboard', ['view' => 'integration']) }}" title="Integration &amp; Data Sources"><span class="nav-icon">🔄</span><span class="nav-label">Integration &amp; Data Sources</span></a>
+                <a href="{{ route('dashboard', ['view' => 'mapping']) }}" title="Allocation Mapping"><span class="nav-icon">🧭</span><span class="nav-label">Allocation Mapping</span></a>
+                <a href="{{ route('dashboard', ['view' => 'config']) }}" title="Configuration"><span class="nav-icon">⚙️</span><span class="nav-label">Configuration</span></a>
+                <a class="admin-nav-link active" href="{{ route('admin.index') }}" aria-current="page" title="Administrator"><span class="nav-icon">👥</span><span class="nav-label">Administrator</span></a>
+            </nav>
+            <div class="sidebar-account">
+                <span class="sidebar-account-avatar" title="{{ auth()->user()->name }} · Administrator">{{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}</span>
+                <span class="sidebar-account-copy"><b>{{ auth()->user()->name }}</b><span>{{ auth()->user()->email }}</span><small>Administrator</small></span>
+                <form method="post" action="{{ route('logout') }}">@csrf<button type="submit" aria-label="Sign out" title="Keluar">↪</button></form>
+            </div>
+        </aside>
+        <div class="app-main admin-app-main">
+            <header class="app-header admin-topbar">
+                <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="Toggle navigation" aria-controls="appSidebar" aria-expanded="true"><span></span><span></span><span></span></button>
+                <div class="admin-header-title"><b>Administrator</b><small>USER &amp; ACCESS MANAGEMENT</small></div>
+                <div class="admin-top-actions"><div class="language-switch" role="group" aria-label="Language"><button type="button" data-locale-switch="id">ID</button><button type="button" data-locale-switch="en">EN</button></div><span class="admin-user"><i>{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</i><span>{{ auth()->user()->name }}<small>Administrator</small></span></span><a class="soft-button" href="{{ route('dashboard') }}">← Dashboard</a></div>
+            </header>
+            <main class="admin-main">
         <div class="admin-heading"><div><span class="admin-eyebrow">PENGATURAN SISTEM</span><h1>Administrator</h1><p>Kelola akun pengguna dan akses ke FinOps Dashboard.</p></div><span class="admin-secure">◈ Admin workspace</span></div>
 
         @if (session('status')) <div class="portal-alert success" role="status">{{ session('status') }}</div> @endif
@@ -75,6 +105,45 @@
         <section class="role-card-grid">@foreach($roles as $role)<article class="admin-panel role-card"><div class="role-card-heading"><div><span class="role-pill {{ $role->is_system ? 'role-admin' : '' }}">{{ $role->is_system ? 'Role sistem' : 'Role khusus' }}</span><h3>{{ $role->name }}</h3><p>{{ $role->description ?: 'Tidak ada deskripsi.' }}</p></div><span class="role-assignment-count">{{ $role->users_count ?? $role->users()->count() }} akun</span></div>@if($role->slug === 'administrator')<div class="system-role-access"><b>Akses halaman</b><p>@foreach($role->page_access ?? [] as $pageKey => $permission){{ $pages[$pageKey]['label'] ?? $pageKey }}{{ $permission === 'edit' ? ' · Edit' : ' · Lihat' }}@if(!$loop->last), @endif @endforeach</p><small>Administrator memiliki akses penuh dan dilindungi. Role Viewer dapat diatur; buat role khusus untuk aturan lain.</small></div>@else<form method="post" action="{{ route('admin.roles.update', $role) }}" class="role-edit-form">@csrf @method('PUT')<label>Nama role<input name="name" value="{{ $role->name }}" required maxlength="80"></label><label>Deskripsi<input name="description" value="{{ $role->description }}" maxlength="255"></label><div class="permissions-table-wrap"><table class="permissions-table"><thead><tr><th>Halaman</th><th>Akses</th></tr></thead><tbody>@foreach($pages as $slug => $page)<tr><td><b>{{ $page['label'] }}</b><small>{{ $page['group'] }}</small></td><td><select name="page_access[{{ $slug }}]"><option value="" @selected(!isset($role->page_access[$slug]))>Tidak ada akses</option><option value="read" @selected(($role->page_access[$slug] ?? null) === 'read')>Lihat</option><option value="edit" @selected(($role->page_access[$slug] ?? null) === 'edit')>Lihat &amp; edit</option></select></td></tr>@endforeach</tbody></table></div><div class="role-actions"><button class="primary-button" type="submit">Simpan izin</button></form><form method="post" action="{{ route('admin.roles.delete', $role) }}" onsubmit="return confirm(document.documentElement.lang === 'en' ? 'Delete this role?' : 'Hapus role ini?')">@csrf @method('DELETE')<button class="danger-button" type="submit" @disabled($role->users_count > 0 || $role->is_system)>Hapus role</button></form></div>@endif</article>@endforeach</section>
         <p class="admin-footnote">Administrator memiliki akses penuh dan role sistem tidak dapat diubah. Akses khusus langsung berlaku untuk akun yang memakai role tersebut.</p>
         @endif
-    </main>
+            </main>
+        </div>
+    </div>
+    <script>
+        (() => {
+            const toggle = document.getElementById('sidebarToggle');
+            const scrim = document.getElementById('sidebarScrim');
+            if (window.innerWidth <= 760) document.body.classList.remove('sidebar-collapsed', 'tablet-sidebar-expanded');
+            const closeMobile = () => {
+                document.body.classList.remove('sidebar-open');
+                toggle.setAttribute('aria-expanded', 'false');
+            };
+            toggle.addEventListener('click', () => {
+                const width = window.innerWidth;
+                if (width <= 760) {
+                    const open = !document.body.classList.contains('sidebar-open');
+                    document.body.classList.toggle('sidebar-open', open);
+                    toggle.setAttribute('aria-expanded', String(open));
+                } else if (width <= 1050) {
+                    const open = !document.body.classList.contains('tablet-sidebar-expanded');
+                    document.body.classList.toggle('tablet-sidebar-expanded', open);
+                    toggle.setAttribute('aria-expanded', String(open));
+                } else {
+                    const expanded = document.body.classList.contains('sidebar-collapsed');
+                    document.body.classList.toggle('sidebar-collapsed', !expanded);
+                    toggle.setAttribute('aria-expanded', String(expanded));
+                }
+            });
+            scrim.addEventListener('click', closeMobile);
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape' && document.body.classList.contains('sidebar-open')) closeMobile();
+            });
+            window.addEventListener('resize', () => {
+                document.body.classList.remove('sidebar-open', 'tablet-sidebar-expanded');
+                if (window.innerWidth <= 760) document.body.classList.remove('sidebar-collapsed');
+                toggle.setAttribute('aria-expanded', String(window.innerWidth > 1050));
+            });
+            toggle.setAttribute('aria-expanded', String(window.innerWidth > 1050));
+        })();
+    </script>
 </body>
 </html>
