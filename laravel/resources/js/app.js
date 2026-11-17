@@ -215,16 +215,17 @@ async function overview(period, mode) {
     const vesselCard = $('[data-overview-card="Mother Vessel"]');
     if (vesselCard && !soldQty) vesselCard.querySelector('.overview-card-sub').textContent = 'No sales quantity in live October inventory source · Select for details';
     flowPanel.querySelectorAll('.overview-flow-map details').forEach(item => item.addEventListener('toggle', () => {
-        if (!item.open) return;
+        if (!item.open) {
+            if (detailPanel.dataset.owner === (item.dataset.overviewCard || item.dataset.overviewRoute)) {
+                detailPanel.hidden = true;
+                delete detailPanel.dataset.owner;
+            }
+            return;
+        }
         flowPanel.querySelectorAll('.overview-flow-map details[open]').forEach(other => { if (other !== item) other.open = false; });
         const summary = item.querySelector('summary');
-        detailPanel.innerHTML = `<strong>${esc(summary.querySelector('span')?.textContent || 'Details')}</strong>${item.querySelector(':scope > div')?.innerHTML || item.querySelector(':scope > p')?.outerHTML || ''}`;
-        detailPanel.hidden = false;
-    }));
-    flowPanel.querySelectorAll('.overview-flow-map .overview-route').forEach(item => item.addEventListener('toggle', () => {
-        if (!item.open) return;
-        flowPanel.querySelectorAll('.overview-flow-map .overview-route[open]').forEach(other => { if (other !== item) other.open = false; });
-        detailPanel.innerHTML = `<strong>${esc(item.querySelector('summary span')?.textContent || 'Route details')}</strong>${item.querySelector(':scope > p')?.outerHTML || ''}`;
+        detailPanel.dataset.owner = item.dataset.overviewCard || item.dataset.overviewRoute;
+        detailPanel.innerHTML = `<strong>${esc(summary.querySelector('span')?.textContent || 'Production')} — Details</strong><div>${item.querySelector(':scope > div')?.innerHTML || item.querySelector(':scope > p')?.outerHTML || ''}</div>`;
         detailPanel.hidden = false;
     }));
     const renderAllocation = async () => {

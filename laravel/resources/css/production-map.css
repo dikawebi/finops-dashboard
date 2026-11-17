@@ -4,25 +4,34 @@
 .production-geography .production-map-heading{position:absolute;left:2%;top:2%;color:#fff;font-size:1.2rem;font-weight:700;text-shadow:0 2px 6px #000}
 .production-map-heading small{display:block;font-size:.7rem;font-weight:400;margin-top:3px}
 .production-geography .overview-flow-cards{position:absolute;inset:0 0 100px;display:block;pointer-events:none}
-.production-geography .overview-detail-card{pointer-events:auto;position:absolute;min-width:0;width:15%;min-height:0;left:auto;top:auto;padding:0;border:0;background:transparent;transform:translateX(-50%)}
+.production-geography .overview-detail-card{pointer-events:auto;position:absolute;min-width:0;width:clamp(116px,12%,154px);min-height:0;left:auto;top:auto;padding:0;border:0;background:transparent;transform:translateX(-50%)}
 .production-geography .overview-detail-card::after{display:none!important}
-.production-geography .overview-detail-card summary{display:flex;flex-direction:column;gap:3px;padding:8px 9px;border:1px solid #ffffff60;border-radius:8px;background:#15222ceF;color:#fff;box-shadow:0 5px 15px #0005;cursor:pointer;text-align:center}
+.production-geography .overview-detail-card summary{display:flex;flex-direction:column;gap:4px;padding:7px 9px;border:1px solid #ffffff60;border-radius:7px;background:#15222ceF;color:#fff;box-shadow:0 3px 9px #0004;cursor:pointer;text-align:center;list-style:none}
+.production-geography .overview-detail-card summary::-webkit-details-marker{display:none}
 .production-geography .overview-detail-card summary:hover,.production-geography .overview-detail-card[open] summary{border-color:#ffb651;background:#233b48}
 .production-geography summary:focus-visible{outline:3px solid #ffb651;outline-offset:3px}
-.production-geography .overview-detail-card summary>span{font-size:.78rem;color:#fff;text-shadow:none;letter-spacing:0;font-weight:700}
+.production-geography .overview-detail-card summary>span{font-size:12px;line-height:1.25;color:#fff;text-shadow:none;letter-spacing:0;font-weight:600}
+.production-geography .production-metric-label{font-size:10px;color:#b9cbd6;line-height:1.2}
 .production-geography .overview-card-values{display:flex;flex-direction:column;gap:2px}
-.production-geography .overview-stage-qty{font-size:.94rem;color:#fff}
-.production-geography .overview-stage-rate{font-size:.71rem;color:#f4cb80}
-.production-geography .overview-detail-card summary small{font-size:.64rem;line-height:1.3;color:#d5e1e8;text-shadow:none;margin:0}
+.production-geography .overview-card-values .overview-stage-qty{font-size:13px;line-height:1.3;color:#fff;font-variant-numeric:tabular-nums}
+.production-geography .overview-card-values .overview-stage-rate{font-size:11px;line-height:1.25;color:#f4cb80}
+.production-geography .overview-detail-card summary small{display:none}
 .production-geography .overview-scene{display:none}
-.production-geography [data-overview-card="Pit Takalot"]{left:9%;top:13%;width:13%}
-.production-geography [data-overview-card="Pit North G"]{left:9%;top:39%;width:13%}
+.production-geography [data-overview-card="Pit Takalot"]{left:9%;top:13%}
+.production-geography [data-overview-card="Pit North G"]{left:9%;top:39%}
 .production-geography [data-overview-card="Stockpile BUA"]{left:23%;top:24%}
 .production-geography [data-overview-card="Washing Plant"]{left:38%;top:24%}
 .production-geography [data-overview-card="BP Port"]{left:55%;top:34%}
 .production-geography [data-overview-card="ISP"]{left:72%;top:18%}
-.production-geography [data-overview-card="Mother Vessel"]{left:90%;top:8%;width:17%}
-.production-geography [data-overview-card="Coal Mining"]{left:16%;top:77%;width:25%}
+.production-geography [data-overview-card="Mother Vessel"]{left:90%;top:8%}
+.production-geography [data-overview-card="Coal Mining"]{left:16%;top:77%}
+.overview-flow-panel .overview-flow-detail{width:fit-content;max-width:100%;min-width:min(420px,100%);margin-top:4px;padding:16px 18px;border:1px solid #dce8f3;border-radius:10px;background:#f7fbff;color:#24435e;box-shadow:0 4px 14px #254b730d}
+.overview-flow-panel .overview-flow-detail>strong{display:block;margin-bottom:8px;font-size:.85rem;color:#1c4e78}
+.overview-flow-panel .overview-flow-detail>div{max-width:640px;font-size:.8rem;line-height:1.6}
+.overview-flow-panel .overview-flow-detail .overview-detail-line{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:7px 0;font-size:.78rem;border-bottom:1px solid #dce8f3}
+.overview-flow-panel .overview-flow-detail .overview-detail-line:last-child{border-bottom:0}
+.overview-flow-panel .overview-flow-detail .overview-detail-line strong{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+@media(max-width:520px){.overview-flow-panel .overview-flow-detail{width:100%;padding:12px}.overview-flow-panel .overview-flow-detail .overview-detail-line{flex-wrap:wrap;gap:4px}.overview-flow-panel .overview-flow-detail .overview-detail-line strong{margin-left:auto;white-space:normal}}
 .production-geography .production-route-strip{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;min-height:100px;padding:14px;background:#edf3f6}
 .production-geography .overview-route{position:static;width:auto;min-width:0;transform:none;margin:0;padding:0;background:transparent;border:0;box-shadow:none}
 .production-geography .overview-route summary{display:flex;flex-direction:column;gap:5px;padding:5px;cursor:pointer}
