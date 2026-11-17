@@ -14,6 +14,33 @@
 .admin-page .sidebar-collapsed .sidebar-account{justify-content:center;padding-right:0;padding-left:0}
 .admin-page .sidebar-collapsed .admin-sidebar-nav a{justify-content:center;padding-right:4px;padding-left:4px}
 .admin-page .sidebar-collapsed .admin-sidebar-nav a .nav-label{display:none}
+.admin-role-intro{margin:8px 0 18px}
+.role-create-panel details>summary{display:flex;align-items:center;gap:12px;min-height:72px;padding:14px 18px;cursor:pointer;list-style:none}
+.role-create-panel details>summary::-webkit-details-marker{display:none}
+.role-create-panel summary b,.role-create-panel summary small{display:block}
+.role-create-panel summary b{color:#1c2d47;font-size:13px;font-weight:800}
+.role-create-panel summary small{margin-top:4px;color:#71819a;font-size:11px}
+.role-create-panel details[open]>summary{border-bottom:1px solid #edf1f6;background:#fbfdff}
+.role-create-panel details[open] .summary-action{font-size:0}
+.role-create-panel details[open] .summary-action:after{content:'Tutup form';font-size:10px}
+.role-fields label,.role-edit-form>label{display:grid;gap:6px;color:#41566f;font-size:11px;font-weight:700}
+.role-fields input,.role-edit-form>label input{width:100%;min-height:38px;padding:9px 10px;border:1px solid #d5dfeb;border-radius:7px;background:#fff;color:#172b45;font:inherit;font-size:12px;outline:none}
+.role-fields input:focus,.role-edit-form>label input:focus{border-color:#0066ff;box-shadow:0 0 0 3px #0066ff18}
+.role-card-grid{align-items:start}
+.role-card{align-self:start;overflow:hidden}
+.role-card-heading{min-height:106px;background:#fff}
+.role-card-heading p{max-width:64ch}
+.permissions-table-wrap{max-height:none;overflow:visible}
+.permissions-table th{top:68px}
+.permissions-table td{height:48px}
+.permissions-table td:first-child b{color:#293c56;font-size:11px}
+.permissions-table td:first-child small{color:#8996a8}
+.permissions-table select{width:100%;min-width:140px;max-width:190px;min-height:36px}
+.role-actions{position:sticky;bottom:0;z-index:3;margin:0 -18px -18px;padding:12px 18px;border-top:1px solid #e8edf3;background:#ffffffed;backdrop-filter:blur(8px)}
+.system-role-access{padding:16px 18px 18px}
+.system-role-access>b{display:block;margin-bottom:8px;color:#314761}
+.system-role-access p{max-height:150px;margin:0 0 10px;padding:10px 12px;border:1px solid #e4ebf3;border-radius:8px;background:#f8fafc;color:#425873;line-height:1.8}
+.system-role-access small{display:block;line-height:1.55}
 @media(max-width:1050px) and (min-width:761px){
     .admin-page .tablet-sidebar-expanded .app-sidebar{flex-basis:258px;width:258px;padding-right:12px;padding-left:12px}
     .admin-page .tablet-sidebar-expanded .sidebar-brand{justify-content:flex-start;padding-right:8px;padding-left:8px}
