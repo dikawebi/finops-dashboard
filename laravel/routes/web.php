@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AdministratorController;
 use App\Http\Controllers\AccrualController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\D365Controller;
@@ -10,13 +11,23 @@ use App\Http\Controllers\FinancialAccountMappingController;
 use App\Http\Controllers\InventoryManualInputController;
 use App\Http\Middleware\EnsurePeriodOpen;
 
+Route::get('/login', [AuthController::class, 'showLogin'])->middleware('guest')->name('login');
+Route::post('/login', [AuthController::class, 'login'])->middleware('guest')->name('login.store');
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
+Route::post('/api/login', [AuthController::class, 'login'])->middleware('guest');
+Route::post('/api/logout', [AuthController::class, 'logout'])->middleware('auth');
+
 Route::get('/', function () {
     return view('welcome');
+})->middleware('auth')->name('dashboard');
+
+Route::middleware(['auth', 'administrator'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', [AdministratorController::class, 'index'])->name('index');
+    Route::post('/users', [AdministratorController::class, 'store'])->name('users.store');
+    Route::put('/users/{user}', [AdministratorController::class, 'update'])->name('users.update');
 });
 
-Route::prefix('api')->group(function () {
-    Route::post('/login', [AuthController::class, 'login'])->middleware('guest');
-    Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth');
+Route::middleware('auth')->prefix('api')->group(function () {
     Route::post('/accruals', [AccrualController::class, 'store'])->middleware(['auth', EnsurePeriodOpen::class]);
     Route::get('/accounts', [OperationsController::class, 'accounts']);
     Route::get('/accruals', [OperationsController::class, 'accruals']);

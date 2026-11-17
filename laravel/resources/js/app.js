@@ -57,7 +57,11 @@ if (['mtd', 'ytd'].includes(initialMode || '')) $('#mode').value = initialMode;
 const d365SyncStorageKey = 'finops.d365.sync.progress';
 let d365ProgressTimer = null;
 const api = async path => {
-    const response = await fetch(path);
+    const response = await fetch(path, { credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+    if (response.status === 401) {
+        window.location.assign('/login');
+        throw new Error('Sesi berakhir. Silakan masuk kembali.');
+    }
     const text = await response.text();
     let payload = null;
     try { payload = text ? JSON.parse(text) : null; } catch { payload = null; }

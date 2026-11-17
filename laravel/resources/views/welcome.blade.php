@@ -59,8 +59,15 @@
                 <button type="button" data-view="integration"><span class="nav-icon">🔄</span><span class="nav-label">Integration &amp; Data Sources</span></button>
                 <button type="button" data-view="mapping"><span class="nav-icon">🧭</span><span class="nav-label">Allocation Mapping</span></button>
                 <button type="button" data-view="config"><span class="nav-icon">⚙️</span><span class="nav-label">Configuration</span></button>
+                @if(auth()->user()->isAdministrator())
+                    <a class="admin-nav-link" href="{{ route('admin.index') }}"><span class="nav-icon">👥</span><span class="nav-label">Administrator</span></a>
+                @endif
             </nav>
-            <div class="sidebar-company"><b>{{ $companyName }}</b><span>Coal Production Accounting</span></div>
+            <div class="sidebar-account">
+                <span class="sidebar-account-avatar" title="{{ auth()->user()->name }} · {{ auth()->user()->isAdministrator() ? 'Administrator' : 'Pengguna' }}">{{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}</span>
+                <span class="sidebar-account-copy"><b>{{ auth()->user()->name }}</b><span>{{ auth()->user()->email }}</span><small>{{ auth()->user()->isAdministrator() ? 'Administrator' : 'Pengguna' }}</small></span>
+                <form method="post" action="{{ route('logout') }}">@csrf<button type="submit" aria-label="Keluar dari akun" title="Keluar">↪</button></form>
+            </div>
         </aside>
         <div class="app-main">
             <div class="filterbar" aria-label="Reporting period controls">
