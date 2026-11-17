@@ -179,7 +179,12 @@ class DashboardController extends Controller
             elseif ($isExpense) $costs[$date]['ga'] += (float) $entry->amount_reporting;
         }
         ksort($costs);
+        $haulingEntities = \Illuminate\Support\Facades\DB::table('db_accrual_items')
+            ->whereBetween('period', [$fromPeriod, $period])
+            ->whereIn('account_code', ['5000407', '5000408', '5000409'])
+            ->get(['period', 'account_code', 'entity', 'qty']);
         return response()->json(['success'=>true,'data'=>[
+            'haulingEntities'=>$haulingEntities,
             'daily'=>array_values($dailyMap),'costs'=>array_values($costs),
             'source'=>'Google Sheets daily production + D365 dated GL','mode'=>$mode,'period'=>$period,
             'sheetsLastSyncedAt'=>SystemConfig::get('sheetsSync', [])['last_synced_at'] ?? null,

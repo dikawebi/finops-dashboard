@@ -1,5 +1,8 @@
 .overview-flow-map.production-geography{width:100%;min-width:0;height:auto;overflow:hidden;background:#202426;border:0;border-radius:14px;padding:0;isolation:isolate}
 .production-geography::before{display:none}
+.production-geography .production-shipping{position:absolute;inset:0;width:100%;height:auto;pointer-events:none;z-index:1}
+.production-detail-popover small{display:block;margin-top:9px;color:#667f96;font-size:11px;line-height:1.5}
+@media(max-width:900px){.production-geography .production-shipping{height:auto;aspect-ratio:1672/941}}
 .overview-flow-panel .overview-flow-detail.production-detail-popover{position:fixed;inset:auto;margin:0;box-sizing:border-box;width:min(440px,calc(100vw - 24px));min-width:0;max-height:min(480px,calc(100dvh - 24px));overflow:auto;padding:16px 18px;border:1px solid #b8cede;border-radius:12px;background:#f7fbff;box-shadow:0 12px 40px #132e4a40}
 .overview-flow-panel .overview-flow-detail.production-detail-popover:not(:popover-open){display:none}
 .production-detail-popover::backdrop{background:transparent;pointer-events:none}
