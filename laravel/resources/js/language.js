@@ -59,6 +59,14 @@ translations.push(
     ['Mother Vessel', 'Kapal Induk']
 );
 
+const preserveSourceTerms = new Set([
+    'Production', 'Coal Mining', 'Washing Plant', 'Mother Vessel', 'Port',
+    'Coal Production', 'Coal Hauling', 'Selling', 'Inhouse Mining', 'Location', 'Activity',
+    'Produksi', 'Penambangan Batu Bara', 'Pabrik Pencucian', 'Kapal Induk',
+    'Pelabuhan', 'Produksi Batu Bara', 'Pengangkutan Batu Bara', 'Penjualan',
+    'Penambangan Internal', 'Lokasi', 'Aktivitas',
+]);
+
 const sourceByNode = new WeakMap();
 const sourceByAttribute = new WeakMap();
 
@@ -70,8 +78,9 @@ function transform(value, target) {
     const dictionary = target === 'en'
         ? translations.map(([en, id]) => [id, en])
         : translations.map(([en, id]) => [en, id]);
+    const safeDictionary = dictionary.filter(([from, to]) => !preserveSourceTerms.has(from) && !preserveSourceTerms.has(to));
     let output = value;
-    for (const [from, to] of dictionary.sort((a, b) => b[0].length - a[0].length)) {
+    for (const [from, to] of safeDictionary.sort((a, b) => b[0].length - a[0].length)) {
         if (from.toLocaleLowerCase() === output.trim().toLocaleLowerCase()) {
             const leading = output.match(/^\s*/)?.[0] || '';
             const trailing = output.match(/\s*$/)?.[0] || '';
@@ -116,6 +125,7 @@ function translateTextNode(node, target) {
 }
 
 function translateAttribute(element, attribute, target) {
+    if (element.closest('[data-locale-ignore]')) return;
     const current = element.getAttribute(attribute);
     if (current === null) return;
     let records = sourceByAttribute.get(element);
