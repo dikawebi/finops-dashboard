@@ -160,7 +160,7 @@ body{min-height:100vh}.app-shell{display:flex;min-height:100vh;background:var(--
 .overview-route summary b{color:#173751}
 .overview-route p{padding:0 8px 8px;color:#657890;font-size:.72rem;line-height:1.4}
 .route-bua-wp{left:17.6%}.route-wp-port{left:39.2%}.route-bua-port{top:calc(118px + 152px + 44px);left:28.4%}.route-bua-port summary>span{background:#098d91}
-.overview-flow-map .overview-detail-card>div,.overview-flow-map .overview-route>p{display:none}
+.overview-flow-map .overview-detail-card>div:not(.overview-scene),.overview-flow-map .overview-route>p{display:none}
 .overview-flow-detail{width:fit-content;max-width:100%;min-width:min(420px,100%);margin-top:8px;padding:14px 16px;border:1px solid #dce8f3;border-radius:10px;background:#f7fbff;color:#24435e}
 .overview-flow-detail[hidden]{display:none}.overview-flow-detail>strong{display:block;margin-bottom:8px;color:#1c4e78;font-size:.85rem}
 .overview-flow-detail .overview-detail-line{gap:16px}.overview-flow-detail .overview-detail-line strong{text-align:right}
@@ -204,5 +204,14 @@ body{min-height:100vh}.app-shell{display:flex;min-height:100vh;background:var(--
 .overview-lower>.card{min-width:0;overflow:hidden;border:1px solid #dce5ef;border-radius:12px;background:#fff;box-shadow:0 4px 18px #1f37550c}
 .overview-daily-details .table-responsive{max-height:260px;overflow:auto}
 .overview-daily-details .table-accounting{font-size:11px}
+
+/* Illustrated production scenes: mine, wash plant, stockpiles, port and vessel. */
+.overview-detail-card{position:relative;min-height:244px}
+.overview-scene{display:block!important;height:70px;margin:8px -3px 5px;overflow:hidden;border:1px solid #e5edf3;border-radius:8px;background:linear-gradient(180deg,#f7fbff 0%,#eef5f8 100%)}
+.overview-scene svg{display:block;width:100%;height:100%}
+.overview-card-values{position:relative;z-index:2}
+.overview-bypass{top:calc(118px + 244px)}
+.route-bua-port{top:calc(118px + 244px + 44px)}
+@media(max-width:760px){.overview-detail-card{min-height:230px}.overview-bypass{top:calc(118px + 230px)}.route-bua-port{top:calc(118px + 230px + 44px)}}
 @media(max-width:760px){.overview-lower,.allocation-grid{grid-template-columns:1fr}.overview-driver-tools{align-items:flex-start}.driver-row{grid-template-columns:1fr}.driver-row>b{text-align:right}.overview-flow-map{min-width:1200px}}
 @media(max-width:760px){.overview-flow-panel{padding:16px}.overview-date-controls{align-items:flex-start;flex-wrap:wrap}.overview-flow-detail{min-width:100%}.overview-allocation-tile[aria-pressed=true]{outline-offset:1px}}
