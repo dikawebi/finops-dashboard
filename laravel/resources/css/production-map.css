@@ -32,9 +32,18 @@
 .overview-flow-panel .overview-flow-detail .overview-detail-line:last-child{border-bottom:0}
 .overview-flow-panel .overview-flow-detail .overview-detail-line strong{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 @media(max-width:520px){.overview-flow-panel .overview-flow-detail{width:100%;padding:12px}.overview-flow-panel .overview-flow-detail .overview-detail-line{flex-wrap:wrap;gap:4px}.overview-flow-panel .overview-flow-detail .overview-detail-line strong{margin-left:auto;white-space:normal}}
-.production-geography .production-route-strip{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;min-height:100px;padding:14px;background:#edf3f6}
-.production-geography .overview-route{position:static;width:auto;min-width:0;transform:none;margin:0;padding:0;background:transparent;border:0;box-shadow:none}
-.production-geography .overview-route summary{display:flex;flex-direction:column;gap:5px;padding:5px;cursor:pointer}
-.production-geography .overview-route summary>span{font-size:.78rem;color:#284357}
-.production-geography .overview-route summary>div{flex-wrap:wrap;white-space:normal}
+.production-geography .production-route-strip{position:absolute;inset:0;pointer-events:none}
+.production-geography .overview-route{position:absolute;z-index:4;width:clamp(116px,12%,154px);min-width:0;margin:0;padding:0;transform:translate(-50%,-50%);border:1px solid #f1a447;border-radius:7px;background:#15222cf2;box-shadow:0 3px 9px #0005;pointer-events:auto}
+.production-geography .overview-route summary{display:flex;flex-direction:column;gap:3px;padding:6px 8px;cursor:pointer;text-align:center;list-style:none}
+.production-geography .overview-route summary::-webkit-details-marker{display:none}
+.production-geography .overview-route summary>span{font-size:11px;line-height:1.2;color:#fff;font-weight:600}
+.production-geography .overview-route summary>div{display:flex;justify-content:center;gap:5px;flex-wrap:wrap;white-space:normal;padding:0;background:transparent}
+.production-geography .overview-route summary strong{font-size:12px;color:#fff}
+.production-geography .overview-route summary b{font-size:10px;color:#f4cb80}
+.production-geography .overview-route.route-bua-wp{left:32%;top:43%}
+.production-geography .overview-route.route-wp-port{left:49%;top:58%}
+.production-geography .overview-route.route-bua-port{left:37%;top:73%}
+.production-geography .overview-route[open]{background:#233b48}
+.production-geography .overview-route p{display:none}
+@media(max-width:900px){.production-geography .production-route-strip{position:relative;inset:auto;display:grid;grid-template-columns:1fr;gap:5px;padding:12px;background:#edf3f6}.production-geography .overview-route{position:static;width:auto;transform:none;background:transparent;box-shadow:none}.production-geography .overview-route summary>span{color:#284357}.production-geography .overview-route summary>div{background:#fff;border-radius:999px}.production-geography .overview-route summary strong{color:#193b61}.production-geography .overview-route summary b{color:#60798a}}
 @media(max-width:900px){.production-geography .overview-flow-cards{position:relative;inset:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px;background:#202b32}.production-geography .overview-detail-card[data-overview-card]{position:static;transform:none;width:auto;min-width:0}.production-geography .overview-detail-card summary{height:100%;min-height:90px}.production-geography .production-route-strip{grid-template-columns:1fr;gap:5px}.production-geography .production-map-heading{font-size:1rem}.production-geography .production-map-heading small{max-width:230px;font-size:.65rem}.production-geography .overview-detail-card summary small{font-size:.72rem}.production-geography .overview-stage-qty{font-size:1rem}}
