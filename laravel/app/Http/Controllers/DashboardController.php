@@ -15,6 +15,7 @@ use App\Services\InventoryValuationService;
 use App\Services\CostPerMtService;
 use App\Services\EquipmentCostService;
 use App\Services\GoogleSheetsProductionSync;
+use App\Services\D365\D365AllocationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -23,7 +24,11 @@ class DashboardController extends Controller
     public function costMatrix(Request $request, CostMatrixService $service): JsonResponse
     {
         [$period, $mode] = $this->periodMode($request);
-        return response()->json(['success' => true, 'data' => $service->build($period, $mode)]);
+        $data = $service->build($period, $mode);
+        if ($period === '2026-10' && !in_array('2026-10', $data['d365Periods'] ?? [], true)) {
+            return response()->json(['success'=>false,'message'=>'October 2026 cost overview requires imported D365 GL data. Baseline data is not used for October.'], 409);
+        }
+        return response()->json(['success' => true, 'data' => $data]);
     }
 
     public function updateReportCostClosing(Request $request): JsonResponse
@@ -56,6 +61,12 @@ class DashboardController extends Controller
         $mode = (string) $request->query('mode', 'mtd');
         abort_unless((bool) preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $period), 422, 'Invalid period.');
         abort_unless(in_array($mode, ['mtd', 'ytd'], true), 422, 'Invalid mode.');
+        if ($period === '2026-10') {
+            $sheetsReady = \Illuminate\Support\Facades\DB::table('inventory_movements')->where('period', $period)->where('source', 'google_sheets')->exists()
+                && DailyProduction::query()->where('period', $period)->where('source', 'google_sheets')->exists();
+            $d365Ready = GlEntry::query()->where('period', $period)->where('source_type', 'd365')->exists();
+            if (!$sheetsReady || !$d365Ready) return response()->json(['success'=>false,'message'=>'October inventory requires Google Sheets production sync and imported D365 GL. Baseline data is not used for October.'], 409);
+        }
         return response()->json(['success' => true, 'data' => $service->build($period, $mode)]);
     }
 
@@ -68,6 +79,9 @@ class DashboardController extends Controller
         $yearStart = substr($period, 0, 4).'-01';
         $syncedInPeriod = DailyProduction::query()->where('source', 'google_sheets')->where('period', $period)->exists();
         $syncedInYtd = DailyProduction::query()->where('source', 'google_sheets')->whereBetween('period', [$yearStart, $period])->exists();
+        if ($period === '2026-10' && !$syncedInPeriod) {
+            return response()->json(['success'=>false,'message'=>'October 2026 Executive Overview requires Google Sheets production sync. Baseline data is not used for October.'], 409);
+        }
         if (($mode === 'mtd' && !$syncedInPeriod) || ($mode === 'ytd' && !$syncedInYtd)) {
             $baselinePath = base_path("../baseline/reference_dump/production-summary_{$period}_{$mode}.json");
             if (is_file($baselinePath)) {
@@ -75,7 +89,8 @@ class DashboardController extends Controller
                 return response()->json(['success' => true, 'data' => $data]);
             }
         }
-        $daily = DailyProduction::period($period)->whereNotNull('coal_getting_mt')->where('coal_getting_mt', '>', 0)->orderBy('production_date')->get();
+        $daily = DailyProduction::query()->whereBetween('period', [$mode === 'ytd' ? $yearStart : $period, $period])
+            ->where('source', 'google_sheets')->whereNotNull('coal_getting_mt')->where('coal_getting_mt', '>', 0)->orderBy('production_date')->get();
         $metrics = MonthlyMetric::period($period)->get()->keyBy('metric_key');
         if ($mode === 'ytd') {
             $metricRows = MonthlyMetric::query()->whereBetween('period', [$yearStart, $period])->orderBy('period')->get()->groupBy('metric_key');
@@ -95,13 +110,18 @@ class DashboardController extends Controller
         $activityFlows = \Illuminate\Support\Facades\DB::table('production_activity_details')
             ->select('activity','location','activity_type','route','contractor','equipment','metric','unit')
             ->selectRaw('SUM(value) as value')
-            ->whereBetween('production_date', [$fromDate, $toDate])
+            ->whereBetween('production_date', [$fromDate, $toDate])->where('source', 'google_sheets')
             ->whereNotNull('value')
             ->groupBy('activity','location','activity_type','route','contractor','equipment','metric','unit')
             ->orderBy('activity')->orderBy('location')->orderBy('route')->get();
+        $activityMonths = \Illuminate\Support\Facades\DB::table('production_activity_details')
+            ->whereBetween('production_date', [$fromDate, $toDate])->where('source', 'google_sheets')
+            ->selectRaw("DATE_FORMAT(production_date, '%Y-%m') as period")->distinct()->orderBy('period')->pluck('period')->all();
         return response()->json(['success' => true, 'data' => [
             'dbMetrics' => $metrics,
             'activityFlows' => $activityFlows,
+            'activityDetailPeriods' => $activityMonths,
+            'productionSourcePeriods' => $daily->pluck('period')->unique()->values(),
             'periodRange' => ['from'=>$fromDate, 'to'=>$toDate],
             'sheetLastSyncedAt' => \App\Models\SystemConfig::get('sheetsSync', [])['last_synced_at'] ?? null,
             'dataSource' => ($mode === 'ytd' ? $syncedInYtd : $syncedInPeriod) ? 'Google Sheets sync' : 'database',
@@ -111,6 +131,85 @@ class DashboardController extends Controller
                 'count' => 0,
             ])->values(),
         ]]);
+    }
+
+    public function overviewDaily(Request $request, D365AllocationService $allocation): JsonResponse
+    {
+        [$period, $mode] = $this->periodMode($request);
+        if ($period === '2026-10' && !DailyProduction::query()->where('period', $period)->where('source', 'google_sheets')->exists()) {
+            return response()->json(['success'=>false,'message'=>'October daily production requires Google Sheets sync.'], 409);
+        }
+        $fromPeriod = $mode === 'ytd' ? substr($period, 0, 4).'-01' : $period;
+        $fromDate = $fromPeriod.'-01';
+        $toDate = \Carbon\Carbon::createFromFormat('Y-m', $period)->endOfMonth()->toDateString();
+        $daily = DailyProduction::query()->whereBetween('period', [$fromPeriod, $period])->where('source', 'google_sheets')
+            ->whereNotNull('coal_getting_mt')->orderBy('production_date')->get(['production_date','coal_getting_mt']);
+        $activities = \Illuminate\Support\Facades\DB::table('production_activity_details')->whereBetween('production_date', [$fromDate, $toDate])
+            ->where('source', 'google_sheets')->whereNotNull('value')->get(['production_date','activity','metric','value']);
+        $dailyMap = [];
+        foreach ($daily as $row) {
+            $date = $row->production_date->format('Y-m-d');
+            $dailyMap[$date] = ['date'=>$date,'coal'=>(float) $row->coal_getting_mt,'ob'=>null,'hauling'=>null];
+        }
+        foreach ($activities as $row) {
+            $date = substr((string) $row->production_date, 0, 10);
+            $dailyMap[$date] ??= ['date'=>$date,'coal'=>null,'ob'=>null,'hauling'=>null];
+            if (strcasecmp((string) $row->activity, 'OB Removal') === 0) $dailyMap[$date]['ob'] = (float) ($dailyMap[$date]['ob'] ?? 0) + (float) $row->value;
+            if (strcasecmp((string) $row->activity, 'Coal Hauling') === 0 && strcasecmp((string) $row->metric, 'quantity') === 0) $dailyMap[$date]['hauling'] = (float) ($dailyMap[$date]['hauling'] ?? 0) + (float) $row->value;
+        }
+
+        $glRows = GlEntry::query()->where('source_type', 'd365')->whereBetween('period', [$fromPeriod, $period])
+            ->whereBetween('entry_date', [$fromDate, $toDate])->get(['entry_date','main_account','amount_reporting','costing_to','valuation_to','activity','location','department','group_activity']);
+        $costs = [];
+        $mappingCache = [];
+        foreach ($glRows as $entry) {
+            $date = $entry->entry_date?->format('Y-m-d');
+            if (!$date) continue;
+            $code = (string) $entry->main_account;
+            $key = implode('|', [(string)$entry->main_account,(string)$entry->activity,(string)$entry->location,(string)$entry->department,(string)$entry->group_activity]);
+            $mapping = $mappingCache[$key] ??= $allocation->resolveGlEntry($entry);
+            $costing = strtolower(trim((string) ($mapping['costing_to'] ?? $entry->costing_to)));
+            $valuation = strtolower(trim((string) ($mapping['valuation_to'] ?? $entry->valuation_to)));
+            $head = substr($code, 0, 1);
+            $isDirect = preg_replace('/[\s_-]+/', '', $costing) === 'directexpense';
+            $isExpense = in_array($head, ['7','8','9'], true) || $isDirect || str_contains($costing, 'admin') || str_contains($costing, 'overhead') || $costing === 'ga';
+            $isCogp = !$isExpense && preg_match('/^[5-6]/', $code) && (str_contains($costing, 'mining') || str_contains($costing, 'pit') || str_contains($costing, 'haul') || str_contains($costing, 'wash') || str_contains($costing, 'port') || str_contains($costing, 'jetty'));
+            $costs[$date] ??= ['date'=>$date,'cogp'=>0.0,'ga'=>0.0,'gaAvailable'=>true];
+            if ($isCogp) $costs[$date]['cogp'] += (float) $entry->amount_reporting;
+            elseif ($isExpense) $costs[$date]['ga'] += (float) $entry->amount_reporting;
+        }
+        ksort($costs);
+        return response()->json(['success'=>true,'data'=>[
+            'daily'=>array_values($dailyMap),'costs'=>array_values($costs),
+            'source'=>'Google Sheets daily production + D365 dated GL','mode'=>$mode,'period'=>$period,
+            'sheetsLastSyncedAt'=>SystemConfig::get('sheetsSync', [])['last_synced_at'] ?? null,
+        ]]);
+    }
+
+    public function overviewAllocation(Request $request, D365AllocationService $allocation): JsonResponse
+    {
+        [$period, $mode] = $this->periodMode($request);
+        $group = (string) $request->query('group', 'account');
+        abort_unless(in_array($group, ['location','activity','department'], true), 422, 'Invalid allocation grouping.');
+        $from = $mode === 'ytd' ? substr($period, 0, 4).'-01' : $period;
+        $rows = GlEntry::query()->where('source_type', 'd365')->whereBetween('period', [$from, $period])
+            ->get(['main_account','amount_reporting','costing_to','valuation_to','activity','location','department','group_activity']);
+        $totals = ['cogp'=>[],'expense'=>[],'all'=>[]];
+        $mappingCache = [];
+        foreach ($rows as $entry) {
+            $code = (string) $entry->main_account;
+            $key = implode('|', [(string)$entry->main_account,(string)$entry->activity,(string)$entry->location,(string)$entry->department,(string)$entry->group_activity]);
+            $mapping = $mappingCache[$key] ??= $allocation->resolveGlEntry($entry);
+            $costing = strtolower(trim((string) ($mapping['costing_to'] ?? $entry->costing_to)));
+            $isDirect = preg_replace('/[\s_-]+/', '', $costing) === 'directexpense';
+            $head = substr($code, 0, 1);
+            $bucket = in_array($head, ['7','8','9'], true) || $isDirect || $costing === 'ga' || str_contains($costing, 'admin') || str_contains($costing, 'overhead') ? 'expense' : 'cogp';
+            $dimension = trim((string) ($entry->{$group} ?? '')) ?: 'Unspecified';
+            $amount = (float) $entry->amount_reporting;
+            $totals[$bucket][$dimension] = ($totals[$bucket][$dimension] ?? 0) + $amount;
+            $totals['all'][$dimension] = ($totals['all'][$dimension] ?? 0) + $amount;
+        }
+        return response()->json(['success'=>true,'data'=>['period'=>$period,'mode'=>$mode,'group'=>$group,'source'=>'D365 GL transactions','totals'=>$totals]]);
     }
 
     public function equipmentCost(Request $request, EquipmentCostService $service): JsonResponse

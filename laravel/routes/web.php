@@ -36,6 +36,8 @@ Route::prefix('api')->group(function () {
     Route::post('/inventory-inputs', [InventoryManualInputController::class, 'store']);
     Route::post('/inventory-inputs/{id}/void', [InventoryManualInputController::class, 'void']);
     Route::get('/production-summary', [DashboardController::class, 'production']);
+    Route::get('/overview-daily', [DashboardController::class, 'overviewDaily']);
+    Route::get('/overview-allocation', [DashboardController::class, 'overviewAllocation']);
     Route::get('/equipment-cost', [DashboardController::class, 'equipmentCost']);
     Route::get('/cost-per-mt', [DashboardController::class, 'costPerMt']);
     Route::get('/excel-cost-example', [DashboardController::class, 'excelCostExample']);

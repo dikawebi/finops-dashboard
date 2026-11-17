@@ -14,6 +14,7 @@ class InventoryValuationService
         if ($period === '2026-10' && in_array($mode, ['mtd', 'ytd'], true)) {
             $dynamic = $this->buildOctoberFromLiveSources($mode);
             if ($dynamic !== null) return $this->applyManualInputs($dynamic, $period, $mode, ['sale']);
+            throw new \RuntimeException('October 2026 inventory overview requires Google Sheets production sync and imported D365 GL data. Baseline data is not used for October.');
         }
         $baseline = base_path("../baseline/reference_dump/inventory-valuation_{$period}_{$mode}.json");
         if (is_file($baseline)) {

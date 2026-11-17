@@ -115,6 +115,7 @@ class CostMatrixService
 
         $historyMonths = array_values(array_unique(array_column($history, 'period')));
         $rawMonths = array_keys($monthsWithGl);
+        $d365Months = $glEntries->where('source_type', 'd365')->pluck('period')->filter()->unique()->sort()->values()->all();
         $source = $historyMonths && $rawMonths ? 'mixed' : ($historyMonths ? 'workbook' : ($rawMonths ? 'gl' : 'none'));
         $accrualMonths = array_values(array_unique(array_filter(array_column($accruals, 'period'))));
         $capitalizationPeriods = $this->sourceFilePeriods('../data_snapshot/extracted/mining_capitalization_history.json', $periods, $monthsWithGl);
@@ -123,6 +124,7 @@ class CostMatrixService
         return [
             'currency' => 'USD', 'amountScale' => 1, 'mode' => $mode, 'period' => $period,
             'dataSource' => $source, 'capitalizationPeriods' => $capitalizationPeriods,
+            'd365Periods' => $d365Months,
             'adjustmentPeriods' => $adjustmentPeriods, 'accrualPeriods' => $accrualMonths,
             'historicalPeriods' => $historyMonths, 'periods' => $periods,
             'closedPeriods' => array_values(array_intersect($periods, array_keys($closedPeriods))),

@@ -57,8 +57,10 @@ const d365SyncStorageKey = 'finops.d365.sync.progress';
 let d365ProgressTimer = null;
 const api = async path => {
     const response = await fetch(path);
-    if (!response.ok) throw new Error(`Request failed: ${response.status}`);
-    const payload = await response.json();
+    const text = await response.text();
+    let payload = null;
+    try { payload = text ? JSON.parse(text) : null; } catch { payload = null; }
+    if (!response.ok) throw new Error(payload?.message || payload?.error || `Request failed: ${response.status}`);
     return payload && Object.prototype.hasOwnProperty.call(payload, 'data') ? payload.data : payload;
 };
 const postJson = async (path, body) => {
@@ -144,68 +146,193 @@ function updateNavigation(period, mode) {
 }
 
 async function overview(period, mode) {
-    const [cost, financial, inventory, production, costPerMt] = await Promise.all([
+    const [cost, inventory, production, dailyData] = await Promise.all([
         api(`/api/cost-matrix?period=${period}&mode=${mode}`),
-        api(`/api/financial-statements?period=${period}&mode=${mode}`),
         api(`/api/inventory-valuation?period=${period}&mode=${mode}`),
         api(`/api/production-summary?period=${period}&mode=${mode}`),
-        api(`/api/cost-per-mt?period=${period}&mode=${mode}`),
+        api(`/api/overview-daily?period=${period}&mode=${mode}`),
     ]);
-    const metrics = Array.isArray(production.dbMetrics) ? production.dbMetrics : Object.values(production.dbMetrics || {});
-    const daily = production.dailyTrends || [];
-    const productionMT = Number(production.dbMetrics?.coalGetting?.value || metrics.find(item => item.metric_key === 'coalGetting')?.value || 0);
-    const line = id => Number(financial.incomeStatement?.[id] ?? financial.sections?.profitLoss?.find(item => item.id === id)?.value ?? 0);
-    const stages = inventory.stages || [];
-    const inventoryValue = stages.reduce((total, stage) => total + Number(stage.endingValueUSD || 0), 0);
-    const kpis = [
-        ['TOTAL ALL COST (GL)', money(cost.grandTotal.allCost), 'Costing to allocation, including Direct Expense (USD)', 'blue'],
-        ['TOTAL PRODUCTION VOLUME', `${qty(productionMT)} MT`, 'Coal mined / weighbridge volume', 'val'],
-        ['AVERAGE COST / MT', productionMT ? `${money(Number(cost.grandTotal.allCost) / productionMT)} / MT` : '—', 'Total operating cost / net MT', 'cost'],
-        ['TOTAL INVENTORY VALUE', money(inventoryValue), 'Provisional value — see quantity and cost sources', 'success'],
-        ['GROSS PROFIT', Number(financial.incomeStatement?.grossProfit || 0) === 0 ? 'USD -' : money(line('grossProfit')), 'Coal sales less cost of sales', 'blue'],
-        ['OPERATING PROFIT / BEFORE INTEREST', money(line('profitBeforeInterest')), 'Operating profit for the period', 'blue'],
-    ];
-    const topDrivers = (costPerMt.costByAccountGroup || []).slice().sort((a, b) => Number(b.amount) - Number(a.amount)).slice(0, 8).map(item => { const percentage = Number(cost.grandTotal.allCost) ? Number(item.amount) / Number(cost.grandTotal.allCost) * 100 : 0; return `<div class="driver-row"><div><span>${esc(item.group)}</span><div class="driver-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percentage.toFixed(1)}" aria-label="${esc(item.group)} ${percentage.toFixed(1)} percent"><i style="width:${Math.min(100, Math.max(1, percentage))}%"></i><em style="left:100%" aria-hidden="true"></em></div></div><b>${money(item.amount)} ${signedNumber(percentage, 0, 0, '%')}</b></div>`; }).join('');
+    if (period === '2026-10') {
+        if (!['Google Sheets sync', 'Google Sheets'].includes(production.dataSource)) throw new Error('October production must come from the Google Sheets sync. Baseline values are disabled for October.');
+        if (!(cost.d365Periods || []).includes('2026-10')) throw new Error('October costs must come from imported D365 GL. Baseline values are disabled for October.');
+        if (inventory.dynamicSourceStatus !== 'active') throw new Error('October inventory requires live Google Sheets movements and imported D365 GL. Baseline values are disabled for October.');
+    }
     const metricValue = key => production.dbMetrics?.[key]?.value == null ? null : Number(production.dbMetrics[key].value);
-    const metricDisplay = key => metricValue(key) === null ? '—' : `${qty(metricValue(key))} ${esc(production.dbMetrics[key].unit || 'MT')}`;
+    const number = value => reportAmount(value);
     const flows = production.activityFlows || [];
-    const siteProduction = ['Takalot', 'North G'].map(location => ({ location, value: flows.filter(row => row.activity === 'Coal Getting' && row.location === location).reduce((sum, row) => sum + Number(row.value || 0), 0) }));
-    const portArrivals = (Number(production.dbMetrics?.haulingBuaPort) || 0) + (Number(production.dbMetrics?.haulingWpPort) || 0);
-    const bargingRows = flows.filter(row => /barging/i.test(row.activity || ''));
-    const bargingValue = bargingRows.reduce((sum, row) => sum + Number(row.value || 0), 0);
-    const flowDetails = {
-        mine: [['Coal Getting', metricDisplay('coalGetting')], ...siteProduction.map(site => [site.location, `${qty(site.value)} MT`]), ['Waste Removal', metricDisplay('wasteRemoval')]],
-        bua: [['BUA to Washing Plant', metricDisplay('haulingBuaWp')], ['BUA to Port', metricDisplay('haulingBuaPort')], ['Loading BUA to Washing Plant', metricDisplay('loadingBuaWp')], ['Loading BUA to Port', metricDisplay('loadingBuaPort')]],
-        nonwash: [['Feed to Washing Plant', metricDisplay('washFeed')], ['Received via BUA to Washing Plant', metricDisplay('haulingBuaWp')]],
-        wash: [['Feed', metricDisplay('washFeed')], ['Clean Cooking', metricDisplay('washCoal')], ['Reject', metricDisplay('washReject')]],
-        port: [['Hauling BUA to Port', metricDisplay('haulingBuaPort')], ['Hauling WP to Port', metricDisplay('haulingWpPort')], ['Loading BUA to Port', metricDisplay('loadingBuaPort')], ['Loading WP to Port', metricDisplay('loadingWpPort')], ['Port Loading (BLC)', metricDisplay('portLoading')], ['Barging', bargingRows.length ? `${qty(bargingValue)} MT` : 'No activity data']],
+    const stages = inventory.stages || [];
+    const stage = id => stages.find(item => item.id === id);
+    const aggregate = ids => {
+        const selected = stages.filter(item => ids.includes(item.id));
+        const qtyMT = selected.reduce((sum, item) => sum + Number(item.endingQtyMT || 0), 0);
+        const valueUSD = selected.reduce((sum, item) => sum + Number(item.endingValueUSD || 0), 0);
+        return { qty: qtyMT, value: valueUSD, rate: qtyMT ? valueUSD / qtyMT : null, stages: selected };
     };
-    const flowNode = (id, title, eyebrow, value, detail, active = false) => `<button type="button" class="production-flow-node${active ? ' is-active' : ''}" data-flow-node="${id}" aria-pressed="${active}"><span class="flow-node-eyebrow">${eyebrow}</span><strong>${title}</strong><b>${value}</b><small>${detail}</small></button>`;
-    const flowMarkup = `<section class="production-flow-card"><div class="production-flow-heading"><div><span class="eyebrow">SHEET PRODUCTION FLOW</span><h3>From mine site to port</h3><p>Select a stage to inspect its production and movement figures.</p></div><span class="live-source-chip"><i></i>Google Sheets · ${mode.toUpperCase()} ${esc(period)}</span></div><div class="production-flow-track">${flowNode('mine','Mine sites','TAKALOT · NORTH G',metricDisplay('coalGetting'),'Coal Getting &amp; waste',true)}<span class="flow-connector" aria-hidden="true">›</span>${flowNode('bua','BUA / ROM','HAULING',`${metricDisplay('haulingBuaWp')} · ${metricDisplay('haulingBuaPort')}`,'To Wash Plant and Port') }<span class="flow-connector" aria-hidden="true">›</span>${flowNode('nonwash','Non-Wash','STOCKPILE',metricDisplay('washFeed'),'Feed to Washing Plant') }<span class="flow-connector" aria-hidden="true">›</span>${flowNode('wash','Washing Plant','PROCESS',metricDisplay('washFeed'),'Feed · clean coal · reject') }<span class="flow-connector" aria-hidden="true">›</span>${flowNode('port','BP Port','SHIPMENT',`${qty(portArrivals)} MT`,'Arrivals via hauling routes')}</div><div class="production-flow-detail" id="productionFlowDetail" aria-live="polite"></div><p class="production-flow-footnote">Values follow the selected ${mode.toUpperCase()} range. Reject is shown as process output and is not added to High Ash inventory.</p></section>`;
-    const maxMT = Math.max(...daily.map(item => Number(item.nettoMT) || 0), 10);
-    const chartWidth = 560, chartHeight = 200, padding = 30;
-    const barWidth = Math.max(5, Math.floor((chartWidth - padding * 2) / Math.max(daily.length, 1)) - 4);
-    const bars = daily.map((item, index) => {
-        const x = padding + index * (barWidth + 4);
-        const height = Math.round((Number(item.nettoMT || 0) / maxMT) * (chartHeight - padding * 2));
-        const day = item.date.slice(-2);
-        return `<g class="chart-bar-group"><rect x="${x}" y="${chartHeight - padding - height}" width="${barWidth}" height="${height}" fill="#0891b2" rx="3"><title>${esc(item.date)}: ${qty(item.nettoMT)} MT recorded in Google Sheets</title></rect>${index % 2 === 0 ? `<text x="${x + barWidth / 2}" y="${chartHeight - 10}" text-anchor="middle" font-size="10" fill="#64748b">${day}</text>` : ''}</g>`;
-    }).join('');
-    const dailyChart = daily.length ? `<svg width="100%" height="${chartHeight}" viewBox="0 0 ${chartWidth} ${chartHeight}" role="img" aria-label="Daily production volume"><line x1="${padding}" y1="${chartHeight - padding}" x2="${chartWidth - padding}" y2="${chartHeight - padding}" stroke="#cbd5e1"/><line x1="${padding}" y1="${padding}" x2="${chartWidth - padding}" y2="${padding}" stroke="#e2e8f0" stroke-dasharray="4"/><text x="${padding - 5}" y="${padding + 10}" text-anchor="end" font-size="10" fill="#94a3b8">${qty(maxMT)} MT</text><text x="${padding - 5}" y="${chartHeight - padding}" text-anchor="end" font-size="10" fill="#94a3b8">0</text>${bars}</svg>` : '<p class="chart-empty">No daily production records for this period.</p>';
-    $('#pageContent').innerHTML = `
-        ${sectionHeader('Operations & Financial Overview', 'October costs use imported D365 GL and Google Sheets production data; earlier periods follow the approved historical source.')}
-        <div class="kpi-grid overview-kpi-grid">${kpis.map(([label, value, sub, type]) => `<article class="kpi-card ${type}"><span class="kpi-title">${label}</span><strong class="kpi-value">${value}</strong><small class="kpi-sub">${sub}</small></article>`).join('')}</div>
-        ${flowMarkup}
-        ${card(`Production by Activity — Google Sheets DB ${badge('Live synchronized values')}`, `<p class="data-warning">Monthly figures use the DB tab. YTD sums available months only; blank source cells stay marked unavailable. Daily trend uses the Produksi tab.</p>${table(['Activity', 'Volume', 'Unit', 'Availability'], metrics.map(item => `<tr><td>${esc(item.label || item.metric_key)}</td><td class="num">${item.value == null ? '—' : qty(item.value)}</td><td>${esc(item.unit)}</td><td>${item.value == null ? `No data: ${(item.missingPeriods || []).join(', ')}` : 'Available'}</td></tr>`))}`)}
-        <div class="grid-2 overview-lower"><section class="card"><div class="card-title"><span>Cost Allocation: COGP &amp; Direct Expense</span>${badge(cost.dataSource === 'gl' ? 'D365 GL sync' : cost.dataSource)}<small>USD</small></div><div class="allocation-grid"><article class="allocation-val"><b>DIRECT EXPENSE, GA &amp; SELLING</b><strong>${money(cost.grandTotal.totalExpense)}</strong><span>Direct Expense by Valuation to; Not Valuated is included in GA. Selling Expense has its own column.</span></article><article class="allocation-cost"><b>COGP</b><strong>${money(cost.grandTotal.totalCOGP)}</strong><span>From Costing to: Mining, 3 Coal Hauling routes, Washing Plant, BP PORT</span></article></div><b class="drivers-title">Top Cost Drivers</b><div>${topDrivers}</div></section><section class="card"><div class="card-title"><span>Daily Production Volume (MT)</span>${badge(production.dataSource || 'Google Sheets')}<small>${mode.toUpperCase()} · ${esc(period)}</small></div><p class="chart-caption">Daily recorded coal volume (MT):</p><div id="chart-daily-production">${dailyChart}</div><div class="chart-footer"><span>Source: Google Sheets · Produksi</span><span>Updated: ${production.sheetLastSyncedAt ? esc(formatSyncTimestamp(production.sheetLastSyncedAt)) : '—'}</span></div></section></div>`;
-    const detailTarget = $('#productionFlowDetail');
-    const renderFlowDetails = id => {
-        const details = flowDetails[id] || [];
-        detailTarget.innerHTML = `<strong>${esc(({mine:'Mine sites',bua:'BUA / ROM hauling',nonwash:'Non-Wash stockpile',wash:'Washing Plant',port:'BP Port'})[id] || 'Production stage')}</strong><div class="production-flow-detail-grid">${details.map(([label,value]) => `<div><span>${esc(label)}</span><b>${value}</b></div>`).join('')}</div>`;
-        document.querySelectorAll('[data-flow-node]').forEach(button => { const active = button.dataset.flowNode === id; button.classList.toggle('is-active', active); button.setAttribute('aria-pressed', active ? 'true' : 'false'); });
+    const buaStock = aggregate(['bua']);
+    const washStock = aggregate(['nonWash', 'washed', 'highAsh']);
+    const portStock = aggregate(['port', 'transitPort']);
+    const ispStock = aggregate(['kunz', 'transitKunz']);
+    const amount = value => `USD ${number(value)}`;
+    const stockLine = item => `${qty(item.qty)} MT${item.rate == null ? '' : ` · USD ${number(item.rate)} / MT`}`;
+    const lines = items => items.map(([name, value]) => `<div class="overview-detail-line"><span>${esc(name)}</span><strong>${value}</strong></div>`).join('');
+    const detail = rows => `<div>${lines(rows)}</div>`;
+    const dailyDate = new Date(`${period}-01T00:00:00`);
+    const lastDay = new Date(dailyDate.getFullYear(), dailyDate.getMonth() + 1, 0).getDate();
+    const defaultDate = `${period}-${String(lastDay).padStart(2, '0')}`;
+    const flowSitesAvailable = mode !== 'ytd' || (production.activityDetailPeriods || []).length >= 10;
+    const siteBreakdown = flowSitesAvailable ? ['Takalot', 'North G'].map(location => [location, `${qty(flows.filter(row => row.activity === 'Coal Getting' && row.location === location).reduce((sum, row) => sum + Number(row.value || 0), 0))} MT`]) : [['Location split', 'October detail only; YTD source unavailable']];
+    const miningRows = cost.rows.filter(row => !row.isParent && Math.abs(Number(row.costMining || 0)) > 0.005).sort((a, b) => Math.abs(Number(b.costMining)) - Math.abs(Number(a.costMining)));
+    const portSales = ['port', 'transitPort'].flatMap(id => stage(id)?.rows || []).filter(row => row.type === 'outflow' && row.source === 'sale');
+    const ispSales = ['kunz', 'transitKunz'].flatMap(id => stage(id)?.rows || []).filter(row => row.type === 'outflow' && row.source === 'sale');
+    const salesQty = rows => Math.abs(rows.reduce((sum, row) => sum + Number(row.qtyMT || 0), 0));
+    const soldQty = salesQty([...portSales, ...ispSales]);
+    const soldCost = Math.abs([...portSales, ...ispSales].reduce((sum, row) => sum + Number(row.valueUSD || 0), 0));
+    const washFeed = metricValue('washFeed');
+    const washReject = metricValue('washReject');
+    const washCoal = metricValue('washCoal');
+    const buaWp = metricValue('haulingBuaWp');
+    const buaPort = metricValue('haulingBuaPort');
+    const wpPort = metricValue('haulingWpPort');
+    const combinedPortHauling = Number(cost.grandTotal.costHaulingBUAToPort || 0) + Number(cost.grandTotal.costHaulingWPToPort || 0);
+    const combinedPortVolume = Number(buaPort || 0) + Number(wpPort || 0);
+    const combinedPortRate = combinedPortVolume ? combinedPortHauling / combinedPortVolume : null;
+    const dailySelected = dailyData.daily.find(row => row.date === defaultDate) || dailyData.daily.at(-1);
+    const overviewActions = `<label>Overview view<select id="overview-date-mode"><option value="period">MTD / YTD</option><option value="daily">Daily</option></select></label><label id="overview-date-label" hidden>Date<input id="overview-date" type="date" value="${esc(defaultDate)}" min="${period}-01" max="${period}-${String(lastDay).padStart(2, '0')}"></label>`;
+    const card = (title, value, sub, rows, qtyValue = null) => `<details class="overview-detail-card" data-overview-card="${esc(title)}"><summary><span>${esc(title)}</span><div class="overview-card-values">${qtyValue ? `<strong class="overview-stage-qty">${qtyValue}</strong>` : ''}<strong class="overview-stage-rate">${value}</strong></div><small class="overview-card-sub">${esc(sub)} · Select for details</small></summary>${detail(rows)}</details>`;
+    const flowMarkup = `<section class="overview-flow-panel"><div class="overview-routes-heading"><strong>Production</strong><span><i class="flow-key-main"></i> Main flow &nbsp;&nbsp; <i class="flow-key-direct"></i> Direct route · ${mode.toUpperCase()} ${esc(formatPeriod(period))}<small class="overview-source-chip">Google Sheets ${production.sheetLastSyncedAt ? `· synced ${esc(formatSyncTimestamp(production.sheetLastSyncedAt))}` : '· synced data'}</small></span></div><div class="overview-flow-scroll"><div class="overview-flow-map"><div class="overview-flow-cards">${card('Coal Mining', buaStock.qty ? `USD ${number(Number(cost.grandTotal.costMining || 0) / (metricValue('coalGetting') || 1))} / MT` : '—', `Coal getting · BUA closing ${stockLine(buaStock)}`, [['Coal Getting', metricValue('coalGetting') == null ? '—' : `${qty(metricValue('coalGetting'))} MT`], ...siteBreakdown, ['Waste Removal', metricValue('wasteRemoval') == null ? '—' : `${qty(metricValue('wasteRemoval'))} Bcm`], ['BUA inventory closing', stockLine(buaStock)], ...miningRows.map(row => [`${row.code} ${row.name}`, amount(row.costMining)])], metricValue('coalGetting') == null ? '—' : `${qty(metricValue('coalGetting'))} MT`)}${card('Washing Plant', '', `Washed coal production · WP closing ${stockLine(washStock)}`, [['Raw coal available', `${qty(Number(stage('nonWash')?.availableQtyMT || 0))} MT`], ['Feed to washing', washFeed == null ? '—' : `${qty(washFeed)} MT`], ['Clean coal produced · feed less reject', washCoal == null ? '—' : `${qty(washCoal)} MT`], ['Reject (reduces Wash only)', washReject == null ? '—' : `${qty(washReject)} MT`], ['Ending raw coal', stage('nonWash') ? stockLine({qty:Number(stage('nonWash').endingQtyMT || 0),rate:stage('nonWash').endingRateUSD}) : '—'], ['Ending clean coal', stage('washed') ? stockLine({qty:Number(stage('washed').endingQtyMT || 0),rate:stage('washed').endingRateUSD}) : '—'], ['Ending reject stock', stage('highAsh') ? stockLine({qty:Number(stage('highAsh').endingQtyMT || 0),rate:stage('highAsh').endingRateUSD}) : '—']], washCoal == null ? '—' : `${qty(washCoal)} MT`)}${card('BP Port', portStock.rate == null ? '—' : `USD ${number(portStock.rate)} / MT`, `Closing inventory · includes transit ${stockLine(portStock)}`, portStock.stages.map(item => [item.name || item.id, stockLine({qty:Number(item.endingQtyMT || 0),rate:item.endingRateUSD})]), `${qty(portStock.qty)} MT`)}${card('ISP', ispStock.rate == null ? '—' : `USD ${number(ispStock.rate)} / MT`, `Closing inventory · includes transit ${stockLine(ispStock)}`, ispStock.stages.map(item => [item.name || item.id, stockLine({qty:Number(item.endingQtyMT || 0),rate:item.endingRateUSD})]), `${qty(ispStock.qty)} MT`)}${card('Mother Vessel', soldQty ? `USD ${number(soldCost / soldQty)} / MT` : '—', 'Sales volume · inventory cost per MT', [['From BP Port', `${qty(salesQty(portSales))} MT`], ['From ISP', `${qty(salesQty(ispSales))} MT`]], soldQty ? `${qty(soldQty)} MT` : '—')}</div><div class="overview-bypass" aria-label="Direct hauling from BUA to Port"><svg viewBox="0 0 1000 90" preserveAspectRatio="none" aria-hidden="true"><path d="M68 0 V48 Q68 70 88 70 H480 Q500 70 500 48 V4"/></svg></div><div class="overview-vessel-direct" aria-label="Direct sales from BP Port to Mother Vessel"><svg viewBox="0 0 1000 70" preserveAspectRatio="none" aria-hidden="true"><path d="M500 70 V28 Q500 8 520 8 H912 Q932 8 932 28 V65"/></svg><span>BP PORT → MOTHER VESSEL</span></div><details class="overview-route route-bua-wp" data-overview-route="buaWp"><summary><span>BUA → WP</span><div><strong>${buaWp == null ? '—' : `${qty(buaWp)} MT`}</strong><b>${buaWp && buaWp !== 0 ? `USD ${number(Number(cost.grandTotal.costHaulingBUAToWP || 0) / buaWp)} / MT` : '—'}</b></div></summary><p>Costing to BUA→WP divided by Google Sheets route volume.</p></details><details class="overview-route route-wp-port" data-overview-route="wpPort"><summary><span>WP → Port</span><div><strong>${wpPort == null ? '—' : `${qty(wpPort)} MT`}</strong><b>${combinedPortRate == null ? '—' : `USD ${number(combinedPortRate)} / MT`}</b></div></summary><p>Temporary estimate: combined port hauling cost allocated by route volume.</p></details><details class="overview-route route-bua-port" data-overview-route="buaPort"><summary><span>BUA → Port</span><div><strong>${buaPort == null ? '—' : `${qty(buaPort)} MT`}</strong><b>${combinedPortRate == null ? '—' : `USD ${number(combinedPortRate)} / MT`}</b></div></summary><p>Google Sheets hauling volume; temporary estimate uses combined port hauling cost per route MT.</p></details></div></div><div class="overview-flow-detail" hidden></div>${mode === 'ytd' && !flowSitesAvailable ? '<p class="overview-daily-note">Rincian produksi per lokasi yang tersinkron tersedia mulai Oktober saja. Total YTD memakai nilai bulanan DB Google Sheets; rincian Takalot/North G tidak diisi dengan angka MTD.</p>' : ''}</section>`;
+    $('#pageContent').innerHTML = `${sectionHeader('Operations & Financial Overview', `October production uses Google Sheets sync; October operating costs use imported D365 GL. YTD combines the approved January–September history with live October sources.`, overviewActions)}${flowMarkup}<div class="grid-2 overview-lower"><section class="card"><div class="card-title"><span>Cost Allocation: COGP &amp; Direct Expense</span>${badge(mode === 'ytd' ? 'D365 GL Oct + Jan–Sep history' : 'D365 GL sync')}<small>USD</small></div><div class="allocation-grid"><button type="button" id="overview-filter-expense" class="allocation-val overview-allocation-tile" aria-pressed="false"><b>DIRECT EXPENSE, GA &amp; SELLING</b><strong>${money(cost.grandTotal.totalExpense)}</strong><span>Direct Expense by Valuation to; Not Valuated is included in GA. Selling Expense has its own column.</span></button><button type="button" id="overview-filter-cogp" class="allocation-cost overview-allocation-tile" aria-pressed="true"><b>COGP</b><strong>${money(cost.grandTotal.totalCOGP)}</strong><span>From Costing to: Mining, 3 Coal Hauling routes, Washing Plant, BP PORT</span></button></div><div class="overview-driver-tools"><b>Top Cost Drivers</b><button type="button" id="overview-filter-all" class="btn btn-outline overview-filter-all" aria-pressed="false">All Cost</button><label>Group by<select id="overview-allocation-group"><option value="account">Account</option><option value="location">Location</option><option value="activity">Activity</option><option value="department">Department</option></select></label></div><p id="overview-allocation-note" class="integration-note"></p><div id="overview-top-drivers"></div></section><section class="card"><div class="card-title"><span>Daily Production Volume (MT)</span>${badge('Google Sheets Data')}</div><p class="chart-caption">Daily recorded coal volume (MT):</p><label class="overview-production-control">Production view<select id="overview-production-view"><option value="production">Coal Production</option><option value="hauling">Coal Hauling</option><option value="selling">Selling</option></select></label><div id="chart-daily-production"></div><div class="card-title overview-daily-cost-title">Daily Cost — COGP &amp; GA</div><p id="overview-direct-note" class="integration-note"></p><div id="overview-direct-chart"></div><details class="overview-daily-details"><summary><strong>View daily cost details</strong></summary>${table(['Date','COGP GL (USD)','GA GL (USD)'],'<tr><td colspan="3">Loading daily details…</td></tr>')}</details><div class="chart-footer"><span>Production: Google Sheets · Produksi</span><span>Dated costs: D365 GL</span></div></section></div>`;
+    const flowPanel = $('.overview-flow-panel');
+    const detailPanel = flowPanel.querySelector('.overview-flow-detail');
+    const vesselCard = $('[data-overview-card="Mother Vessel"]');
+    if (vesselCard && !soldQty) vesselCard.querySelector('.overview-card-sub').textContent = 'No sales quantity in live October inventory source · Select for details';
+    flowPanel.querySelectorAll('.overview-flow-map details').forEach(item => item.addEventListener('toggle', () => {
+        if (!item.open) return;
+        flowPanel.querySelectorAll('.overview-flow-map details[open]').forEach(other => { if (other !== item) other.open = false; });
+        const summary = item.querySelector('summary');
+        detailPanel.innerHTML = `<strong>${esc(summary.querySelector('span')?.textContent || 'Details')}</strong>${item.querySelector(':scope > div')?.innerHTML || item.querySelector(':scope > p')?.outerHTML || ''}`;
+        detailPanel.hidden = false;
+    }));
+    flowPanel.querySelectorAll('.overview-flow-map .overview-route').forEach(item => item.addEventListener('toggle', () => {
+        if (!item.open) return;
+        flowPanel.querySelectorAll('.overview-flow-map .overview-route[open]').forEach(other => { if (other !== item) other.open = false; });
+        detailPanel.innerHTML = `<strong>${esc(item.querySelector('summary span')?.textContent || 'Route details')}</strong>${item.querySelector(':scope > p')?.outerHTML || ''}`;
+        detailPanel.hidden = false;
+    }));
+    const renderAllocation = async () => {
+        const group = $('#overview-allocation-group').value;
+        const active = document.querySelector('.overview-allocation-tile[aria-pressed="true"]')?.id;
+        const bucket = active === 'overview-filter-expense' ? 'expense' : active === 'overview-filter-cogp' ? 'cogp' : 'all';
+        const title = bucket === 'cogp' ? 'COGP' : bucket === 'expense' ? 'Direct Expense, GA & Selling' : 'All costs';
+        $('#overview-allocation-note').textContent = `${title} · Top 10 by absolute amount. October uses imported D365 GL; YTD historical months follow the approved source.`;
+        let entries = [];
+        if (group === 'account') {
+            const field = bucket === 'cogp' ? 'totalCOGP' : bucket === 'expense' ? 'totalExpense' : 'allCost';
+            entries = cost.rows.filter(row => !row.isParent && Math.abs(Number(row[field] || 0)) > 0.005).map(row => [`${row.code} ${row.name}`, Number(row[field])]);
+        } else {
+            $('#overview-allocation-note').textContent = `${title} · Aggregated from imported D365 GL dimensions only.`;
+            const result = await api(`/api/overview-allocation?period=${period}&mode=${mode}&group=${group}`);
+            entries = Object.entries(result.totals[bucket] || {}).map(([name, value]) => [name, Number(value)]);
+        }
+        entries.sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+        const top = entries.slice(0, 10);
+        $('#overview-top-drivers').innerHTML = top.map(([name, value]) => {
+            const percent = Number(cost.grandTotal.allCost) ? Math.abs(value) / Number(cost.grandTotal.allCost) * 100 : 0;
+            return `<div class="driver-row"><div><span>${esc(name)}</span><div class="driver-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent.toFixed(1)}" aria-label="${esc(name)} ${percent.toFixed(1)} percent"><i style="width:${Math.min(100, Math.max(1, percent))}%"></i><em style="left:100%" aria-hidden="true"></em></div></div><b>${money(value)} ${signedNumber(percent, 0, 0, '%')}</b></div>`;
+        }).join('') || '<p>No data for this selection.</p>';
     };
-    document.querySelectorAll('[data-flow-node]').forEach(button => button.addEventListener('click', () => renderFlowDetails(button.dataset.flowNode)));
-    renderFlowDetails('mine');
+    document.querySelectorAll('.overview-allocation-tile').forEach(button => button.addEventListener('click', () => {
+        if (button.getAttribute('aria-pressed') === 'true') {
+            button.setAttribute('aria-pressed', 'false');
+            $('#overview-filter-cogp').setAttribute('aria-pressed', 'false');
+            $('#overview-filter-expense').setAttribute('aria-pressed', 'false');
+        } else {
+            document.querySelectorAll('.overview-allocation-tile').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+        }
+        renderAllocation();
+    }));
+    $('#overview-filter-all').addEventListener('click', event => {
+        const next = event.currentTarget.getAttribute('aria-pressed') !== 'true';
+        event.currentTarget.setAttribute('aria-pressed', String(next));
+        if (next) document.querySelectorAll('.overview-allocation-tile').forEach(item => item.setAttribute('aria-pressed', 'false'));
+        else $('#overview-filter-cogp').setAttribute('aria-pressed', 'true');
+        renderAllocation();
+    });
+    $('#overview-allocation-group').addEventListener('change', renderAllocation);
+    await renderAllocation();
+
+    const chartDate = () => $('#overview-date').value || defaultDate;
+    const dailyControls = () => {
+        const dailyMode = $('#overview-date-mode').value === 'daily';
+        $('#overview-date-label').hidden = !dailyMode;
+        renderOverviewCharts();
+    };
+    const renderOverviewCharts = () => {
+        const isDaily = $('#overview-date-mode').value === 'daily';
+        const chosenDate = chartDate();
+        const view = $('#overview-production-view').value;
+        let dailyRows = dailyData.daily || [];
+        if (isDaily) dailyRows = dailyRows.filter(row => row.date === chosenDate);
+        const selectedDay = (dailyData.daily || []).find(row => row.date === chosenDate);
+        const mineCard = $('[data-overview-card="Coal Mining"]');
+        if (mineCard) {
+            mineCard.querySelector('.overview-stage-qty').textContent = isDaily ? (selectedDay?.coal == null ? '—' : `${qty(selectedDay.coal)} MT`) : `${qty(metricValue('coalGetting'))} MT`;
+            mineCard.querySelector('.overview-stage-rate').textContent = isDaily ? '—' : `USD ${number(Number(cost.grandTotal.costMining || 0) / (metricValue('coalGetting') || 1))} / MT`;
+            mineCard.querySelector('.overview-card-sub').textContent = `${isDaily ? `Daily coal getting · BUA closing ${stockLine(buaStock)}` : `Coal getting · BUA closing ${stockLine(buaStock)}`} · Select for details`;
+        }
+        const washCard = $('[data-overview-card="Washing Plant"]');
+        if (washCard) {
+            washCard.querySelector('.overview-stage-qty').textContent = isDaily ? '—' : (washCoal == null ? '—' : `${qty(washCoal)} MT`);
+            washCard.querySelector('.overview-stage-rate').textContent = '';
+            washCard.querySelector('.overview-card-sub').textContent = `${isDaily ? 'Daily production unavailable' : 'Washed coal production'} · WP closing ${stockLine(washStock)} · Select for details`;
+        }
+        if (vesselCard && isDaily) { vesselCard.querySelector('.overview-stage-qty').textContent = '—'; vesselCard.querySelector('.overview-stage-rate').textContent = '—'; vesselCard.querySelector('.overview-card-sub').textContent = 'Daily sales unavailable · Select for details'; }
+        const routeValues = {buaWp, wpPort, buaPort};
+        flowPanel.querySelectorAll('[data-overview-route]').forEach(route => {
+            const key = route.dataset.overviewRoute;
+            const volume = route.querySelector('summary strong');
+            const rate = route.querySelector('summary b');
+            if (isDaily) { volume.textContent = '—'; rate.textContent = '—'; }
+            else if (key === 'buaWp') { volume.textContent = routeValues.buaWp == null ? '—' : `${qty(routeValues.buaWp)} MT`; rate.textContent = routeValues.buaWp ? `USD ${number(Number(cost.grandTotal.costHaulingBUAToWP || 0) / routeValues.buaWp)} / MT` : '—'; }
+            else { const amount = key === 'wpPort' ? routeValues.wpPort : routeValues.buaPort; volume.textContent = amount == null ? '—' : `${qty(amount)} MT`; rate.textContent = combinedPortRate == null ? '—' : `USD ${number(combinedPortRate)} / MT`; }
+        });
+        const maxDays = Math.max(1, ...dailyRows.map(row => view === 'hauling' ? Number(row.hauling || 0) : Number(row.coal || 0) + Number(row.ob || 0)));
+        const chartRows = dailyRows;
+        const totalCoal = chartRows.reduce((sum, row) => sum + Number(row.coal || 0), 0);
+        const totalOb = chartRows.reduce((sum, row) => sum + Number(row.ob || 0), 0);
+        const totalHauling = chartRows.reduce((sum, row) => sum + Number(row.hauling || 0), 0);
+        if (view === 'selling') {
+            $('#chart-daily-production').innerHTML = '<p class="overview-daily-note">Daily selling data is not available. Inventory sales inputs are monthly and cannot be assigned to a day.</p>';
+        } else if (!chartRows.length) {
+            $('#chart-daily-production').innerHTML = '<p class="chart-empty">No daily Google Sheets data for the selected date range.</p>';
+        } else {
+            const width = Math.max(550, chartRows.length * 38 + 136), height = 230, pad = 68;
+            const bars = chartRows.map((row, index) => {
+                const x = pad + index * 38 + 10;
+                const coalHeight = view === 'hauling' ? 0 : Number(row.coal || 0) / maxDays * 150;
+                const obHeight = view === 'hauling' ? Number(row.hauling || 0) / maxDays * 150 : Number(row.ob || 0) / maxDays * 150;
+                const primary = view === 'hauling' ? Number(row.hauling || 0) : Number(row.coal || 0);
+                const dateLabel = row.date.slice(8);
+                return `<g><rect x="${x}" y="${height-pad-obHeight}" width="20" height="${obHeight}" rx="3" fill="${view === 'hauling' ? '#2563eb' : '#14b8a6'}"><title>${esc(row.date)}: ${view === 'hauling' ? `Hauling ${qty(primary)} MT` : `OB ${row.ob == null ? '—' : `${qty(row.ob)} Bcm`}`}</title></rect>${view !== 'hauling' ? `<rect x="${x}" y="${height-pad-obHeight-coalHeight}" width="20" height="${coalHeight}" rx="3" fill="#2563eb"><title>${esc(row.date)}: Coal Getting ${qty(row.coal)} MT</title></rect>` : ''}<text x="${x+10}" y="${height-14}" text-anchor="middle" font-size="9" fill="#64748b">${dateLabel}</text></g>`;
+            }).join('');
+            const summary = view === 'hauling' ? `${isDaily ? 'Daily' : mode.toUpperCase()} hauling ${qty(totalHauling)} MT` : `${isDaily ? 'Daily' : mode.toUpperCase()} coal ${qty(totalCoal)} MT · OB ${dailyRows.every(row => row.ob !== null) ? `${qty(totalOb)} Bcm` : '—'} · SR ${totalCoal && dailyRows.every(row => row.ob !== null) ? (totalOb / totalCoal).toFixed(2) : '—'}`;
+            const note = mode === 'ytd' && !isDaily ? '<p class="overview-daily-note">Grafik memakai baris harian yang tersedia dari Google Sheets. Total YTD pada diagram produksi memakai DB sheet; bulan tanpa rincian harian tidak dibuat dari baseline Oktober.</p>' : '';
+            $('#chart-daily-production').innerHTML = `${note}<div class="overview-production-summary">${summary}</div><div class="overview-graph-legend">${view === 'hauling' ? '<span>● Coal Hauling (MT) — all recorded routes</span>' : '<span>● Coal Getting (MT)</span><span>● OB Removal (Bcm)</span><span>Unit berbeda ditampilkan bertumpuk.</span>'}</div><div class="overview-graph-scroll"><svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="Daily production chart"><line x1="${pad}" y1="${height-pad}" x2="${width-20}" y2="${height-pad}" stroke="#cbd5e1"/>${bars}</svg></div>`;
+        }
+        const costRows = (dailyData.costs || []).filter(row => !isDaily || row.date === chosenDate);
+        $('#overview-direct-note').textContent = `${isDaily ? `Daily ${formatDate(chosenDate)}` : mode.toUpperCase()} · D365 GL postings grouped by posting date. Google Sheets operating accruals remain monthly and are not spread across days.`;
+        if (!costRows.length) {
+            $('#overview-direct-chart').innerHTML = '<p class="chart-empty">No dated D365 GL costs for this selection.</p>';
+        } else {
+            const max = Math.max(1, ...costRows.flatMap(row => [Math.abs(Number(row.cogp || 0)), Math.abs(Number(row.ga || 0))]));
+            $('#overview-direct-chart').innerHTML = `<div class="overview-graph-legend"><span>● COGP GL</span><span>● GA GL</span><span>USD by posting date</span></div><div class="overview-daily-bars">${costRows.map(row => `<div title="${esc(row.date)} · COGP ${money(row.cogp)} · GA ${money(row.ga)}"><span>${esc(row.date.slice(5))}</span><i style="height:${Math.max(2, Math.abs(Number(row.cogp || 0)) / max * 100)}%"></i><b style="height:${Math.max(2, Math.abs(Number(row.ga || 0)) / max * 100)}%"></b></div>`).join('')}</div>`;
+        }
+        const body = $('#overview-daily-cost-details tbody');
+        if (body) body.innerHTML = costRows.map(row => `<tr><td>${esc(formatDate(row.date))}</td><td class="num">${money(row.cogp)}</td><td class="num">${money(row.ga)}</td></tr>`).join('') || '<tr><td colspan="3">No dated GL rows for this selection.</td></tr>';
+    };
+    $('#overview-date-mode').addEventListener('change', dailyControls);
+    $('#overview-date').addEventListener('change', renderOverviewCharts);
+    $('#overview-production-view').addEventListener('change', renderOverviewCharts);
+    dailyControls();
 }
 
 async function cost(period, mode) {
