@@ -202,20 +202,26 @@ class InventoryValuationService
         $applyManualAdjustment('nonWash');
 
         $qty['washed'] += $feed;
-        // The reference moving-average formula carries the feed value into clean output;
-        // reject is quantity-only and is tracked separately as High Ash.
+        // Carry the feed value and Washing Plant cost into the Wash moving-average pool.
         $amount['washed'] += $feedValue + $costs['washed'];
-        $activity['washed']['in'] = $feed; $activity['washed']['receipt'] = $feedValue; $activity['washed']['cost'] = $costs['washed']; $activity['washed']['adjust'] = -$reject;
-        $qty['washed'] -= $reject;
+        $activity['washed']['in'] = $feed; $activity['washed']['receipt'] = $feedValue; $activity['washed']['cost'] = $costs['washed'];
         $availableSnapshots['washed'] = ['qty'=>$qty['washed'],'value'=>$amount['washed']];
         $washedRate = $qty['washed'] > 0 ? $amount['washed'] / $qty['washed'] : 0;
+        $rejectValue = $reject * $washedRate;
+        $qty['washed'] -= $reject;
+        $amount['washed'] -= $rejectValue;
+        $qty['highAsh'] += $reject;
+        $amount['highAsh'] += $rejectValue;
+        $activity['washed']['out'] = $reject;
+        $activity['washed']['outValue'] = $rejectValue;
+        $activity['highAsh']['in'] = $reject;
+        $activity['highAsh']['receipt'] = $rejectValue;
         $washedOut = $wpLoadedPort;
         $washedValue = $washedOut * $washedRate;
         $qty['washed'] -= $washedOut;
         $amount['washed'] -= $washedValue;
-        $activity['washed']['out'] = $washedOut; $activity['washed']['outValue'] = $washedValue;
+        $activity['washed']['out'] += $washedOut; $activity['washed']['outValue'] += $washedValue;
         $applyManualAdjustment('washed');
-        // Reject reduces Wash stock only; it is not an inflow to High Ash.
 
         $qty['transitBuaPort'] += $buaLoadedPort;
         $amount['transitBuaPort'] += $buaLoadedPort * $buaRate;
@@ -279,8 +285,8 @@ class InventoryValuationService
             $stage['rows'] = match ($id) {
                 'bua' => [$openingRow,$movement('Coal mined — COGP Mining', $mined, $costs['bua'], 'receipt', 'Google Sheets + D365 GL'),$availableRow,$movement('Loaded to Wash Plant',-$buaToWp,-$buaToWp*$buaRate,'outflow','Google Sheets'),$movement('Loaded to BP PORT',-$buaLoadedPort,-$buaLoadedPort*$buaRate,'outflow','Google Sheets'),...($manualRows['bua'] ?? []),$closingRow],
                 'nonWash' => [$openingRow,$movement('Received from BUA to Washing Plant',$directBuaWpIn,$directBuaWpIn*$buaRate,'receipt','Google Sheets'),$movement('Add cost — Coal Hauling BUA to WP',0,$costs['nonWash'],'cost','D365 GL'),$availableRow,$movement('Washing Plant Feed',-$washFeedApplied,-$feedValue,'outflow','Google Sheets'),...($manualRows['nonWash'] ?? []),$closingRow],
-                'washed' => [$openingRow,$movement('Feed received from Non Wash',$feed,$feedValue,'receipt','Google Sheets'),$movement('Reject (quantity only)',-$reject,0,'adjustment','Google Sheets'),$movement('Add cost — COGP Washing Plant',0,$costs['washed'],'cost','D365 GL'),$availableRow,$movement('Loaded to BP PORT',-$washedOut,-$washedValue,'outflow','Google Sheets'),...($manualRows['washed'] ?? []),$closingRow],
-                'highAsh' => [$openingRow,...($manualRows['highAsh'] ?? []),$closingRow],
+                'washed' => [$openingRow,$movement('Feed received from Non Wash',$feed,$feedValue,'receipt','Google Sheets'),$movement('Add cost — COGP Washing Plant',0,$costs['washed'],'cost','D365 GL'),$availableRow,$movement('Reject transferred to High Ash',-$reject,-$rejectValue,'outflow','Google Sheets'),$movement('Loaded to BP PORT',-$washedOut,-$washedValue,'outflow','Google Sheets'),...($manualRows['washed'] ?? []),$closingRow],
+                'highAsh' => [$openingRow,$movement('Reject received from Wash',$reject,$rejectValue,'receipt','Google Sheets'),$availableRow,...($manualRows['highAsh'] ?? []),$closingRow],
                 'port' => [$openingRow,$movement('Received from BUA to Port',$buaArrivedPort,$transitBuaPortValue,'receipt','Google Sheets'),$movement('Received from Washing Plant to Port',$wpArrivedPort,$transitWpPortValue,'receipt','Google Sheets'),$movement('Add cost — hauling routes + COGP BP PORT',0,$costs['port'],'cost','D365 GL'),$availableRow,$movement('Barging',-$barging,-$bargingValue,'outflow','Google Sheets'),...($manualRows['port'] ?? []),$closingRow],
                 'transitBuaWp' => [$openingRow,...($manualRows['transitBuaWp'] ?? []),$closingRow],
                 'transitBuaPort' => [$openingRow,$movement('Loaded at BUA',$buaLoadedPort,$buaLoadedPort*$buaRate,'receipt','Google Sheets'),...($manualRows['transitBuaPort'] ?? []),$movement('Arrived at BP PORT',-$buaArrivedPort,-$transitBuaPortValue,'outflow','Google Sheets'),$closingRow],
