@@ -237,7 +237,7 @@ class CostMatrixService
     {
         $entries = Accrual::whereIn('period', $periods)->get()->map(fn (Accrual $entry): array => [
             'period' => $entry->period, 'account_code' => $entry->account_code, 'name' => $entry->description,
-            'category' => $entry->category, 'amount_usd' => $entry->amount_usd,
+            'category' => $entry->category, 'amount_usd' => $entry->amount_usd, 'source'=>'manual',
         ])->all();
 
         $historyFile = base_path('../data_snapshot/extracted/automatic_accrual_history.json');
@@ -252,7 +252,7 @@ class CostMatrixService
             : collect();
         foreach ($liveAccruals as $row) $entries[] = [
             'period'=>$row->period,'account_code'=>$row->account_code,'name'=>$row->name,
-            'category'=>$row->category,'amount_usd'=>$row->amount_usd,'entity'=>$row->entity,
+            'category'=>$row->category,'amount_usd'=>$row->amount_usd,'entity'=>$row->entity,'source'=>'live_sheet',
         ];
         $hasLiveAccruals = $liveAccruals->isNotEmpty();
         if ($hasLiveAccruals) {
@@ -260,12 +260,12 @@ class CostMatrixService
             $portQty = $metrics->get('portLoading');
             if ($portQty !== null && (float) $portQty >= 0) $entries[] = [
                 'period'=>$activePeriod,'account_code'=>'5000104','name'=>'Barge Loading Conveyor Rent',
-                'category'=>'BP PORT','amount_usd'=>max((float) $portQty * 1.332, 15000),
+                'category'=>'BP PORT','amount_usd'=>max((float) $portQty * 1.332, 15000),'source'=>'live_metric',
             ];
             $feedQty = $metrics->get('washFeed');
             if ($feedQty !== null && (float) $feedQty > 0) $entries[] = [
                 'period'=>$activePeriod,'account_code'=>'5000105','name'=>'Wash Plant Rent',
-                'category'=>'Washing Plant','amount_usd'=>(float) $feedQty * 13.487,
+                'category'=>'Washing Plant','amount_usd'=>(float) $feedQty * 13.487,'source'=>'live_metric',
             ];
             foreach ([
                 ['haulingBuaPort','Coal Hauling BUA to Port'],
@@ -274,11 +274,13 @@ class CostMatrixService
                 $qty = $metrics->get($metricKey);
                 if ($qty !== null && (float) $qty > 0) $entries[] = [
                     'period'=>$activePeriod,'account_code'=>'5000109','name'=>'Land And Road Rent',
-                    'category'=>$category,'amount_usd'=>(float) $qty * 0.7,
+                    'category'=>$category,'amount_usd'=>(float) $qty * 0.7,'source'=>'live_metric',
                 ];
             }
         }
-        if ($hasLiveAccruals && count(array_filter($periods, static fn (string $month): bool => $month !== $activePeriod)) === 0) return $entries;
+        if ($hasLiveAccruals && count(array_filter($periods, static fn (string $month): bool => $month !== $activePeriod)) === 0) {
+            return $this->excludeAccrualsAlreadyPostedToD365($entries);
+        }
         foreach ($periods as $month) {
             // The selected, synced month is recalculated from the current Sheets DB rows.
             // Prior months can use saved DB payloads. JSON snapshots are limited
@@ -288,9 +290,55 @@ class CostMatrixService
             $snapshot = $savedHistory ?? ($month < '2026-10' ? ($historyData[$month] ?? []) : []);
             foreach ((array) $snapshot as $row) $entries[] = $row + [
                 'period' => $month, 'account_code' => $row['code'] ?? null, 'amount_usd' => $row['amount'] ?? 0,
+                'source' => $savedHistory !== null ? 'database_history' : 'historical_snapshot',
             ];
         }
-        return $entries;
+        return $this->excludeAccrualsAlreadyPostedToD365($entries);
+    }
+
+    private function excludeAccrualsAlreadyPostedToD365(array $entries): array
+    {
+        // The GL voucher is authoritative once an automatic live accrual is
+        // posted. Match each expense row once; cent-level rounding is allowed.
+        $eligible = array_values(array_filter($entries, static fn (array $entry): bool =>
+            (string) ($entry['period'] ?? '') >= '2026-10'
+            && in_array($entry['source'] ?? '', ['live_sheet','live_metric','database_history'], true)
+            && trim((string) ($entry['account_code'] ?? $entry['code'] ?? '')) !== ''
+            && (float) ($entry['amount_usd'] ?? $entry['amount'] ?? 0) != 0.0
+        ));
+        if (!$eligible) return $entries;
+
+        $periods = array_values(array_unique(array_column($eligible, 'period')));
+        $accounts = array_values(array_unique(array_map(static fn (array $entry): string => trim((string) ($entry['account_code'] ?? $entry['code'])), $eligible)));
+        $posted = DB::table('gl_entries')->whereIn('period', $periods)->where('source_type', 'd365')
+            ->where('voucher', 'like', 'ACCR%')->whereIn('main_account', $accounts)
+            ->get(['period','main_account','amount_reporting']);
+        if ($posted->isEmpty()) return $entries;
+
+        $candidates = [];
+        foreach ($posted as $row) $candidates[(string) $row->period.'|'.trim((string) $row->main_account)][] = [
+            'amount'=>(float) $row->amount_reporting,'used'=>false,
+        ];
+        $excluded = [];
+        foreach ($eligible as $entry) {
+            $key = (string) $entry['period'].'|'.trim((string) ($entry['account_code'] ?? $entry['code']));
+            $amount = (float) ($entry['amount_usd'] ?? $entry['amount'] ?? 0);
+            foreach ($candidates[$key] ?? [] as $index => $candidate) {
+                if ($candidate['used'] || abs($candidate['amount'] - $amount) > 0.02) continue;
+                $candidates[$key][$index]['used'] = true;
+                $excluded[serialize($entry)] = ($excluded[serialize($entry)] ?? 0) + 1;
+                break;
+            }
+        }
+
+        return array_values(array_filter($entries, static function (array $entry) use (&$excluded): bool {
+            $key = serialize($entry);
+            if (($excluded[$key] ?? 0) > 0) {
+                $excluded[$key]--;
+                return false;
+            }
+            return true;
+        }));
     }
 
     public function financialAdjustmentRows(array $periods): array
