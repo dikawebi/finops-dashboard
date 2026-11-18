@@ -84,6 +84,24 @@ class InventoryValuationService
         ];
         $opening = collect($openingData['stages'] ?? [])->keyBy('id');
         $stages = collect($template['stages'] ?? [])->keyBy('id');
+        // Route quantities that have left BUA/Wash but have not reached BP PORT
+        // are still company inventory. Keep them as their own visible locations
+        // so totals and the composition chart include them exactly once.
+        foreach ([
+            'transitBuaPort' => 'In Transit BUA to Port',
+            'transitWpPort' => 'In Transit WP to Port',
+        ] as $id => $name) {
+            if (!$stages->has($id)) {
+                $prototype = $stages->get('transitPort') ?? $stages->get('port') ?? [];
+                $stages->put($id, array_merge($prototype, [
+                    'id' => $id,
+                    'name' => $name,
+                    'location' => $name,
+                    'includedInQuantityTotal' => true,
+                    'includedInValueTotal' => true,
+                ]));
+            }
+        }
         $qty = $amount = [];
         foreach ($stages as $id => $stage) {
             $prior = $opening->get($id);
@@ -234,8 +252,9 @@ class InventoryValuationService
 
         foreach ($stages as $id => $stage) {
             $begin = $opening->get($id);
-            $beginQty = (float) ($begin['endingQtyMT'] ?? 0);
-            $beginValue = (float) ($begin['endingValueUSD'] ?? 0);
+            $transitOpening = $transitOpenings[$id] ?? [];
+            $beginQty = (float) ($begin['endingQtyMT'] ?? $transitOpening['qtyMT'] ?? 0);
+            $beginValue = (float) ($begin['endingValueUSD'] ?? $transitOpening['valueUSD'] ?? 0);
             $stage['beginningQtyMT'] = $beginQty;
             $stage['beginningValueUSD'] = $beginValue;
             $stage['endingQtyMT'] = $qty[$id] ?? 0.0;
