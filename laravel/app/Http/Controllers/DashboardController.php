@@ -63,13 +63,23 @@ class DashboardController extends Controller
         abort_unless((bool) preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $period), 422, 'Invalid period.');
         abort_unless(in_array($mode, ['mtd', 'ytd'], true), 422, 'Invalid mode.');
         if ($period >= '2026-10') {
-            if ($period !== '2026-10') return response()->json(['success'=>false,'message'=>'Live inventory roll-forward after October is not available yet. Baseline data is not used from October 2026 onward.'], 409);
-            $sheetsReady = \Illuminate\Support\Facades\DB::table('inventory_movements')->where('period', $period)->where('source', 'google_sheets')->exists()
-                && DailyProduction::query()->where('period', $period)->where('source', 'google_sheets')->exists();
-            $d365Ready = GlEntry::query()->where('period', $period)->where('source_type', 'd365')->exists();
-            if (!$sheetsReady || !$d365Ready) return response()->json(['success'=>false,'message'=>'October inventory requires Google Sheets production sync and imported D365 GL. Baseline data is not used for October.'], 409);
+            $requiredPeriods = [];
+            for ($month = '2026-10'; $month <= $period; $month = date('Y-m', strtotime($month.'-01 +1 month'))) $requiredPeriods[] = $month;
+            $missing = [];
+            foreach ($requiredPeriods as $requiredPeriod) {
+                $sheetsReady = \Illuminate\Support\Facades\DB::table('inventory_movements')->where('period', $requiredPeriod)->where('source', 'google_sheets')->exists()
+                    && DailyProduction::query()->where('period', $requiredPeriod)->where('source', 'google_sheets')->exists();
+                $d365Ready = GlEntry::query()->where('period', $requiredPeriod)->where('source_type', 'd365')->exists();
+                if (!$sheetsReady || !$d365Ready) $missing[] = $requiredPeriod;
+            }
+            if ($missing) return response()->json(['success'=>false,'message'=>'Inventory live roll-forward is missing Google Sheets production/movement sync or D365 GL for: '.implode(', ', $missing).'. Baseline data is not used from October 2026 onward.'], 409);
         }
-        return response()->json(['success' => true, 'data' => $service->build($period, $mode)]);
+        try {
+            return response()->json(['success' => true, 'data' => $service->build($period, $mode)]);
+        } catch (\RuntimeException $exception) {
+            if ($period >= '2026-10') return response()->json(['success'=>false,'message'=>$exception->getMessage()], 409);
+            throw $exception;
+        }
     }
 
     public function production(Request $request): JsonResponse

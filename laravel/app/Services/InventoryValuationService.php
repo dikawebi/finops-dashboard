@@ -11,21 +11,14 @@ class InventoryValuationService
 {
     public function build(string $period, string $mode = 'mtd'): array
     {
-        if ($period >= '2026-10' && $period !== '2026-10') {
-            throw new \RuntimeException('Live inventory roll-forward after October 2026 is not available yet. Baseline data is not used from October 2026 onward.');
-        }
-        if ($period === '2026-10' && in_array($mode, ['mtd', 'ytd'], true)) {
-            $dynamic = $this->buildOctoberFromLiveSources($mode);
-            if ($dynamic !== null) return $this->applyManualInputs($dynamic, $period, $mode, ['sale']);
-            throw new \RuntimeException('October 2026 inventory overview requires Google Sheets production sync and imported D365 GL data. Baseline data is not used for October.');
+        if ($period >= '2026-10' && in_array($mode, ['mtd', 'ytd'], true)) {
+            $dynamic = $this->buildLiveFromSources($period, $mode);
+            if ($dynamic !== null) return $mode === 'ytd' ? $dynamic : $this->applyManualInputs($dynamic, $period, $mode, ['sale']);
+            throw new \RuntimeException("{$period} inventory overview requires live opening balances, Google Sheets movements, and imported D365 GL data. Baseline data is not used from October 2026 onward.");
         }
         $baseline = base_path("../baseline/reference_dump/inventory-valuation_{$period}_{$mode}.json");
         if (is_file($baseline)) {
             $data = json_decode(file_get_contents($baseline), true, 512, JSON_THROW_ON_ERROR)['data'];
-            if ($period === '2026-10') {
-                $data['dynamicSourceStatus'] = 'unavailable';
-                $data['validationWarnings'][] = 'October is showing its saved snapshot because current Google Sheets movements or D365 GL data are unavailable. Sync both sources to refresh live valuation.';
-            }
             return $this->applyManualInputs($data, $period, $mode);
         }
         $source = base_path('../data_snapshot/extracted/inventory_movements.json');
@@ -52,23 +45,37 @@ class InventoryValuationService
         return $this->applyManualInputs(['currency' => 'USD', 'period' => $period, 'dataSource' => 'workbook', 'locations' => array_values($balances)], $period, $mode);
     }
 
-    /** October 2026 uses live Sheets quantities and D365 GL cost; earlier months remain baseline snapshots. */
-    private function buildOctoberFromLiveSources(string $mode): ?array
+    /** Roll inventory forward from the September historical close using only live month data. */
+    private function buildLiveFromSources(string $period, string $mode): ?array
     {
-        $september = base_path('../baseline/reference_dump/inventory-valuation_2026-09_mtd.json');
-        if (!is_file($september)) return null;
-        // Use the September report only for the opening balance and stable
-        // location metadata. October figures are rebuilt from live sources.
-        $openingData = json_decode(file_get_contents($september), true, 512, JSON_THROW_ON_ERROR)['data'];
+        $cutover = '2026-10';
+        if ($period < $cutover) return null;
+        if ($period === $cutover) {
+            $september = base_path('../baseline/reference_dump/inventory-valuation_2026-09_mtd.json');
+            if (!is_file($september)) return null;
+            $openingData = json_decode(file_get_contents($september), true, 512, JSON_THROW_ON_ERROR)['data'];
+        } else {
+            $previousPeriod = date('Y-m', strtotime($period.'-01 -1 month'));
+            $openingData = $this->buildLiveFromSources($previousPeriod, 'mtd');
+            if ($openingData === null) return null;
+            $openingData = $this->applyManualInputs($openingData, $previousPeriod, 'mtd', ['sale']);
+        }
+        $month = $this->buildLiveMonthFromSources($period, $openingData);
+        if ($month === null || $mode === 'mtd') return $month;
+        return $this->buildLiveYtdFromSources($period, $month);
+    }
+
+    private function buildLiveMonthFromSources(string $period, array $openingData): ?array
+    {
         $template = $openingData;
-        $movementRows = DB::table('inventory_movements')->where('period', '2026-10')->where('source', 'google_sheets')->get();
-        $productionRows = DB::table('daily_production')->where('period', '2026-10')->where('source', 'google_sheets')->count();
-        $glRows = GlEntry::where('period', '2026-10')->where('source_type', 'd365')->count();
+        $movementRows = DB::table('inventory_movements')->where('period', $period)->where('source', 'google_sheets')->get();
+        $productionRows = DB::table('daily_production')->where('period', $period)->where('source', 'google_sheets')->count();
+        $glRows = GlEntry::where('period', $period)->where('source_type', 'd365')->count();
         if ($movementRows->isEmpty() || $productionRows === 0 || $glRows === 0) return null;
 
         // Inventory costing in the reference uses only synced GL rows; monthly
         // DB-derived auto accruals belong in Report Cost/Financial Statements.
-        $cost = app(CostMatrixService::class)->build('2026-10', 'mtd', false)['grandTotal'];
+        $cost = app(CostMatrixService::class)->build($period, 'mtd', false)['grandTotal'];
         $costs = [
             'bua' => (float) ($cost['costMining'] ?? 0),
             'nonWash' => (float) ($cost['costHaulingBUAToWP'] ?? 0),
@@ -83,7 +90,6 @@ class InventoryValuationService
             $qty[$id] = (float) ($prior['endingQtyMT'] ?? 0);
             $amount[$id] = (float) ($prior['endingValueUSD'] ?? 0);
         }
-        foreach (['transitBuaWp','transitBuaPort','transitWpPort'] as $id) { $qty[$id] = 0.0; $amount[$id] = 0.0; }
         $activity = [
             'bua'=>['in'=>0.0,'receipt'=>0.0,'cost'=>0.0,'out'=>0.0,'outValue'=>0.0,'adjust'=>0.0,'adjustValue'=>0.0],
             'nonWash'=>['in'=>0.0,'receipt'=>0.0,'cost'=>0.0,'out'=>0.0,'outValue'=>0.0,'adjust'=>0.0,'adjustValue'=>0.0],
@@ -96,7 +102,7 @@ class InventoryValuationService
         ];
         foreach ($stages as $id => $_stage) $activity[$id] ??= ['in'=>0.0,'receipt'=>0.0,'cost'=>0.0,'out'=>0.0,'outValue'=>0.0,'adjust'=>0.0,'adjustValue'=>0.0];
         $manualAdjustments = InventoryManualInput::query()
-            ->where('period', '2026-10')->where('status', 'active')->where('input_type', 'adjustment')
+            ->where('period', $period)->where('status', 'active')->where('input_type', 'adjustment')
             ->orderBy('id')->get()->groupBy('location');
         $manualRows = [];
         $applyManualAdjustment = function (string $id) use (&$qty, &$amount, &$activity, &$manualRows, $manualAdjustments): void {
@@ -118,7 +124,7 @@ class InventoryValuationService
                 return $row->location === $location && $row->movement_type === $type && ($meta['route'] ?? '') === $route;
             })->sum(fn ($row) => abs((float) $row->qty_mt));
         };
-        $sheetCoalGetting = DB::table('monthly_metrics')->where('metric_key', 'coalGetting')->where('period', '2026-10')->value('value');
+        $sheetCoalGetting = DB::table('monthly_metrics')->where('metric_key', 'coalGetting')->where('period', $period)->value('value');
         $mined = max(0, $sheetCoalGetting !== null ? (float) $sheetCoalGetting : $sum(fn ($r) => $r->location === 'bua' && $r->movement_type === 'coalMined'));
         // The same route quantity is recorded once at each location: out at BUA,
         // in at Non Wash. It is a single transfer in the stock flow.
@@ -243,8 +249,8 @@ class InventoryValuationService
         }
         $included = $stages->filter(fn ($s) => ($s['includedInQuantityTotal'] ?? true) !== false);
         $template['stages'] = $stages->values()->all();
-        $template['periodKey'] = '2026-10';
-        $template['period'] = '2026-10';
+        $template['periodKey'] = $period;
+        $template['period'] = $period;
         $template['dataSource'] = 'google-sheets+d365-gl';
         $template['quantitySource'] = 'google-sheets';
         $template['totalEndingQtyMT'] = $included->sum(fn ($s) => (float) $s['endingQtyMT']);
@@ -257,54 +263,120 @@ class InventoryValuationService
         if ($feed > $nonWashAvailable) $template['validationWarnings'][] = 'Google Sheets Washing Plant Feed exceeds opening Non Wash stock plus BUA→WP receipts by '.number_format($feed - $nonWashAvailable, 3, '.', '').' MT; negative closing stock is retained for reconciliation.';
         if (abs($feed - $clean - $reject) > 0.001) $template['validationWarnings'][] = 'Coal Wash quantity does not reconcile: Feed differs from Clean Cooking plus Reject by '.number_format($feed - $clean - $reject, 3, '.', '').' MT.';
         if ($washedOut > (float) ($opening->get('washed')['endingQtyMT'] ?? 0) + $feed - $reject) $template['validationWarnings'][] = 'Washing Plant to Port loading exceeds Wash stock available for the period; negative stock is retained for reconciliation.';
-        if ($mode === 'ytd') {
-            $ytdPath = base_path('../baseline/reference_dump/inventory-valuation_2026-09_ytd.json');
-            $ytd = is_file($ytdPath) ? json_decode(file_get_contents($ytdPath), true, 512, JSON_THROW_ON_ERROR)['data'] : $template;
-            $priorYtdStages = collect($ytd['stages'] ?? [])->keyBy('id');
-            $template['stages'] = array_map(function (array $stage) use ($priorYtdStages, $activity): array {
-                $prior = $priorYtdStages->get($stage['id']);
-                if (!$prior) return $stage;
-                foreach (['beginningQtyMT','beginningValueUSD'] as $field) $stage[$field] = (float) ($prior[$field] ?? $stage[$field]);
-                foreach (['inflowQtyMT','receiptValueUSD','addedCostUSD','outflowQtyMT','outflowValueUSD','adjustmentQtyMT','adjustmentValueUSD'] as $field) $stage[$field] = (float) ($prior[$field] ?? 0) + (float) ($stage[$field] ?? 0);
-                $stage['availableQtyMT'] = $stage['beginningQtyMT'] + $stage['inflowQtyMT'] + $stage['adjustmentQtyMT'];
-                $stage['availableValueUSD'] = $stage['beginningValueUSD'] + $stage['receiptValueUSD'] + $stage['addedCostUSD'] + $stage['adjustmentValueUSD'];
-                $stage['movingAverageRateUSD'] = $stage['availableQtyMT'] > 0 ? $stage['availableValueUSD'] / $stage['availableQtyMT'] : 0;
-                $stage['rows'] = [
-                    ['label'=>'YTD opening balance','qtyMT'=>$stage['beginningQtyMT'],'valueUSD'=>$stage['beginningValueUSD'],'rateUSD'=>$stage['beginningQtyMT'] ? $stage['beginningValueUSD'] / $stage['beginningQtyMT'] : 0,'type'=>'opening'],
-                    ['label'=>'January–October movements and allocated costs','qtyMT'=>$stage['endingQtyMT']-$stage['beginningQtyMT'],'valueUSD'=>$stage['endingValueUSD']-$stage['beginningValueUSD'],'rateUSD'=>null,'type'=>'movement','source'=>'baseline+google-sheets+d365-gl'],
-                    ['label'=>'Closing balance','qtyMT'=>$stage['endingQtyMT'],'valueUSD'=>$stage['endingValueUSD'],'rateUSD'=>$stage['endingRateUSD'],'type'=>'closing'],
-                ];
-                return $stage;
-            }, $template['stages']);
-            $ytd['stages'] = $template['stages'];
-            $ytd['periodKey'] = '2026-10';
-            $ytd['period'] = '2026-10';
-            $ytd['dataSource'] = 'baseline-jan-sep+google-sheets-oct+d365-gl-oct';
-            $ytd['quantitySource'] = 'baseline-jan-sep+google-sheets-oct';
-            $ytd['costMapping'] = $template['costMapping'];
-            $ytd['totalEndingQtyMT'] = $template['totalEndingQtyMT'];
-            $ytd['totalEndingValueUSD'] = $template['totalEndingValueUSD'];
-            $ytd['dynamicSourceStatus'] = 'active';
-            $ytd['sourceRowCounts'] = $template['sourceRowCounts'];
-            $ytd['liveMovements'] = $template['liveMovements'];
-            $ytd['validationWarnings'] = $template['validationWarnings'];
-            $ytd['history'] = array_values(array_filter($ytd['history'] ?? [], fn ($r) => ($r['period'] ?? '') !== '2026-10'));
-            $ytd['history'][] = ['period'=>'2026-10','totalEndingQtyMT'=>$template['totalEndingQtyMT'],'totalEndingValueUSD'=>$template['totalEndingValueUSD'],'cogsShippedQtyMT'=>0,'cogsShippedValUSD'=>0,'hasCostData'=>true,'costSource'=>'d365-gl','quantitySource'=>'google-sheets','issues'=>[]];
-            $ytd['buaHistory'] = array_values(array_filter($ytd['buaHistory'] ?? [], fn ($r) => ($r['period'] ?? '') !== '2026-10'));
-            $ytd['buaHistory'][] = $this->buaHistoryRow($stages->get('bua'), $mined, $costs['bua']);
-            return $ytd;
-        }
-        $template['history'] = array_values(array_filter($template['history'] ?? [], fn ($r) => ($r['period'] ?? '') !== '2026-10'));
-        $template['history'][] = ['period'=>'2026-10','totalEndingQtyMT'=>$template['totalEndingQtyMT'],'totalEndingValueUSD'=>$template['totalEndingValueUSD'],'cogsShippedQtyMT'=>0,'cogsShippedValUSD'=>0,'hasCostData'=>true,'costSource'=>'d365-gl','quantitySource'=>'google-sheets','issues'=>[]];
-        $template['buaHistory'] = array_values(array_filter($template['buaHistory'] ?? [], fn ($r) => ($r['period'] ?? '') !== '2026-10'));
-        $template['buaHistory'][] = $this->buaHistoryRow($stages->get('bua'), $mined, $costs['bua']);
+        $template['history'] = array_values(array_filter($template['history'] ?? [], fn ($r) => ($r['period'] ?? '') !== $period));
+        $template['history'][] = ['period'=>$period,'totalEndingQtyMT'=>$template['totalEndingQtyMT'],'totalEndingValueUSD'=>$template['totalEndingValueUSD'],'cogsShippedQtyMT'=>0,'cogsShippedValUSD'=>0,'hasCostData'=>true,'costSource'=>'d365-gl','quantitySource'=>'google-sheets','issues'=>[]];
+        $template['buaHistory'] = array_values(array_filter($template['buaHistory'] ?? [], fn ($r) => ($r['period'] ?? '') !== $period));
+        $template['buaHistory'][] = $this->buaHistoryRow($stages->get('bua'), $mined, $costs['bua'], $period);
         return $template;
     }
 
-    private function buaHistoryRow(?array $stage, float $mined, float $miningCost): array
+    private function buildLiveYtdFromSources(string $period, array $currentMonth): ?array
+    {
+        $year = (int) substr($period, 0, 4);
+        if ($year === 2026) {
+            $ytdPath = base_path('../baseline/reference_dump/inventory-valuation_2026-09_ytd.json');
+            if (!is_file($ytdPath)) return null;
+            $ytd = json_decode(file_get_contents($ytdPath), true, 512, JSON_THROW_ON_ERROR)['data'];
+            $firstLiveMonth = '2026-10';
+            $dataSource = 'baseline-through-september+google-sheets+d365-gl';
+            $quantitySource = 'baseline-through-september+google-sheets';
+        } else {
+            $priorDecember = sprintf('%04d-12', $year - 1);
+            $ytd = $this->buildLiveFromSources($priorDecember, 'mtd');
+            if ($ytd === null) return null;
+            $ytd = $this->applyManualInputs($ytd, $priorDecember, 'mtd', ['sale']);
+            $ytd['stages'] = array_map(static function (array $stage): array {
+                $stage['beginningQtyMT'] = (float) ($stage['endingQtyMT'] ?? 0);
+                $stage['beginningValueUSD'] = (float) ($stage['endingValueUSD'] ?? 0);
+                foreach (['inflowQtyMT','receiptValueUSD','addedCostUSD','outflowQtyMT','outflowValueUSD','adjustmentQtyMT','adjustmentValueUSD'] as $field) $stage[$field] = 0.0;
+                return $stage;
+            }, $ytd['stages'] ?? []);
+            $ytd['history'] = [];
+            $ytd['buaHistory'] = [];
+            $firstLiveMonth = sprintf('%04d-01', $year);
+            $dataSource = 'live-prior-year-close+google-sheets+d365-gl';
+            $quantitySource = 'live-prior-year-close+google-sheets';
+        }
+        $months = [];
+        for ($month = $firstLiveMonth; $month <= $period; $month = date('Y-m', strtotime($month.'-01 +1 month'))) {
+            $monthData = $month === $period ? $currentMonth : $this->buildLiveFromSources($month, 'mtd');
+            if ($monthData === null) return null;
+            $monthData = $this->applyManualInputs($monthData, $month, 'mtd', ['sale']);
+            $months[$month] = $monthData;
+            if ($month === $period) $currentMonth = $monthData;
+        }
+        $baselineStages = collect($ytd['stages'] ?? [])->keyBy('id');
+        $lastStages = collect($currentMonth['stages'] ?? [])->keyBy('id');
+        $flows = ['inflowQtyMT','receiptValueUSD','addedCostUSD','outflowQtyMT','outflowValueUSD','adjustmentQtyMT','adjustmentValueUSD'];
+        $ytd['stages'] = array_map(function (array $stage) use ($baselineStages, $lastStages, $months, $flows): array {
+            $base = $baselineStages->get($stage['id']);
+            $last = $lastStages->get($stage['id']);
+            if (!$base || !$last) return $stage;
+            $stage['beginningQtyMT'] = (float) ($base['beginningQtyMT'] ?? $base['endingQtyMT'] ?? 0);
+            $stage['beginningValueUSD'] = (float) ($base['beginningValueUSD'] ?? $base['endingValueUSD'] ?? 0);
+            foreach ($flows as $field) {
+                $stage[$field] = (float) ($base[$field] ?? 0);
+                foreach ($months as $monthData) {
+                    $monthStage = collect($monthData['stages'] ?? [])->firstWhere('id', $stage['id']);
+                    $stage[$field] += (float) ($monthStage[$field] ?? 0);
+                }
+            }
+            $stage['endingQtyMT'] = (float) $last['endingQtyMT'];
+            $stage['endingValueUSD'] = (float) $last['endingValueUSD'];
+            $stage['endingRateUSD'] = $stage['endingQtyMT'] != 0.0 ? $stage['endingValueUSD'] / $stage['endingQtyMT'] : 0;
+            $stage['availableQtyMT'] = $stage['beginningQtyMT'] + $stage['inflowQtyMT'] + $stage['adjustmentQtyMT'];
+            $stage['availableValueUSD'] = $stage['beginningValueUSD'] + $stage['receiptValueUSD'] + $stage['addedCostUSD'] + $stage['adjustmentValueUSD'];
+            $stage['movingAverageRateUSD'] = $stage['availableQtyMT'] > 0 ? $stage['availableValueUSD'] / $stage['availableQtyMT'] : 0;
+            $stage['rows'] = [
+                ['label'=>'YTD opening balance','qtyMT'=>$stage['beginningQtyMT'],'valueUSD'=>$stage['beginningValueUSD'],'rateUSD'=>$stage['beginningQtyMT'] ? $stage['beginningValueUSD'] / $stage['beginningQtyMT'] : 0,'type'=>'opening'],
+                ['label'=>'October onward live movements and allocated costs','qtyMT'=>$stage['endingQtyMT']-$stage['beginningQtyMT'],'valueUSD'=>$stage['endingValueUSD']-$stage['beginningValueUSD'],'rateUSD'=>null,'type'=>'movement','source'=>'Google Sheets + D365 GL'],
+                ['label'=>'Closing balance','qtyMT'=>$stage['endingQtyMT'],'valueUSD'=>$stage['endingValueUSD'],'rateUSD'=>$stage['endingRateUSD'],'type'=>'closing'],
+            ];
+            return $stage;
+        }, $currentMonth['stages']);
+
+        $ytd['periodKey'] = $period;
+        $ytd['period'] = $period;
+        $ytd['dataSource'] = $dataSource;
+        $ytd['quantitySource'] = $quantitySource;
+        $cost = app(CostMatrixService::class)->build($period, 'ytd', false)['grandTotal'];
+        $ytd['costMapping'] = [
+            'hasData'=>true,'buaUSD'=>(float) ($cost['costMining'] ?? 0),
+            'washingUSD'=>(float) ($cost['costWP'] ?? 0),'portUSD'=>(float) ($cost['costPort'] ?? 0),
+            'haulingTotalUSD'=>(float) ($cost['costHaulingBUAToWP'] ?? 0) + (float) ($cost['costHaulingBUAToPort'] ?? 0) + (float) ($cost['costHaulingWPToPort'] ?? 0),
+            'haulingBUAToWPUSD'=>(float) ($cost['costHaulingBUAToWP'] ?? 0),
+            'haulingBUAToPortUSD'=>(float) ($cost['costHaulingBUAToPort'] ?? 0),
+            'haulingWPToPortUSD'=>(float) ($cost['costHaulingWPToPort'] ?? 0),
+            'quantityReconciliationMT'=>$currentMonth['costMapping']['quantityReconciliationMT'] ?? null,
+            'source'=>'D365 GL allocation: COGP Mining, Coal Hauling routes, Washing Plant, BP PORT',
+        ];
+        $ytd['totalEndingQtyMT'] = $currentMonth['totalEndingQtyMT'];
+        $ytd['totalEndingValueUSD'] = $currentMonth['totalEndingValueUSD'];
+        $ytd['dynamicSourceStatus'] = 'active';
+        $ytd['sourceRowCounts'] = array_reduce($months, static function (array $totals, array $monthData): array {
+            foreach ($monthData['sourceRowCounts'] ?? [] as $key => $value) $totals[$key] = ($totals[$key] ?? 0) + (int) $value;
+            return $totals;
+        }, []);
+        $ytd['liveMovements'] = $currentMonth['liveMovements'];
+        $ytd['manualInputs'] = array_merge(...array_map(static fn (array $data): array => $data['manualInputs'] ?? [], $months));
+        $ytd['manualSalesQtyMT'] = array_sum(array_map(static fn (array $data): float => (float) ($data['manualSalesQtyMT'] ?? 0), $months));
+        $ytd['manualSalesRevenueUSD'] = array_sum(array_map(static fn (array $data): float => (float) ($data['manualSalesRevenueUSD'] ?? 0), $months));
+        $ytd['validationWarnings'] = array_values(array_unique(array_merge(...array_map(static fn (array $data): array => $data['validationWarnings'] ?? [], $months))));
+        $ytd['history'] = array_values(array_filter($ytd['history'] ?? [], static fn (array $row): bool => ($row['period'] ?? '') < $firstLiveMonth));
+        $ytd['buaHistory'] = array_values(array_filter($ytd['buaHistory'] ?? [], static fn (array $row): bool => ($row['period'] ?? '') < $firstLiveMonth));
+        foreach ($months as $month => $monthData) {
+            foreach (['history','buaHistory'] as $key) {
+                $row = collect($monthData[$key] ?? [])->firstWhere('period', $month);
+                if ($row) $ytd[$key][] = $row;
+            }
+        }
+        return $ytd;
+    }
+
+    private function buaHistoryRow(?array $stage, float $mined, float $miningCost, string $period): array
     {
         $stage ??= [];
-        $stage['period'] = '2026-10';
+        $stage['period'] = $period;
         $stage['id'] = 'bua';
         $stage['name'] = 'BUA / Mine Site';
         $stage['location'] = 'BUA / Mine Site';
