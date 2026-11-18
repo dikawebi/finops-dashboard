@@ -281,9 +281,11 @@ class CostMatrixService
         if ($hasLiveAccruals && count(array_filter($periods, static fn (string $month): bool => $month !== $activePeriod)) === 0) return $entries;
         foreach ($periods as $month) {
             // The selected, synced month is recalculated from the current Sheets DB rows.
-            // Earlier months continue to use their approved automatic accrual snapshot.
+            // Prior months can use saved DB payloads. JSON snapshots are limited
+            // to periods before the live-data cutover (October 2026).
             if ($month === $activePeriod && $hasLiveAccruals) continue;
-            $snapshot = $dbHistory->get($month)?->payload ?? ($historyData[$month] ?? []);
+            $savedHistory = $dbHistory->get($month)?->payload;
+            $snapshot = $savedHistory ?? ($month < '2026-10' ? ($historyData[$month] ?? []) : []);
             foreach ((array) $snapshot as $row) $entries[] = $row + [
                 'period' => $month, 'account_code' => $row['code'] ?? null, 'amount_usd' => $row['amount'] ?? 0,
             ];

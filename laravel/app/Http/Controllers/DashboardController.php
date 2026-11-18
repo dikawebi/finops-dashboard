@@ -26,8 +26,8 @@ class DashboardController extends Controller
     {
         [$period, $mode] = $this->periodMode($request);
         $data = $service->build($period, $mode);
-        if ($period === '2026-10' && !in_array('2026-10', $data['d365Periods'] ?? [], true)) {
-            return response()->json(['success'=>false,'message'=>'October 2026 cost overview requires imported D365 GL data. Baseline data is not used for October.'], 409);
+        if ($period >= '2026-10' && !in_array($period, $data['d365Periods'] ?? [], true)) {
+            return response()->json(['success'=>false,'message'=>"{$period} cost overview requires imported D365 GL data. Baseline data is not used from October 2026 onward."], 409);
         }
         return response()->json(['success' => true, 'data' => $data]);
     }
@@ -62,7 +62,8 @@ class DashboardController extends Controller
         $mode = (string) $request->query('mode', 'mtd');
         abort_unless((bool) preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $period), 422, 'Invalid period.');
         abort_unless(in_array($mode, ['mtd', 'ytd'], true), 422, 'Invalid mode.');
-        if ($period === '2026-10') {
+        if ($period >= '2026-10') {
+            if ($period !== '2026-10') return response()->json(['success'=>false,'message'=>'Live inventory roll-forward after October is not available yet. Baseline data is not used from October 2026 onward.'], 409);
             $sheetsReady = \Illuminate\Support\Facades\DB::table('inventory_movements')->where('period', $period)->where('source', 'google_sheets')->exists()
                 && DailyProduction::query()->where('period', $period)->where('source', 'google_sheets')->exists();
             $d365Ready = GlEntry::query()->where('period', $period)->where('source_type', 'd365')->exists();
@@ -80,12 +81,12 @@ class DashboardController extends Controller
         $yearStart = substr($period, 0, 4).'-01';
         $syncedInPeriod = DailyProduction::query()->where('source', 'google_sheets')->where('period', $period)->exists();
         $syncedInYtd = DailyProduction::query()->where('source', 'google_sheets')->whereBetween('period', [$yearStart, $period])->exists();
-        if ($period === '2026-10' && !$syncedInPeriod) {
-            return response()->json(['success'=>false,'message'=>'October 2026 Executive Overview requires Google Sheets production sync. Baseline data is not used for October.'], 409);
+        if ($period >= '2026-10' && !$syncedInPeriod) {
+            return response()->json(['success'=>false,'message'=>"{$period} Executive Overview requires Google Sheets production sync. Baseline data is not used from October 2026 onward."], 409);
         }
         if (($mode === 'mtd' && !$syncedInPeriod) || ($mode === 'ytd' && !$syncedInYtd)) {
             $baselinePath = base_path("../baseline/reference_dump/production-summary_{$period}_{$mode}.json");
-            if (is_file($baselinePath)) {
+            if ($period < '2026-10' && is_file($baselinePath)) {
                 $data = json_decode(file_get_contents($baselinePath), true, 512, JSON_THROW_ON_ERROR)['data'] ?? [];
                 return response()->json(['success' => true, 'data' => $data]);
             }
@@ -137,8 +138,8 @@ class DashboardController extends Controller
     public function overviewDaily(Request $request, D365AllocationService $allocation, DailyCogpService $dailyCogp): JsonResponse
     {
         [$period, $mode] = $this->periodMode($request);
-        if ($period === '2026-10' && !DailyProduction::query()->where('period', $period)->where('source', 'google_sheets')->exists()) {
-            return response()->json(['success'=>false,'message'=>'October daily production requires Google Sheets sync.'], 409);
+        if ($period >= '2026-10' && !DailyProduction::query()->where('period', $period)->where('source', 'google_sheets')->exists()) {
+            return response()->json(['success'=>false,'message'=>"{$period} daily production requires Google Sheets sync. Baseline data is not used from October 2026 onward."], 409);
         }
         $fromPeriod = $mode === 'ytd' ? substr($period, 0, 4).'-01' : $period;
         $fromDate = $fromPeriod.'-01';
@@ -332,6 +333,13 @@ class DashboardController extends Controller
             return response()->json(['success'=>true,'data'=>[
                 'period'=>$period,'mode'=>$mode,'dataSource'=>'Google Sheets DB sync','rows'=>$rows,
                 'remarks'=>$remarkValues,'glOverheadPeriods'=>$rowPeriodsWithGl,'syncedPeriods'=>$syncedPeriods,
+            ]]);
+        }
+
+        if ($period >= '2026-10') {
+            return response()->json(['success'=>true,'data'=>[
+                'period'=>$period,'mode'=>$mode,'dataSource'=>'live-data-not-synced','rows'=>[],
+                'remarks'=>[],'glOverheadPeriods'=>[],'syncedPeriods'=>$syncedPeriods,
             ]]);
         }
 

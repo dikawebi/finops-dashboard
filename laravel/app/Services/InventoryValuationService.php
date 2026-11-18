@@ -11,6 +11,9 @@ class InventoryValuationService
 {
     public function build(string $period, string $mode = 'mtd'): array
     {
+        if ($period >= '2026-10' && $period !== '2026-10') {
+            throw new \RuntimeException('Live inventory roll-forward after October 2026 is not available yet. Baseline data is not used from October 2026 onward.');
+        }
         if ($period === '2026-10' && in_array($mode, ['mtd', 'ytd'], true)) {
             $dynamic = $this->buildOctoberFromLiveSources($mode);
             if ($dynamic !== null) return $this->applyManualInputs($dynamic, $period, $mode, ['sale']);
@@ -52,11 +55,12 @@ class InventoryValuationService
     /** October 2026 uses live Sheets quantities and D365 GL cost; earlier months remain baseline snapshots. */
     private function buildOctoberFromLiveSources(string $mode): ?array
     {
-        $table = base_path('../baseline/reference_dump/inventory-valuation_2026-10_mtd.json');
         $september = base_path('../baseline/reference_dump/inventory-valuation_2026-09_mtd.json');
-        if (!is_file($table) || !is_file($september)) return null;
-        $template = json_decode(file_get_contents($table), true, 512, JSON_THROW_ON_ERROR)['data'];
+        if (!is_file($september)) return null;
+        // Use the September report only for the opening balance and stable
+        // location metadata. October figures are rebuilt from live sources.
         $openingData = json_decode(file_get_contents($september), true, 512, JSON_THROW_ON_ERROR)['data'];
+        $template = $openingData;
         $movementRows = DB::table('inventory_movements')->where('period', '2026-10')->where('source', 'google_sheets')->get();
         $productionRows = DB::table('daily_production')->where('period', '2026-10')->where('source', 'google_sheets')->count();
         $glRows = GlEntry::where('period', '2026-10')->where('source_type', 'd365')->count();
