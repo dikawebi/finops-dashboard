@@ -312,7 +312,6 @@ class InventoryValuationService
             'transitWpPort'=>['qtyMT'=>(float) ($qty['transitWpPort'] ?? 0),'valueUSD'=>(float) ($amount['transitWpPort'] ?? 0)],
         ];
         $template['validationWarnings'] = [];
-        if ($feed > $nonWashAvailable) $template['validationWarnings'][] = 'Google Sheets Washing Plant Feed exceeds opening Non Wash stock plus BUA→WP receipts by '.number_format($feed - $nonWashAvailable, 3, '.', '').' MT; negative closing stock is retained for reconciliation.';
         if (abs($feed - $clean - $reject) > 0.001) $template['validationWarnings'][] = 'Coal Wash quantity does not reconcile: Feed differs from Clean Cooking plus Reject by '.number_format($feed - $clean - $reject, 3, '.', '').' MT.';
         if ($washedOut > (float) ($opening->get('washed')['endingQtyMT'] ?? 0) + $feed - $reject) $template['validationWarnings'][] = 'Washing Plant to Port loading exceeds Wash stock available for the period; negative stock is retained for reconciliation.';
         $template['history'] = array_values(array_filter($template['history'] ?? [], fn ($r) => ($r['period'] ?? '') !== $period));
