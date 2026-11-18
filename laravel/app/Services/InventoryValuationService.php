@@ -90,6 +90,11 @@ class InventoryValuationService
             $qty[$id] = (float) ($prior['endingQtyMT'] ?? 0);
             $amount[$id] = (float) ($prior['endingValueUSD'] ?? 0);
         }
+        $transitOpenings = $openingData['liveTransitBalances'] ?? [];
+        foreach (['transitBuaPort','transitWpPort'] as $id) {
+            $qty[$id] = (float) ($transitOpenings[$id]['qtyMT'] ?? 0);
+            $amount[$id] = (float) ($transitOpenings[$id]['valueUSD'] ?? 0);
+        }
         $activity = [
             'bua'=>['in'=>0.0,'receipt'=>0.0,'cost'=>0.0,'out'=>0.0,'outValue'=>0.0,'adjust'=>0.0,'adjustValue'=>0.0],
             'nonWash'=>['in'=>0.0,'receipt'=>0.0,'cost'=>0.0,'out'=>0.0,'outValue'=>0.0,'adjust'=>0.0,'adjustValue'=>0.0],
@@ -134,7 +139,12 @@ class InventoryValuationService
         $wpLoadedPort = $routeQty('washed', 'Washing Plant to Port', 'transfer_out');
         $wpArrivedPort = $routeQty('transitWpPort', 'Washing Plant to Port', 'transfer_out');
         $feed = max(0, -$sum(fn ($r) => $r->location === 'nonWash' && $r->movement_type === 'washFeed'));
-        $clean = max(0, $sum(fn ($r) => $r->location === 'washed' && $r->movement_type === 'washOutput'));
+        $sheetClean = DB::table('monthly_metrics')->where('metric_key', 'washCoal')->where('period', $period)->value('value');
+        if ($sheetClean === null) {
+            $sheetClean = DB::table('production_activity_details')->whereBetween('production_date', [$period.'-01', date('Y-m-t', strtotime($period.'-01'))])
+                ->where('source', 'google_sheets')->where('activity', 'Coal Wash')->where('metric', 'Clean Cooking')->sum('value');
+        }
+        $clean = max(0, $sheetClean !== null ? (float) $sheetClean : $sum(fn ($r) => $r->location === 'washed' && $r->movement_type === 'washOutput'));
         $reject = max(0, $sum(fn ($r) => $r->location === 'highAsh' && $r->movement_type === 'washReject'));
         $barging = max(0, -$sum(fn ($r) => $r->location === 'port' && $r->movement_type === 'barging'));
         $directBuaWpIn = $routeQty('nonWash', 'BUA to Washing Plant', 'transfer_in');
@@ -259,6 +269,10 @@ class InventoryValuationService
         $template['dynamicSourceStatus'] = 'active';
         $template['sourceRowCounts'] = ['productionDays'=>$productionRows,'inventoryMovements'=>$movementRows->count(),'d365GlRows'=>$glRows];
         $template['liveMovements'] = compact('mined','buaToWp','buaLoadedPort','buaArrivedPort','wpLoadedPort','wpArrivedPort','feed','clean','reject','barging');
+        $template['liveTransitBalances'] = [
+            'transitBuaPort'=>['qtyMT'=>(float) ($qty['transitBuaPort'] ?? 0),'valueUSD'=>(float) ($amount['transitBuaPort'] ?? 0)],
+            'transitWpPort'=>['qtyMT'=>(float) ($qty['transitWpPort'] ?? 0),'valueUSD'=>(float) ($amount['transitWpPort'] ?? 0)],
+        ];
         $template['validationWarnings'] = [];
         if ($feed > $nonWashAvailable) $template['validationWarnings'][] = 'Google Sheets Washing Plant Feed exceeds opening Non Wash stock plus BUA→WP receipts by '.number_format($feed - $nonWashAvailable, 3, '.', '').' MT; negative closing stock is retained for reconciliation.';
         if (abs($feed - $clean - $reject) > 0.001) $template['validationWarnings'][] = 'Coal Wash quantity does not reconcile: Feed differs from Clean Cooking plus Reject by '.number_format($feed - $clean - $reject, 3, '.', '').' MT.';
@@ -358,10 +372,10 @@ class InventoryValuationService
             return $totals;
         }, []);
         $ytd['liveMovements'] = $currentMonth['liveMovements'];
-        $ytd['manualInputs'] = array_merge(...array_map(static fn (array $data): array => $data['manualInputs'] ?? [], $months));
+        $ytd['manualInputs'] = array_merge(...array_values(array_map(static fn (array $data): array => $data['manualInputs'] ?? [], $months)));
         $ytd['manualSalesQtyMT'] = array_sum(array_map(static fn (array $data): float => (float) ($data['manualSalesQtyMT'] ?? 0), $months));
         $ytd['manualSalesRevenueUSD'] = array_sum(array_map(static fn (array $data): float => (float) ($data['manualSalesRevenueUSD'] ?? 0), $months));
-        $ytd['validationWarnings'] = array_values(array_unique(array_merge(...array_map(static fn (array $data): array => $data['validationWarnings'] ?? [], $months))));
+        $ytd['validationWarnings'] = array_values(array_unique(array_merge(...array_values(array_map(static fn (array $data): array => $data['validationWarnings'] ?? [], $months)))));
         $ytd['history'] = array_values(array_filter($ytd['history'] ?? [], static fn (array $row): bool => ($row['period'] ?? '') < $firstLiveMonth));
         $ytd['buaHistory'] = array_values(array_filter($ytd['buaHistory'] ?? [], static fn (array $row): bool => ($row['period'] ?? '') < $firstLiveMonth));
         foreach ($months as $month => $monthData) {
