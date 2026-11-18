@@ -53,7 +53,7 @@ const urlState = new URLSearchParams(location.search);
 const state = { view: urlState.get('view') || 'overview', costSearch: '', costParentOnly: false, costHideZero: false, costCollapsed: {}, accountHierarchyCollapsed: {}, voucherSummaryCollapsed: false, glReview: { account: '', search: '', dateFrom: '', dateTo: '', rowsPerPage: 100, mappingStatus: 'all', valuationTo: '', costingTo: '', headerFilters: { account: '', account_name: '', voucher: '', journal_number: '', description: '', costing_to: '', valuation_to: '', currency: '' } }, varianceSearch: '', varianceHideZero: true, varianceMinimum: 0, varianceOrder: 'account', varianceLocation: 'allCost' };
 let pageAccess = {};
 try { pageAccess = JSON.parse(document.body.dataset.pageAccess || '{}'); } catch { pageAccess = {}; }
-const administratorAccess = Object.keys(pageAccess).length > 0 && Object.values(pageAccess).every(permission => permission === 'edit');
+const administratorAccess = document.body.dataset.isAdministrator === 'true';
 const canEditCurrentPage = () => administratorAccess || pageAccess[state.view] === 'edit';
 const initialPeriod = urlState.get('period');
 const initialMode = urlState.get('mode');

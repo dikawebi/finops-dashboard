@@ -39,7 +39,7 @@
         @media (max-width: 640px) { .overview-kpi-grid, .allocation-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
-<body data-company-name="{{ e($companyName) }}" data-page-access="{{ e(json_encode($pageAccess)) }}">
+<body data-company-name="{{ e($companyName) }}" data-is-administrator="{{ auth()->user()->hasAdministratorRole() ? 'true' : 'false' }}" data-page-access="{{ e(json_encode($pageAccess)) }}">
     <div class="app-shell">
         <div id="sidebarScrim" class="sidebar-scrim" aria-hidden="true"></div>
         <aside id="appSidebar" class="app-sidebar" aria-label="Main navigation">
