@@ -95,6 +95,7 @@ class InventoryValuationService
             $qty[$id] = (float) ($transitOpenings[$id]['qtyMT'] ?? 0);
             $amount[$id] = (float) ($transitOpenings[$id]['valueUSD'] ?? 0);
         }
+        $availableSnapshots = [];
         $activity = [
             'bua'=>['in'=>0.0,'receipt'=>0.0,'cost'=>0.0,'out'=>0.0,'outValue'=>0.0,'adjust'=>0.0,'adjustValue'=>0.0],
             'nonWash'=>['in'=>0.0,'receipt'=>0.0,'cost'=>0.0,'out'=>0.0,'outValue'=>0.0,'adjust'=>0.0,'adjustValue'=>0.0],
@@ -110,7 +111,9 @@ class InventoryValuationService
             ->where('period', $period)->where('status', 'active')->where('input_type', 'adjustment')
             ->orderBy('id')->get()->groupBy('location');
         $manualRows = [];
-        $applyManualAdjustment = function (string $id) use (&$qty, &$amount, &$activity, &$manualRows, $manualAdjustments): void {
+        $closingAdjustmentLocations = array_fill_keys(['bua','nonWash','washed','port'], true);
+        $closingAdjustments = [];
+        $applyManualAdjustment = function (string $id) use (&$qty, &$amount, &$activity, &$manualRows, &$closingAdjustments, $closingAdjustmentLocations, $manualAdjustments): void {
             foreach ($manualAdjustments->get($id, collect()) as $input) {
                 $adjustmentQty = (float) $input->qty_mt;
                 $adjustmentValue = (float) ($input->adjustment_usd ?? 0);
@@ -118,6 +121,10 @@ class InventoryValuationService
                 $amount[$id] = ($amount[$id] ?? 0.0) + $adjustmentValue;
                 $activity[$id]['adjust'] += $adjustmentQty;
                 $activity[$id]['adjustValue'] += $adjustmentValue;
+                if (isset($closingAdjustmentLocations[$id])) {
+                    $closingAdjustments[$id]['qty'] = ($closingAdjustments[$id]['qty'] ?? 0.0) + $adjustmentQty;
+                    $closingAdjustments[$id]['value'] = ($closingAdjustments[$id]['value'] ?? 0.0) + $adjustmentValue;
+                }
                 $manualRows[$id][] = ['label'=>'Manual adjustment · '.$input->reference,'qtyMT'=>$adjustmentQty,'valueUSD'=>$adjustmentValue,'rateUSD'=>abs($adjustmentQty) > 0.000001 ? $adjustmentValue / $adjustmentQty : null,'type'=>'adjustment','source'=>'manual_input'];
             }
         };
@@ -151,12 +158,13 @@ class InventoryValuationService
         $qty['bua'] += $mined;
         $amount['bua'] += $costs['bua'];
         $activity['bua']['in'] = $mined; $activity['bua']['receipt'] = $costs['bua'];
-        $applyManualAdjustment('bua');
+        $availableSnapshots['bua'] = ['qty'=>$qty['bua'],'value'=>$amount['bua']];
         $buaRate = $qty['bua'] > 0 ? $amount['bua'] / $qty['bua'] : 0;
         $buaOut = $buaToWp + $buaLoadedPort;
         $activity['bua']['out'] = $buaOut; $activity['bua']['outValue'] = $buaOut * $buaRate;
         $amount['bua'] -= $activity['bua']['outValue'];
         $qty['bua'] -= $buaOut;
+        $applyManualAdjustment('bua');
 
         // BUA→Non Wash is a direct stockpile transfer, not a separate transit stage.
         $qty['transitBuaWp'] = 0.0;
@@ -164,15 +172,16 @@ class InventoryValuationService
         $qty['nonWash'] += $directBuaWpIn;
         $amount['nonWash'] += $directBuaWpIn * $buaRate + $costs['nonWash'];
         $activity['nonWash']['in'] = $directBuaWpIn; $activity['nonWash']['receipt'] = $directBuaWpIn * $buaRate; $activity['nonWash']['cost'] = $costs['nonWash'];
-        $applyManualAdjustment('nonWash');
         $nonWashAvailable = $qty['nonWash'];
         $nonWashRate = $qty['nonWash'] > 0 ? $amount['nonWash'] / $qty['nonWash'] : 0;
+        $availableSnapshots['nonWash'] = ['qty'=>$qty['nonWash'],'value'=>$amount['nonWash']];
         // Preserve the full reported feed. A shortfall must remain visible as negative stock.
         $washFeedApplied = $feed;
         $feedValue = $washFeedApplied * $nonWashRate;
         $qty['nonWash'] -= $washFeedApplied;
         $amount['nonWash'] -= $feedValue;
         $activity['nonWash']['out'] = $washFeedApplied; $activity['nonWash']['outValue'] = $feedValue;
+        $applyManualAdjustment('nonWash');
 
         $qty['washed'] += $feed;
         // The reference moving-average formula carries the feed value into clean output;
@@ -180,13 +189,14 @@ class InventoryValuationService
         $amount['washed'] += $feedValue + $costs['washed'];
         $activity['washed']['in'] = $feed; $activity['washed']['receipt'] = $feedValue; $activity['washed']['cost'] = $costs['washed']; $activity['washed']['adjust'] = -$reject;
         $qty['washed'] -= $reject;
-        $applyManualAdjustment('washed');
+        $availableSnapshots['washed'] = ['qty'=>$qty['washed'],'value'=>$amount['washed']];
         $washedRate = $qty['washed'] > 0 ? $amount['washed'] / $qty['washed'] : 0;
         $washedOut = $wpLoadedPort;
         $washedValue = $washedOut * $washedRate;
         $qty['washed'] -= $washedOut;
         $amount['washed'] -= $washedValue;
         $activity['washed']['out'] = $washedOut; $activity['washed']['outValue'] = $washedValue;
+        $applyManualAdjustment('washed');
         // Reject reduces Wash stock only; it is not an inflow to High Ash.
 
         $qty['transitBuaPort'] += $buaLoadedPort;
@@ -210,14 +220,15 @@ class InventoryValuationService
         $qty['port'] = $portAvailableQty;
         $amount['port'] = $portAvailableValue;
         $activity['port']['in'] = $buaArrivedPort + $wpArrivedPort; $activity['port']['receipt'] = $transitBuaPortValue + $transitWpPortValue; $activity['port']['cost'] = $costs['port'];
-        $applyManualAdjustment('port');
         $portAvailableQty = $qty['port'];
         $portAvailableValue = $amount['port'];
+        $availableSnapshots['port'] = ['qty'=>$portAvailableQty,'value'=>$portAvailableValue];
         $portRate = $portAvailableQty > 0 ? $portAvailableValue / $portAvailableQty : 0;
         $bargingValue = $barging * $portRate;
         $qty['port'] = $portAvailableQty - $barging;
         $amount['port'] = $portAvailableValue - $bargingValue;
         $activity['port']['out'] = $barging; $activity['port']['outValue'] = $bargingValue;
+        $applyManualAdjustment('port');
 
         foreach (['highAsh','kunz','transitPort','transitKunz','transitBuaWp'] as $id) $applyManualAdjustment($id);
 
@@ -234,8 +245,10 @@ class InventoryValuationService
             $flow = $activity[$id] ?? ['in'=>0,'receipt'=>0,'cost'=>0,'out'=>0,'outValue'=>0,'adjust'=>0,'adjustValue'=>0];
             $stage['inflowQtyMT'] = $flow['in']; $stage['receiptValueUSD'] = $flow['receipt']; $stage['addedCostUSD'] = $flow['cost'];
             $stage['outflowQtyMT'] = $flow['out']; $stage['outflowValueUSD'] = $flow['outValue']; $stage['adjustmentQtyMT'] = $flow['adjust']; $stage['adjustmentValueUSD'] = $flow['adjustValue'];
-            $availableQty = $beginQty + $flow['in'] + $flow['adjust'];
-            $availableValue = $beginValue + $flow['receipt'] + $flow['cost'] + $flow['adjustValue'];
+            $stage['closingSurveyAdjustmentQtyMT'] = (float) ($closingAdjustments[$id]['qty'] ?? 0);
+            $stage['closingSurveyAdjustmentValueUSD'] = (float) ($closingAdjustments[$id]['value'] ?? 0);
+            $availableQty = (float) ($availableSnapshots[$id]['qty'] ?? ($beginQty + $flow['in'] + $flow['adjust']));
+            $availableValue = (float) ($availableSnapshots[$id]['value'] ?? ($beginValue + $flow['receipt'] + $flow['cost'] + $flow['adjustValue']));
             $stage['availableQtyMT'] = $availableQty; $stage['availableValueUSD'] = $availableValue;
             $stage['movingAverageRateUSD'] = $availableQty > 0 ? $availableValue / $availableQty : 0;
             $stage['quantitySource'] = 'google-sheets';
@@ -245,11 +258,11 @@ class InventoryValuationService
             $closingRow = ['label'=>'Closing balance','qtyMT'=>$stage['endingQtyMT'],'valueUSD'=>$stage['endingValueUSD'],'rateUSD'=>$stage['endingRateUSD'],'type'=>'closing'];
             $movement = static fn (string $label, float $movementQty, float $value, string $type, ?string $source = null): array => array_filter(['label'=>$label,'qtyMT'=>$movementQty,'valueUSD'=>$value,'rateUSD'=>abs($movementQty) > 0.000001 ? abs($value / $movementQty) : null,'type'=>$type,'source'=>$source], static fn ($v) => $v !== null);
             $stage['rows'] = match ($id) {
-                'bua' => [$openingRow,$movement('Coal mined — COGP Mining', $mined, $costs['bua'], 'receipt', 'Google Sheets + D365 GL'),...($manualRows['bua'] ?? []),$availableRow,$movement('Loaded to Wash Plant',-$buaToWp,-$buaToWp*$buaRate,'outflow','Google Sheets'),$movement('Loaded to BP PORT',-$buaLoadedPort,-$buaLoadedPort*$buaRate,'outflow','Google Sheets'),$closingRow],
-                'nonWash' => [$openingRow,$movement('Received from BUA to Washing Plant',$directBuaWpIn,$directBuaWpIn*$buaRate,'receipt','Google Sheets'),$movement('Add cost — Coal Hauling BUA to WP',0,$costs['nonWash'],'cost','D365 GL'),...($manualRows['nonWash'] ?? []),$availableRow,$movement('Washing Plant Feed',-$washFeedApplied,-$feedValue,'outflow','Google Sheets'),$closingRow],
-                'washed' => [$openingRow,$movement('Feed received from Non Wash',$feed,$feedValue,'receipt','Google Sheets'),$movement('Reject (quantity only)',-$reject,0,'adjustment','Google Sheets'),$movement('Add cost — COGP Washing Plant',0,$costs['washed'],'cost','D365 GL'),...($manualRows['washed'] ?? []),$availableRow,$movement('Loaded to BP PORT',-$washedOut,-$washedValue,'outflow','Google Sheets'),$closingRow],
+                'bua' => [$openingRow,$movement('Coal mined — COGP Mining', $mined, $costs['bua'], 'receipt', 'Google Sheets + D365 GL'),$availableRow,$movement('Loaded to Wash Plant',-$buaToWp,-$buaToWp*$buaRate,'outflow','Google Sheets'),$movement('Loaded to BP PORT',-$buaLoadedPort,-$buaLoadedPort*$buaRate,'outflow','Google Sheets'),...($manualRows['bua'] ?? []),$closingRow],
+                'nonWash' => [$openingRow,$movement('Received from BUA to Washing Plant',$directBuaWpIn,$directBuaWpIn*$buaRate,'receipt','Google Sheets'),$movement('Add cost — Coal Hauling BUA to WP',0,$costs['nonWash'],'cost','D365 GL'),$availableRow,$movement('Washing Plant Feed',-$washFeedApplied,-$feedValue,'outflow','Google Sheets'),...($manualRows['nonWash'] ?? []),$closingRow],
+                'washed' => [$openingRow,$movement('Feed received from Non Wash',$feed,$feedValue,'receipt','Google Sheets'),$movement('Reject (quantity only)',-$reject,0,'adjustment','Google Sheets'),$movement('Add cost — COGP Washing Plant',0,$costs['washed'],'cost','D365 GL'),$availableRow,$movement('Loaded to BP PORT',-$washedOut,-$washedValue,'outflow','Google Sheets'),...($manualRows['washed'] ?? []),$closingRow],
                 'highAsh' => [$openingRow,...($manualRows['highAsh'] ?? []),$closingRow],
-                'port' => [$openingRow,$movement('Received from BUA to Port',$buaArrivedPort,$transitBuaPortValue,'receipt','Google Sheets'),$movement('Received from Washing Plant to Port',$wpArrivedPort,$transitWpPortValue,'receipt','Google Sheets'),$movement('Add cost — hauling routes + COGP BP PORT',0,$costs['port'],'cost','D365 GL'),...($manualRows['port'] ?? []),$availableRow,$movement('Barging',-$barging,-$bargingValue,'outflow','Google Sheets'),$closingRow],
+                'port' => [$openingRow,$movement('Received from BUA to Port',$buaArrivedPort,$transitBuaPortValue,'receipt','Google Sheets'),$movement('Received from Washing Plant to Port',$wpArrivedPort,$transitWpPortValue,'receipt','Google Sheets'),$movement('Add cost — hauling routes + COGP BP PORT',0,$costs['port'],'cost','D365 GL'),$availableRow,$movement('Barging',-$barging,-$bargingValue,'outflow','Google Sheets'),...($manualRows['port'] ?? []),$closingRow],
                 'transitBuaWp' => [$openingRow,...($manualRows['transitBuaWp'] ?? []),$closingRow],
                 'transitBuaPort' => [$openingRow,$movement('Loaded at BUA',$buaLoadedPort,$buaLoadedPort*$buaRate,'receipt','Google Sheets'),...($manualRows['transitBuaPort'] ?? []),$movement('Arrived at BP PORT',-$buaArrivedPort,-$transitBuaPortValue,'outflow','Google Sheets'),$closingRow],
                 'transitWpPort' => [$openingRow,$movement('Loaded at Washing Plant',$wpLoadedPort,$wpLoadedPort*$washedRate,'receipt','Google Sheets'),...($manualRows['transitWpPort'] ?? []),$movement('Arrived at BP PORT',-$wpArrivedPort,-$transitWpPortValue,'outflow','Google Sheets'),$closingRow],
@@ -321,7 +334,7 @@ class InventoryValuationService
         }
         $baselineStages = collect($ytd['stages'] ?? [])->keyBy('id');
         $lastStages = collect($currentMonth['stages'] ?? [])->keyBy('id');
-        $flows = ['inflowQtyMT','receiptValueUSD','addedCostUSD','outflowQtyMT','outflowValueUSD','adjustmentQtyMT','adjustmentValueUSD'];
+        $flows = ['inflowQtyMT','receiptValueUSD','addedCostUSD','outflowQtyMT','outflowValueUSD','adjustmentQtyMT','adjustmentValueUSD','closingSurveyAdjustmentQtyMT','closingSurveyAdjustmentValueUSD'];
         $ytd['stages'] = array_map(function (array $stage) use ($baselineStages, $lastStages, $months, $flows): array {
             $base = $baselineStages->get($stage['id']);
             $last = $lastStages->get($stage['id']);
@@ -338,8 +351,8 @@ class InventoryValuationService
             $stage['endingQtyMT'] = (float) $last['endingQtyMT'];
             $stage['endingValueUSD'] = (float) $last['endingValueUSD'];
             $stage['endingRateUSD'] = $stage['endingQtyMT'] != 0.0 ? $stage['endingValueUSD'] / $stage['endingQtyMT'] : 0;
-            $stage['availableQtyMT'] = $stage['beginningQtyMT'] + $stage['inflowQtyMT'] + $stage['adjustmentQtyMT'];
-            $stage['availableValueUSD'] = $stage['beginningValueUSD'] + $stage['receiptValueUSD'] + $stage['addedCostUSD'] + $stage['adjustmentValueUSD'];
+            $stage['availableQtyMT'] = $stage['beginningQtyMT'] + $stage['inflowQtyMT'] + $stage['adjustmentQtyMT'] - $stage['closingSurveyAdjustmentQtyMT'];
+            $stage['availableValueUSD'] = $stage['beginningValueUSD'] + $stage['receiptValueUSD'] + $stage['addedCostUSD'] + $stage['adjustmentValueUSD'] - $stage['closingSurveyAdjustmentValueUSD'];
             $stage['movingAverageRateUSD'] = $stage['availableQtyMT'] > 0 ? $stage['availableValueUSD'] / $stage['availableQtyMT'] : 0;
             $stage['rows'] = [
                 ['label'=>'YTD opening balance','qtyMT'=>$stage['beginningQtyMT'],'valueUSD'=>$stage['beginningValueUSD'],'rateUSD'=>$stage['beginningQtyMT'] ? $stage['beginningValueUSD'] / $stage['beginningQtyMT'] : 0,'type'=>'opening'],
