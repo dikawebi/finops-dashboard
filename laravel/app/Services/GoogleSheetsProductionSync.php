@@ -68,41 +68,46 @@ class GoogleSheetsProductionSync
             if (count($chunk) < 500) break;
         }
         if (count($values) < 4) throw new RuntimeException('Sheet Produksi tidak berisi header dan data yang cukup.');
+        $dateColumn = array_search('PERIODE', array_map(static fn ($value): string => strtoupper(trim((string) $value)), $values[0] ?? []), true);
+        if ($dateColumn === false) throw new RuntimeException('Kolom tanggal tidak ditemukan: header PERIODE tidak ada pada baris pertama sheet Produksi.');
+        // The source sheet has an extra leading day-number column; anchor the
+        // existing fixed column map to the PERIODE header instead of assuming A.
+        $columnOffset = $dateColumn;
         $rows = $details = $productionPeriods = $inventoryMovements = [];
         $washMetricColumns = [];
         foreach (['Feed', 'Reject', 'Clean Cooking', 'Barging'] as $metric) $washMetricColumns[$metric] = $this->findHeaderColumn($values[1] ?? [], $metric);
         $sheetMovements = $this->summarizeProductionMovements($values, $washMetricColumns);
         foreach (array_slice($values, 3, null, true) as $offset => $cells) {
-            $date = $this->date($cells[0] ?? null);
+            $date = $this->date($cells[$dateColumn] ?? null);
             if (!$date) continue;
             $period = substr($date, 0, 7);
             $productionPeriods[$period] = true;
-            $get = static fn (?int $column): mixed => $column ? ($cells[$column - 1] ?? null) : null;
+            $get = static fn (?int $column): mixed => $column ? ($cells[$column - 1 + $columnOffset] ?? null) : null;
             $coal = $this->number($get(19));
             $routes = ['bua_to_port' => ['PT BP' => $this->number($get(28)), 'PT SMA' => $this->number($get(30)), 'PT HRS' => $this->number($get(32))], 'wp_to_port' => ['PT BP (WP)' => $this->number($get(29)), 'PT SMA (WP)' => $this->number($get(31)), 'PT HRS (WP)' => $this->number($get(33))]];
             $rows[] = ['production_date' => $date, 'period' => $period, 'coal_getting_mt' => $coal, 'routes' => json_encode($routes), 'source' => 'google_sheets', 'updated_at' => now(), 'created_at' => now()];
             foreach ([['activity'=>'OB Removal','location'=>'Takalot','metric'=>'Freedig','column'=>2,'unit'=>'Bcm'],['activity'=>'OB Removal','location'=>'Takalot','metric'=>'Blasting','column'=>3,'unit'=>'Bcm'],['activity'=>'OB Removal','location'=>'Takalot','metric'=>'Parting','column'=>4,'unit'=>'Bcm'],['activity'=>'OB Removal','location'=>'Takalot','metric'=>'Soil','column'=>5,'unit'=>'Bcm'],['activity'=>'OB Removal','location'=>'Takalot','metric'=>'Mud','column'=>6,'unit'=>'Bcm'],['activity'=>'OB Removal','location'=>'North G','metric'=>'Freedig','column'=>7,'unit'=>'Bcm'],['activity'=>'OB Removal','location'=>'North G','metric'=>'Blasting','column'=>8,'unit'=>'Bcm'],['activity'=>'OB Removal','location'=>'North G','metric'=>'Parting','column'=>9,'unit'=>'Bcm'],['activity'=>'OB Removal','location'=>'North G','metric'=>'Soil','column'=>10,'unit'=>'Bcm'],['activity'=>'OB Removal','location'=>'North G','metric'=>'Mud','column'=>11,'unit'=>'Bcm'],['activity'=>'Coal Getting','location'=>'Takalot','metric'=>'coal_getting','column'=>17],['activity'=>'Coal Getting','location'=>'North G','metric'=>'coal_getting','column'=>18]] as $mapping) { $mapping['activity_type'] = $mapping['activity'] === 'OB Removal' ? $mapping['metric'] : null; $details[] = $this->detail($date, $mapping, $this->number($get($mapping['column']))); }
             foreach ([['route'=>'BUA to Port','contractors'=>[28=>'PT BP',30=>'PT SMA',32=>'PT HRS']],['route'=>'Washing Plant to Port','contractors'=>[29=>'PT BP (WP)',31=>'PT SMA (WP)',33=>'PT HRS (WP)']],['route'=>'BUA to Washing Plant','contractors'=>[36=>'PT.BP',37=>'PT. SMA',38=>'PT.HRS']]] as $route) foreach ($route['contractors'] as $column=>$contractor) $details[] = $this->detail($date, ['activity'=>'Coal Hauling','route'=>$route['route'],'contractor'=>$contractor,'metric'=>'quantity'], $this->number($get($column)));
             foreach ([34,35] as $column) {
-                $route = trim((string) ($values[0][$column - 1] ?? ''));
-                $contractor = trim((string) ($values[1][$column - 1] ?? ''));
+                $route = trim((string) ($values[0][$column - 1 + $columnOffset] ?? ''));
+                $contractor = trim((string) ($values[1][$column - 1 + $columnOffset] ?? ''));
                 if ($route !== '') $details[] = $this->detail($date, ['activity'=>$route,'route'=>$route,'contractor'=>$contractor ?: null,'metric'=>'quantity'], $this->number($get($column)));
             }
             foreach ([36,37,38] as $column) {
-                $activity = trim((string) ($values[0][$column - 1] ?? 'Coal Hauling BUA to WP'));
-                $contractor = trim((string) ($values[1][$column - 1] ?? ''));
+                $activity = trim((string) ($values[0][$column - 1 + $columnOffset] ?? 'Coal Hauling BUA to WP'));
+                $contractor = trim((string) ($values[1][$column - 1 + $columnOffset] ?? ''));
                 $details[] = $this->detail($date, ['activity'=>$activity ?: 'Coal Hauling BUA to WP','route'=>'BUA to Washing Plant','contractor'=>$contractor ?: null,'metric'=>'quantity'], $this->number($get($column)));
             }
             foreach (range(40, 46) as $column) {
-                $activity = trim((string) ($values[0][$column - 1] ?? ''));
-                $equipment = trim((string) ($values[1][$column - 1] ?? ''));
+                $activity = trim((string) ($values[0][$column - 1 + $columnOffset] ?? ''));
+                $equipment = trim((string) ($values[1][$column - 1 + $columnOffset] ?? ''));
                 if ($activity === '' || $equipment === '' || strtolower($activity) === 'coal wash' || in_array(strtolower($equipment), ['feed', 'reject', 'clean cooking', 'barging'], true)) continue;
                 $detail = $this->detail($date, ['activity'=>$activity,'route'=>'BUA to Washing Plant','equipment'=>$equipment,'metric'=>'quantity'], $this->number($get($column)));
                 $detail['source_key'] = hash('sha256', $detail['source_key'].'|column:'.$column);
                 $details[] = $detail;
             }
-            foreach ($washMetricColumns as $metric => $column) if ($column) $details[] = $this->detail($date, ['activity'=>'Coal Wash','metric'=>$metric,'unit'=>'MT'], $this->number($get($column)));
-            if ($coal !== null) $inventoryMovements[] = ['period'=>$period,'location'=>'bua','movement_type'=>'coalMined','source'=>'google_sheets','qty_mt'=>$coal,'amount_usd'=>0,'metadata'=>json_encode(['source_column'=>'S']),'created_at'=>now(),'updated_at'=>now()];
+            foreach ($washMetricColumns as $metric => $column) if ($column) $details[] = $this->detail($date, ['activity'=>'Coal Wash','metric'=>$metric,'unit'=>'MT'], $this->number($get($column - $columnOffset)));
+            if ($coal !== null) $inventoryMovements[] = ['period'=>$period,'location'=>'bua','movement_type'=>'coalMined','source'=>'google_sheets','qty_mt'=>$coal,'amount_usd'=>0,'metadata'=>json_encode(['source_column'=>$this->columnLabel(19 + $columnOffset)]),'created_at'=>now(),'updated_at'=>now()];
         }
         if (!$rows) throw new RuntimeException('Tidak ditemukan baris bertanggal yang dapat disinkronkan.');
         $dbRange = "'DB'!A:T";
@@ -161,13 +166,15 @@ class GoogleSheetsProductionSync
     private function summarizeProductionMovements(array $values, array $washMetricColumns): array
     {
         $headers = array_map(static fn ($value): string => strtolower(trim((string) $value)), $values[0] ?? []);
+        $dateColumn = array_search('periode', $headers, true);
+        if ($dateColumn === false) throw new RuntimeException('Kolom tanggal tidak ditemukan: header PERIODE tidak ada pada baris pertama sheet Produksi.');
         $columns = [];
         foreach (['buaToPortMT'=>'Coal Hauling BUA to Port','wpToPortMT'=>'Coal Hauling WP to Port','buaToWpMT'=>'Coal Hauling BUA to WP','loadingBuaMT'=>'Coal Loading BUA','loadingWpMT'=>'Coal Loading WP to Port'] as $key=>$header) {
             $columns[$key] = array_keys($headers, strtolower($header), true);
         }
         $monthly = $observed = [];
         foreach (array_slice($values, 3, null, true) as $cells) {
-            $date = $this->date($cells[0] ?? null);
+            $date = $this->date($cells[$dateColumn] ?? null);
             if (!$date) continue;
             $period = substr($date, 0, 7);
             $totals = [];
@@ -176,7 +183,7 @@ class GoogleSheetsProductionSync
             $matches = 0;
             foreach (['buaToPortMT','wpToPortMT','buaToWpMT'] as $key) if (($totals[$key] ?? 0) > 0 && ($before[$key] ?? 0) > 0 && $totals[$key] >= $before[$key] * 0.7 && $totals[$key] <= $before[$key] * 1.5) $matches++;
             $lastDay = (int) substr($date, 8, 2) === (int) gmdate('t', strtotime($date.' 00:00:00 UTC'));
-            $rawCoal = trim((string) ($cells[18] ?? ''));
+            $rawCoal = trim((string) ($cells[$dateColumn + 18] ?? ''));
             $isRecap = array_sum($totals) > 0 && $lastDay && (($rawCoal === '' || $rawCoal === '-') || $matches >= 2);
             if ($isRecap) {
                 foreach ($totals as $key=>$value) $monthly[$period][$key] = $value;
@@ -435,9 +442,23 @@ class GoogleSheetsProductionSync
         return null;
     }
 
+    private function columnLabel(int $column): string
+    {
+        $label = '';
+        while ($column > 0) {
+            $column--;
+            $label = chr(65 + ($column % 26)).$label;
+            $column = intdiv($column, 26);
+        }
+        return $label;
+    }
+
     private function date(mixed $value): ?string
     {
-        if (is_numeric($value)) return gmdate('Y-m-d', (int) (($value - 25569) * 86400));
+        if (is_numeric($value)) {
+            if ((float) $value <= 31) return null;
+            return gmdate('Y-m-d', (int) (($value - 25569) * 86400));
+        }
         $time = strtotime((string) $value);
         return $time ? date('Y-m-d', $time) : null;
     }
