@@ -241,7 +241,7 @@ class DashboardController extends Controller
         ]]);
     }
 
-    public function overviewAllocation(Request $request, D365AllocationService $allocation): JsonResponse
+    public function overviewAllocation(Request $request, D365AllocationService $allocation, CostMatrixService $costMatrix): JsonResponse
     {
         [$period, $mode] = $this->periodMode($request);
         $group = (string) $request->query('group', 'account');
@@ -267,10 +267,10 @@ class DashboardController extends Controller
             $code = (string) $entry->main_account;
             $key = implode('|', [(string)$entry->main_account,(string)$entry->activity,(string)$entry->location,(string)$entry->department,(string)$entry->group_activity]);
             $mapping = $mappingCache[$key] ??= $allocation->resolveGlEntry($entry);
-            $costing = strtolower(trim((string) ($mapping['costing_to'] ?? $entry->costing_to)));
-            $isDirect = preg_replace('/[\s_-]+/', '', $costing) === 'directexpense';
-            $head = substr($code, 0, 1);
-            $bucket = in_array($head, ['7','8','9'], true) || $isDirect || $costing === 'ga' || str_contains($costing, 'admin') || str_contains($costing, 'overhead') ? 'expense' : 'cogp';
+            $entry->costing_to = $mapping['costing_to'] ?? $entry->costing_to;
+            $entry->valuation_to = $mapping['valuation_to'] ?? $entry->valuation_to;
+            $bucket = $costMatrix->reportBucket($entry);
+            if ($bucket === null) continue;
             $dimensionCode = trim((string) ($entry->{$group} ?? ''));
             $dimension = $dimensionCode === ''
                 ? 'Unspecified'

@@ -226,7 +226,9 @@ async function overview(period, mode) {
     mountProductionMap(flowPanel, { card, buaStock, stockLine, siteBreakdown, flowSitesAvailable, stages, period, mode, dailyData, dbMetrics: production.dbMetrics || {}, api, qty: flowQty, number, flowRate });
     const vesselCard = $('[data-overview-card="Mother Vessel"]');
     if (vesselCard && !soldQty) vesselCard.querySelector('.overview-card-sub').textContent = 'No sales quantity in live October inventory source · Select for details';
+    let allocationRenderVersion = 0;
     const renderAllocation = async () => {
+        const renderVersion = ++allocationRenderVersion;
         const group = $('#overview-allocation-group').value;
         const active = document.querySelector('.overview-allocation-tile[aria-pressed="true"]')?.id;
         const bucket = active === 'overview-filter-expense' ? 'expense' : active === 'overview-filter-cogp' ? 'cogp' : 'all';
@@ -239,8 +241,10 @@ async function overview(period, mode) {
         } else {
             $('#overview-allocation-note').textContent = `${title} · Aggregated from imported D365 GL dimensions only.`;
             const result = await api(`/api/overview-allocation?period=${period}&mode=${mode}&group=${group}`);
+            if (renderVersion !== allocationRenderVersion) return;
             entries = Object.entries(result.totals[bucket] || {}).map(([name, value]) => [name, Number(value)]);
         }
+        if (renderVersion !== allocationRenderVersion) return;
         entries.sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
         const top = entries.slice(0, 10);
         $('#overview-top-drivers').innerHTML = top.map(([name, value]) => {

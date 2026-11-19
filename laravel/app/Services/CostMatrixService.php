@@ -156,6 +156,41 @@ class CostMatrixService
         foreach (self::FIELDS as $field) $rows[$code][$field] = '0';
     }
 
+    /** Return the report bucket used by the cost matrix for a mapped GL entry. */
+    public function reportBucket(object $entry): ?string
+    {
+        $code = trim((string) ($entry->main_account ?? ''));
+        if (! preg_match('/^[5-9]/', $code)) return null;
+
+        $head = substr($code, 0, 1);
+        $valuation = strtolower(trim((string) ($entry->valuation_to ?? '')));
+        $costing = strtolower(trim((string) ($entry->costing_to ?? '')));
+
+        if (in_array($head, ['7', '8', '9'], true)) return 'expense';
+
+        if (preg_replace('/[\s_-]+/', '', $costing) === 'directexpense') {
+            if (str_contains($valuation, 'mining') || str_contains($valuation, 'pit')
+                || str_contains($valuation, 'haul') || str_contains($valuation, 'wash')
+                || str_contains($valuation, 'wp') || str_contains($valuation, 'port')
+                || str_contains($valuation, 'jetty')
+                || preg_replace('/[\s_-]+/', '', $valuation) === 'notvaluated') {
+                return 'expense';
+            }
+            return null;
+        }
+
+        if (str_contains($costing, 'mining') || str_contains($costing, 'pit')
+            || str_contains($costing, 'haul') || str_contains($costing, 'wash')
+            || str_contains($costing, 'wp') || str_contains($costing, 'port')
+            || str_contains($costing, 'jetty')) return 'cogp';
+
+        if ($costing === 'ga' || str_contains($costing, 'admin')
+            || str_contains($costing, 'overhead') || str_contains($costing, 'sell')
+            || str_contains($costing, 'market') || str_contains($costing, 'mkt')) return 'expense';
+
+        return null;
+    }
+
     private function allocate(array &$row, object $entry, string $amount): void
     {
         $head = substr((string) $entry->main_account, 0, 1);
