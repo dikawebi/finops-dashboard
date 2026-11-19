@@ -157,7 +157,7 @@ class DashboardController extends Controller
         $daily = DailyProduction::query()->whereBetween('period', [$fromPeriod, $period])->where('source', 'google_sheets')
             ->whereNotNull('coal_getting_mt')->orderBy('production_date')->get(['production_date','coal_getting_mt']);
         $activities = \Illuminate\Support\Facades\DB::table('production_activity_details')->whereBetween('production_date', [$fromDate, $toDate])
-            ->where('source', 'google_sheets')->whereNotNull('value')->get(['production_date','activity','activity_type','contractor','metric','value']);
+            ->where('source', 'google_sheets')->whereNotNull('value')->get(['production_date','activity','activity_type','route','contractor','metric','value']);
         $dailyMap = [];
         foreach ($daily as $row) {
             $date = $row->production_date->format('Y-m-d');
