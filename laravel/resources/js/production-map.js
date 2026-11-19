@@ -52,14 +52,38 @@ function attachMapPopover(panel, map, options) {
         const rowQty = (stage, test) => stage ? (stage.rows || []).filter(test).reduce((sum, row) => sum + Number(row.qtyMT || 0), 0) : null;
         const mt = value => value == null ? '—' : `${qty(value)} MT`;
         const closing = stage => stage ? `${mt(stage.endingQtyMT)} · ${stage.endingQtyMT ? `USD ${flowRate(stage.endingValueUSD / stage.endingQtyMT)} / MT` : '—'}` : '—';
+        if (item.dataset.overviewCard === 'Coal Mining') {
+            if (document.getElementById('overview-date-mode')?.value === 'daily') return { title:'Coal Mining — Activity details', rows:[], note:'Daily activity cost breakdown is unavailable; select MTD or YTD to view synchronized DB costs.' };
+            const labels = ['OB Removal include blasting','OB removal freedig','OB Overdistance','Topsoil','Mud','Coal Getting + Hauling 1km','Coal Hauling Overdistance'];
+            const metricKeys = { 'OB Removal include blasting':'blasting','OB removal freedig':'freedig','Topsoil':'topsoil','Mud':'mud','Coal Getting + Hauling 1km':'coalGetting','Coal Hauling Overdistance':'coalGetting' };
+            const sourceRows = dailyData.miningBreakdown || [];
+            const periods = mode === 'ytd' ? Array.from({length:Number(period.slice(5))}, (_, index) => `${period.slice(0,4)}-${String(index+1).padStart(2,'0')}`) : [period];
+            const sumSource = (label, section) => {
+                const matching = sourceRows.filter(row => row.label.toLowerCase() === label.toLowerCase() && row.section === section && row.entity === 'HRS');
+                const values = periods.map(month => matching.find(row => row.period === month)?.amount_usd);
+                return matching.length && values.every(value => value != null && Number.isFinite(Number(value))) ? values.reduce((sum, value) => sum + Number(value), 0) : null;
+            };
+            const metrics = dbMetrics || {};
+            const metric = key => metrics[key]?.value == null ? null : Number(metrics[key].value);
+            const tableRows = labels.map(label => {
+                const qtyValue = label === 'OB Overdistance'
+                    ? [metric('blasting'), metric('freedig')].every(value => value != null) ? metric('blasting') + metric('freedig') : null
+                    : metricKeys[label] ? metric(metricKeys[label]) : null;
+                const operation = sumSource(label, 'operation');
+                const fuel = sumSource(label, 'fuel');
+                const total = operation == null || fuel == null ? null : operation + fuel;
+                return [label, qtyValue == null ? '—' : `${qty(qtyValue)} ${['OB Removal include blasting','OB removal freedig','OB Overdistance','Topsoil','Mud'].includes(label) ? 'Bcm' : 'MT'}`, operation == null ? '—' : `USD ${number(operation)}`, fuel == null ? '—' : `USD ${number(fuel)}`, total == null ? '—' : `USD ${number(total)}`, total == null || !metric('coalGetting') ? '—' : `USD ${flowRate(total / metric('coalGetting'))} / MT`];
+            });
+            return { title:'Coal Mining — Activity details', columns:['Activity','Quantity','Operation cost','Fuel cost','Total cost','Cost / MT coal'], tableRows, note:`Source: synchronized Google Sheets DB tab · ${mode.toUpperCase()} ${period}. Quantities follow the localhost:3000 activity definitions. Cost / MT coal = operation and fuel cost ÷ Coal Getting. Account codes are omitted.` };
+        }
         if (item.dataset.overviewCard === 'Washing Plant') {
             const raw = stock('nonWash'), clean = stock('washed'), ash = stock('highAsh');
             const feed = rowQty(raw, row => row.type === 'outflow' && (row.source === 'washed' || row.label === 'Washing Plant Feed'));
-            const reject = rowQty(clean, row => String(row.label || '').endsWith('Stock Reject (qty only)') || row.label === 'Reject (quantity only)');
+            const reject = rowQty(clean, row => /reject/i.test(String(row.label || '')) && (String(row.label).endsWith('Stock Reject (qty only)') || ['Reject (quantity only)','Reject transferred to High Ash'].includes(row.label)));
             return { title: 'Washing Plant — Details', rows: [
                 ['Raw coal available', mt(raw?.availableQtyMT)], ['Feed to washing', mt(feed == null ? null : -feed)],
                 ['Clean coal produced · feed less reject', mt(feed == null || reject == null ? null : -feed + reject)],
-                ['High ash received', mt(rowQty(ash, row => row.type === 'receipt' && ['washed reject','washed'].includes(row.source)))],
+                ['High ash received', mt(rowQty(ash, row => row.type === 'receipt' && (['washed reject','washed'].includes(String(row.source || '').toLowerCase()) || row.label === 'Reject received from Wash')))],
                 ['Clean coal hauled to Port', mt(clean ? -rowQty(clean, row => row.type === 'outflow' && (['port','transitWpPort'].includes(row.source) || row.label === 'Loaded to BP PORT')) : null)],
                 ['Ending raw coal', closing(raw)], ['Ending clean coal', closing(clean)], ['Ending high ash', closing(ash)]
             ], note: `${mode.toUpperCase()} movements; available raw coal and ending balances are for ${period}. Closing balances include opening stock, adjustments and other transfers. High ash follows recorded inventory transfers.` };
@@ -116,7 +140,16 @@ function attachMapPopover(panel, map, options) {
             if (!result || active !== item || revision !== currentRevision) return;
             heading.textContent = result.title;
             content.replaceChildren();
-            result.rows.forEach(([name, value]) => {
+            if (result.columns && result.tableRows) {
+                const wrapper = document.createElement('div'); wrapper.className = 'production-detail-table-wrap';
+                const table = document.createElement('table'); table.className = 'production-detail-table';
+                const thead = document.createElement('thead'), headerRow = document.createElement('tr');
+                result.columns.forEach(value => { const th = document.createElement('th'); th.textContent = value; headerRow.append(th); });
+                thead.append(headerRow); table.append(thead);
+                const tbody = document.createElement('tbody');
+                result.tableRows.forEach(values => { const row = document.createElement('tr'); values.forEach(value => { const cell = document.createElement('td'); cell.textContent = value; row.append(cell); }); tbody.append(row); });
+                table.append(tbody); wrapper.append(table); content.append(wrapper);
+            } else result.rows.forEach(([name, value]) => {
                 const line = document.createElement('div'); line.className = 'overview-detail-line';
                 const label = document.createElement('span'); label.textContent = name;
                 const amount = document.createElement('strong'); amount.textContent = value;

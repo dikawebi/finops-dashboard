@@ -11,8 +11,8 @@ class GoogleSheetsProductionSync
     public function sync(): array
     {
         $parsed = $this->readAndParse();
-        $rows = $parsed['rows']; $details = $parsed['details']; $monthlyMetrics = $parsed['monthlyMetrics']; $productionPeriods = $parsed['productionPeriods']; $inventoryMovements = $parsed['inventoryMovements']; $dbCostSummary = $parsed['dbCostSummary']; $dbAccrualItems = $parsed['dbAccrualItems']; $dbDailyCogpParameters = $parsed['dbDailyCogpParameters'];
-        DB::transaction(function () use ($rows, $details, $monthlyMetrics, $productionPeriods, $inventoryMovements, $dbCostSummary, $dbAccrualItems, $dbDailyCogpParameters): void {
+        $rows = $parsed['rows']; $details = $parsed['details']; $monthlyMetrics = $parsed['monthlyMetrics']; $productionPeriods = $parsed['productionPeriods']; $inventoryMovements = $parsed['inventoryMovements']; $dbCostSummary = $parsed['dbCostSummary']; $dbAccrualItems = $parsed['dbAccrualItems']; $dbDailyCogpParameters = $parsed['dbDailyCogpParameters']; $dbMiningBreakdown = $parsed['dbMiningBreakdown']; $dbEntityVolumes = $parsed['dbEntityVolumes'];
+        DB::transaction(function () use ($rows, $details, $monthlyMetrics, $productionPeriods, $inventoryMovements, $dbCostSummary, $dbAccrualItems, $dbDailyCogpParameters, $dbMiningBreakdown, $dbEntityVolumes): void {
             $dates = array_column($rows, 'production_date');
             DB::table('production_activity_details')->where('source', 'google_sheets')->whereIn('production_date', $dates)->delete();
             DB::table('inventory_movements')->where('source', 'google_sheets')->whereIn('period', array_keys($productionPeriods))->delete();
@@ -36,15 +36,19 @@ class GoogleSheetsProductionSync
             foreach (array_chunk($dbAccrualItems, 500) as $chunk) DB::table('db_accrual_items')->insert($chunk);
             DB::table('db_daily_cogp_parameters')->whereIn('period', $summaryPeriods)->delete();
             foreach (array_chunk($dbDailyCogpParameters, 500) as $chunk) DB::table('db_daily_cogp_parameters')->insert($chunk);
-            DB::table('system_configs')->updateOrInsert(['key'=>'sheetsSync'], ['value'=>json_encode(['last_synced_at'=>now()->toIso8601String(),'rows'=>count($rows),'details'=>count($details),'db_cost_periods'=>$summaryPeriods,'db_accrual_periods'=>$accrualPeriods,'db_accrual_rows'=>count($dbAccrualItems)]),'updated_at'=>now(),'created_at'=>now()]);
+            DB::table('db_mining_breakdown')->whereIn('period', $summaryPeriods)->delete();
+            foreach (array_chunk($dbMiningBreakdown, 500) as $chunk) DB::table('db_mining_breakdown')->insert($chunk);
+            DB::table('db_entity_volumes')->whereIn('period', $summaryPeriods)->delete();
+            foreach (array_chunk($dbEntityVolumes, 500) as $chunk) DB::table('db_entity_volumes')->insert($chunk);
+            DB::table('system_configs')->updateOrInsert(['key'=>'sheetsSync'], ['value'=>json_encode(['last_synced_at'=>now()->toIso8601String(),'rows'=>count($rows),'details'=>count($details),'db_cost_periods'=>$summaryPeriods,'db_accrual_periods'=>$accrualPeriods,'db_accrual_rows'=>count($dbAccrualItems),'db_mining_breakdown_rows'=>count($dbMiningBreakdown),'db_entity_volume_rows'=>count($dbEntityVolumes)]),'updated_at'=>now(),'created_at'=>now()]);
         });
-        return ['rows'=>count($rows),'details'=>count($details),'inventory_movements'=>count($inventoryMovements),'metrics'=>count($monthlyMetrics, COUNT_RECURSIVE) - count($monthlyMetrics),'db_cost_rows'=>array_sum(array_map('count', $dbCostSummary)),'db_accrual_rows'=>count($dbAccrualItems),'daily_cogp_parameters'=>count($dbDailyCogpParameters),'periods'=>array_keys($productionPeriods),'synced_at'=>now()->toIso8601String()];
+        return ['rows'=>count($rows),'details'=>count($details),'inventory_movements'=>count($inventoryMovements),'metrics'=>count($monthlyMetrics, COUNT_RECURSIVE) - count($monthlyMetrics),'db_cost_rows'=>array_sum(array_map('count', $dbCostSummary)),'db_accrual_rows'=>count($dbAccrualItems),'daily_cogp_parameters'=>count($dbDailyCogpParameters),'db_mining_breakdown_rows'=>count($dbMiningBreakdown),'db_entity_volume_rows'=>count($dbEntityVolumes),'periods'=>array_keys($productionPeriods),'synced_at'=>now()->toIso8601String()];
     }
 
     public function preview(): array
     {
         $data = $this->readAndParse();
-        return ['rows'=>count($data['rows']),'details'=>count($data['details']),'metric_periods'=>array_keys($data['monthlyMetrics']),'periods'=>array_keys($data['productionPeriods']),'monthly_metrics'=>$data['monthlyMetrics'],'db_cost_rows'=>array_sum(array_map('count', $data['dbCostSummary'])),'db_accrual_rows'=>count($data['dbAccrualItems']),'daily_cogp_parameters'=>count($data['dbDailyCogpParameters']),'sample_accruals'=>array_slice($data['dbAccrualItems'],0,8),'samples'=>array_slice($data['rows'],0,5),'sample_details'=>array_slice($data['details'],0,12)];
+        return ['rows'=>count($data['rows']),'details'=>count($data['details']),'metric_periods'=>array_keys($data['monthlyMetrics']),'periods'=>array_keys($data['productionPeriods']),'monthly_metrics'=>$data['monthlyMetrics'],'db_cost_rows'=>array_sum(array_map('count', $data['dbCostSummary'])),'db_accrual_rows'=>count($data['dbAccrualItems']),'daily_cogp_parameters'=>count($data['dbDailyCogpParameters']),'db_mining_breakdown_rows'=>count($data['dbMiningBreakdown']),'db_entity_volume_rows'=>count($data['dbEntityVolumes']),'sample_mining_breakdown'=>array_values(array_filter($data['dbMiningBreakdown'], static fn (array $row): bool => $row['period'] === '2026-10')),'sample_entity_volumes'=>array_values(array_filter($data['dbEntityVolumes'], static fn (array $row): bool => $row['period'] === '2026-10')),'sample_accruals'=>array_slice($data['dbAccrualItems'],0,8),'samples'=>array_slice($data['rows'],0,5),'sample_details'=>array_slice($data['details'],0,12)];
     }
 
     private function readAndParse(): array
@@ -121,6 +125,8 @@ class GoogleSheetsProductionSync
         $dbCostSummary = $this->parseDbCostSummary($dbRows, array_keys($monthlyMetrics));
         $dbAccrualItems = $this->parseDbAccrualItems($dbRows, array_keys($monthlyMetrics), $monthlyMetrics);
         $dbDailyCogpParameters = $this->parseDbDailyCogpParameters($dbRows, array_keys($monthlyMetrics));
+        $dbMiningBreakdown = $this->parseDbMiningBreakdown($dbRows, array_keys($monthlyMetrics));
+        $dbEntityVolumes = $this->parseDbEntityVolumes($dbRows, array_keys($monthlyMetrics));
         $appendMovement = function (string $period, string $location, string $type, float $qty, array $meta = []) use (&$inventoryMovements): void {
             if (abs($qty) < 0.000001) return;
             $inventoryMovements[] = ['period'=>$period,'location'=>$location,'movement_type'=>$type,'source'=>'google_sheets','qty_mt'=>$qty,'amount_usd'=>0,'metadata'=>json_encode($meta),'created_at'=>now(),'updated_at'=>now()];
@@ -161,7 +167,53 @@ class GoogleSheetsProductionSync
             $barging = $sheet['bargingMT'] ?? null;
             if ($barging !== null && $barging > 0) $appendMovement($period, 'port', 'barging', -$barging, ['source'=>'Google Sheets Coal Wash / Barging']);
         }
-        return compact('rows','details','monthlyMetrics','dbCostSummary','dbAccrualItems','dbDailyCogpParameters','productionPeriods','inventoryMovements');
+        return compact('rows','details','monthlyMetrics','dbCostSummary','dbAccrualItems','dbDailyCogpParameters','dbMiningBreakdown','dbEntityVolumes','productionPeriods','inventoryMovements');
+    }
+
+    private function parseDbMiningBreakdown(array $rows, array $periods): array
+    {
+        $labels = ['OB Removal include blasting','OB removal freedig','OB Overdistance','Topsoil','Mud','Coal Getting + Hauling 1km','Coal Hauling Overdistance'];
+        $section = '';
+        $result = [];
+        foreach ($rows as $row) {
+            $heading = strtolower(trim((string) ($row[1] ?? '')));
+            if ($heading === 'mining operation cost') $section = 'operation';
+            elseif ($heading === 'fuel mining operation cost') $section = 'fuel';
+            elseif ($heading !== '') $section = '';
+            $label = trim((string) ($row[2] ?? ''));
+            if ($section === '' || strtoupper(trim((string) ($row[4] ?? ''))) !== 'HRS' || !in_array(strtolower($label), array_map('strtolower', $labels), true)) continue;
+            foreach ($periods as $period) {
+                $month = (int) substr($period, 5, 2);
+                $amount = $this->number($row[7 + $month] ?? null);
+                if ($amount === null) continue;
+                $key = implode('|', [$period, strtolower($label), $section, 'HRS']);
+                $result[$key] = ['period'=>$period,'label'=>$label,'section'=>$section,'entity'=>'HRS','amount_usd'=>$amount,'created_at'=>now(),'updated_at'=>now()];
+            }
+        }
+        return array_values($result);
+    }
+
+    private function parseDbEntityVolumes(array $rows, array $periods): array
+    {
+        $activities = [
+            'coal hauling bua to wash plant'=>['5000407','Coal Hauling ROM BUA to WP'],
+            'coal hauling bua stock to port'=>['5000409','Coal Hauling ROM BUA to Port'],
+            'coal hauling wash plant to port'=>['5000408','Coal Hauling WP to Port'],
+        ];
+        $result = [];
+        foreach ($rows as $row) {
+            $match = $activities[strtolower(trim((string) ($row[2] ?? '')))] ?? null;
+            $entity = strtoupper(trim((string) ($row[4] ?? '')));
+            if (!$match || !in_array($entity, ['HRS','BP','SMA'], true) || strtolower(trim((string) ($row[3] ?? ''))) !== 'mt') continue;
+            foreach ($periods as $period) {
+                $month = (int) substr($period, 5, 2);
+                $qty = $this->number($row[7 + $month] ?? null);
+                if ($qty === null) continue;
+                $key = implode('|', [$period, $match[0], $entity]);
+                $result[$key] = ['period'=>$period,'account_code'=>$match[0],'activity'=>$match[1],'entity'=>$entity,'qty'=>$qty,'unit'=>'MT','created_at'=>now(),'updated_at'=>now()];
+            }
+        }
+        return array_values($result);
     }
 
     /** Mirrors the reference parser: month-end recap values replace daily route subtotals. */

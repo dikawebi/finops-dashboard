@@ -224,12 +224,17 @@ class DashboardController extends Controller
             'ga'=>$costs[$date]['ga'] ?? 0.0,
             'gaAvailable'=>isset($costs[$date]),
         ], $costDates);
-        $haulingEntities = \Illuminate\Support\Facades\DB::table('db_accrual_items')
+        // The DB-sheet quantity rows are authoritative for contractor volumes.
+        // In particular, BP volume is not an accrual row and must not be filtered out.
+        $haulingEntities = \Illuminate\Support\Facades\DB::table('db_entity_volumes')
             ->whereBetween('period', [$fromPeriod, $period])
             ->whereIn('account_code', ['5000407', '5000408', '5000409'])
             ->get(['period', 'account_code', 'entity', 'qty']);
+        $miningBreakdown = \Illuminate\Support\Facades\DB::table('db_mining_breakdown')
+            ->whereBetween('period', [$fromPeriod, $period])
+            ->orderBy('period')->orderBy('label')->get(['period','label','section','entity','amount_usd']);
         return response()->json(['success'=>true,'data'=>[
-            'haulingEntities'=>$haulingEntities,
+            'haulingEntities'=>$haulingEntities,'miningBreakdown'=>$miningBreakdown,
             'daily'=>array_values($dailyMap),'costs'=>$costSeries,
             'source'=>'Synced Google Sheets production + DB accrual inputs for COGP; D365 dated GL for GA','mode'=>$mode,'period'=>$period,
             'sheetsLastSyncedAt'=>SystemConfig::get('sheetsSync', [])['last_synced_at'] ?? null,

@@ -7,6 +7,12 @@
 .overview-flow-panel .overview-flow-detail.production-detail-popover:not(:popover-open){display:none}
 .production-detail-popover::backdrop{background:transparent;pointer-events:none}
 .overview-flow-panel .overview-flow-detail.production-detail-popover>strong{padding-right:32px}
+.production-detail-table-wrap{max-width:100%;overflow-x:auto;margin-top:6px}
+.production-detail-table{width:100%;min-width:640px;border-collapse:collapse;font-size:11px;font-variant-numeric:tabular-nums}
+.production-detail-table th{padding:7px 8px;background:#e8f0f7;color:#35536c;text-align:left;font-weight:700;white-space:nowrap}
+.production-detail-table td{padding:7px 8px;border-bottom:1px solid #dce8f3;color:#29465e;white-space:nowrap}
+.production-detail-table th:not(:first-child),.production-detail-table td:not(:first-child){text-align:right}
+.production-detail-table tbody tr:last-child td{border-bottom:0}
 .production-detail-close{position:absolute;right:8px;top:8px;width:32px;height:32px;border:0;border-radius:6px;background:transparent;color:#24435e;font-size:23px;cursor:pointer}
 .production-detail-close:hover{background:#e2edf6}
 .production-detail-close:focus-visible{outline:2px solid #1767ad;outline-offset:1px}
