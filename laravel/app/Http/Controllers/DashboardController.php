@@ -251,6 +251,18 @@ class DashboardController extends Controller
             ->get(['main_account','amount_reporting','costing_to','valuation_to','activity','location','department','group_activity']);
         $totals = ['cogp'=>[],'expense'=>[],'all'=>[]];
         $mappingCache = [];
+        $dimensionNames = [];
+        if ($group !== 'account') {
+            foreach (\Illuminate\Support\Facades\DB::table('d365_raw_records')->where('entity_key', 'dimension_values')->get(['payload']) as $record) {
+                $dimension = json_decode((string) $record->payload, true);
+                if (! is_array($dimension)) continue;
+                $type = strtolower(trim((string) ($dimension['FinancialDimension'] ?? '')));
+                $value = trim((string) ($dimension['DimensionValue'] ?? ''));
+                $description = trim((string) ($dimension['Description'] ?? ''));
+                if ($type !== $group || $value === '' || $description === '') continue;
+                $dimensionNames[$value] ??= $description;
+            }
+        }
         foreach ($rows as $entry) {
             $code = (string) $entry->main_account;
             $key = implode('|', [(string)$entry->main_account,(string)$entry->activity,(string)$entry->location,(string)$entry->department,(string)$entry->group_activity]);
@@ -259,7 +271,12 @@ class DashboardController extends Controller
             $isDirect = preg_replace('/[\s_-]+/', '', $costing) === 'directexpense';
             $head = substr($code, 0, 1);
             $bucket = in_array($head, ['7','8','9'], true) || $isDirect || $costing === 'ga' || str_contains($costing, 'admin') || str_contains($costing, 'overhead') ? 'expense' : 'cogp';
-            $dimension = trim((string) ($entry->{$group} ?? '')) ?: 'Unspecified';
+            $dimensionCode = trim((string) ($entry->{$group} ?? ''));
+            $dimension = $dimensionCode === ''
+                ? 'Unspecified'
+                : (($dimensionNames[$dimensionCode] ?? null) !== null
+                    ? $dimensionNames[$dimensionCode].' ('.$dimensionCode.')'
+                    : $dimensionCode);
             $amount = (float) $entry->amount_reporting;
             $totals[$bucket][$dimension] = ($totals[$bucket][$dimension] ?? 0) + $amount;
             $totals['all'][$dimension] = ($totals['all'][$dimension] ?? 0) + $amount;
