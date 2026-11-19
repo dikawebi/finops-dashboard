@@ -173,12 +173,14 @@ class DashboardController extends Controller
         $glRows = GlEntry::query()->where('source_type', 'd365')->whereBetween('period', [$fromPeriod, $period])
             ->whereBetween('entry_date', [$fromDate, $toDate])->get(['entry_date','main_account','amount_reporting','costing_to','valuation_to','activity','location','department','group_activity']);
         $costs = [];
+        $glMonths = [];
         $mappingCache = [];
         foreach ($glRows as $entry) {
             $date = $entry->entry_date?->format('Y-m-d');
             if (!$date) continue;
             $code = (string) $entry->main_account;
             if (!preg_match('/^[5-9]/', $code)) continue;
+            $glMonths[substr($date, 0, 7)] = true;
             $key = implode('|', [(string)$entry->main_account,(string)$entry->activity,(string)$entry->location,(string)$entry->department,(string)$entry->group_activity]);
             $mapping = $mappingCache[$key] ??= $allocation->resolveGlEntry($entry);
             $costing = strtolower(trim((string) ($mapping['costing_to'] ?? $entry->costing_to)));
@@ -186,20 +188,39 @@ class DashboardController extends Controller
             $head = substr($code, 0, 1);
             $isDirect = preg_replace('/[\s_-]+/', '', $costing) === 'directexpense';
             $isExpense = in_array($head, ['7','8','9'], true) || preg_match('/^ga$|admin|overhead/', $costing) || ($isDirect && $valuation === 'notvaluated');
-            $costs[$date] ??= ['date'=>$date,'ga'=>0.0];
-            if ($isExpense) $costs[$date]['ga'] += (float) $entry->amount_reporting;
+            $costs[$date] ??= ['date'=>$date,'ga'=>0.0,'haulingGL'=>0.0];
+            if ($isExpense) {
+                $costs[$date]['ga'] += (float) $entry->amount_reporting;
+            } elseif (preg_match('/haul/i', $costing) && !preg_match('/direct.?expense|sell|market|mkt/i', $costing)) {
+                // Match localhost:3000: contractor accrual accounts are already
+                // priced from Sheets and must not be counted again as GL hauling.
+                static $contractorAccounts = null;
+                if ($contractorAccounts === null) {
+                    $contractorAccounts = array_fill_keys(['5000407','5000408','5000409','5000411'], true);
+                    foreach (\App\Models\CostAccount::query()->where('parent_code', '5000400')->pluck('account_code') as $childCode) {
+                        $contractorAccounts[(string) $childCode] = true;
+                    }
+                }
+                if (!isset($contractorAccounts[$code])) $costs[$date]['haulingGL'] += (float) $entry->amount_reporting;
+            }
         }
         $accrualItems = \Illuminate\Support\Facades\DB::table('db_accrual_items')->whereBetween('period', [$fromPeriod, $period])->get();
         $cogpParameters = \Illuminate\Support\Facades\DB::table('db_daily_cogp_parameters')->whereBetween('period', [$fromPeriod, $period])->get();
         $calculatedCogp = $dailyCogp->calculate($daily, $activities, $accrualItems, $cogpParameters);
+        $contractorHauling = $dailyCogp->calculateContractorHauling($activities, $accrualItems);
         $costDates = array_values(array_unique([...array_keys($costs), ...array_keys($calculatedCogp)]));
         sort($costDates);
         $costSeries = array_map(static fn (string $date): array => [
             'date'=>$date,
-            'cogp'=>$calculatedCogp[$date]['cogp'] ?? null,
+            'cogp'=>($calculatedCogp[$date]['cogp'] ?? null) !== null && ($contractorHauling[$date]['amount'] ?? null) !== null && isset($glMonths[substr($date, 0, 7)])
+                ? $calculatedCogp[$date]['cogp'] + $contractorHauling[$date]['amount'] + ($costs[$date]['haulingGL'] ?? 0.0)
+                : null,
             'operation'=>$calculatedCogp[$date]['operation'] ?? null,
             'fuel'=>$calculatedCogp[$date]['fuel'] ?? null,
-            'cogpAvailable'=>isset($calculatedCogp[$date]) && $calculatedCogp[$date]['cogp'] !== null,
+            'haulingContractor'=>$contractorHauling[$date]['amount'] ?? null,
+            'haulingGL'=>isset($glMonths[substr($date, 0, 7)]) ? ($costs[$date]['haulingGL'] ?? 0.0) : null,
+            'haulingMissing'=>$contractorHauling[$date]['missing'] ?? [],
+            'cogpAvailable'=>($calculatedCogp[$date]['cogp'] ?? null) !== null && ($contractorHauling[$date]['amount'] ?? null) !== null && isset($glMonths[substr($date, 0, 7)]),
             'ga'=>$costs[$date]['ga'] ?? 0.0,
             'gaAvailable'=>isset($costs[$date]),
         ], $costDates);
@@ -282,6 +303,10 @@ class DashboardController extends Controller
 
     public function excelCostExample(): JsonResponse
     {
+        $period = (string) request()->query('period', '');
+        if ($period >= '2026-10') {
+            return response()->json(['success'=>true,'data'=>['abcMonthly'=>null,'cogpMonthly'=>null,'source'=>'Google Sheets sync has not imported the ABC Monthly / Calc COGP-COGS tabs for this period.','available'=>false]]);
+        }
         $path = base_path('../baseline/reference_dump/excel-cost-example.static.json');
         if (!is_file($path)) {
             return response()->json(['success' => true, 'data' => ['abcMonthly' => null, 'cogpMonthly' => null]]);

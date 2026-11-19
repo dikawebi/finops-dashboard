@@ -25,12 +25,16 @@ class EquipmentCostService
         $dbRows = $this->readValues($token, $spreadsheet, $dbSheet, 'A1:W1000');
 
         $inventoryPath = $config['equipment_inventory_path'] ?? base_path('../data/equipment_inventory.json');
-        $inventoryAvailable = is_file($inventoryPath);
+        $livePeriod = $period >= '2026-10';
+        // The legacy snapshot has no validated row-level link to October D365
+        // transactions, equipment units, or activities. Never use it after cutover.
+        $inventoryAvailable = !$livePeriod && is_file($inventoryPath);
         $inventoryRows = $inventoryAvailable ? $this->inventoryRows(json_decode(file_get_contents($inventoryPath), true, 512, JSON_THROW_ON_ERROR)) : [];
         $start = $mode === 'ytd' ? $period.'-01' : $period.'-01';
         $end = (new \DateTimeImmutable($period.'-01'))->modify('last day of this month')->format('Y-m-d');
         $yearStart = substr($period, 0, 4).'-01-01';
         $from = $mode === 'ytd' ? $yearStart : $start;
+        $d365InventoryCount = $livePeriod ? \Illuminate\Support\Facades\DB::table('d365_typed_records')->where('entity_key', 'inventory_trans')->whereBetween('accounting_date', [$from, $end])->count() : null;
 
         $inventoryByActivity = $inventoryByUnit = $fuelLitres = [];
         foreach ($inventoryRows as $raw) {
@@ -147,9 +151,9 @@ class EquipmentCostService
 
         return [
             'period' => $period, 'mode' => $mode, 'currency' => 'USD', 'activities' => $activities, 'units' => $unitRows,
-            'sources' => ['inventory'=>['available'=>$inventoryAvailable,'path'=>$inventoryAvailable ? basename($inventoryPath) : null], 'production'=>'Google Sheets · Inhouse Mining', 'employeeAndFuel'=>['source'=>'Google Sheets · DB','available'=>$dbPeriodAvailable,'year'=>$dbYear]],
+            'sources' => ['inventory'=>$livePeriod ? ['available'=>false,'source'=>'D365 Inventory Transactions','transactionCount'=>$d365InventoryCount,'activityMappingAvailable'=>false] : ['available'=>$inventoryAvailable,'path'=>$inventoryAvailable ? basename($inventoryPath) : null], 'production'=>'Google Sheets · Inhouse Mining', 'employeeAndFuel'=>['source'=>'Google Sheets · DB','available'=>$dbPeriodAvailable,'year'=>$dbYear]],
             'notes' => array_values(array_filter([
-                $inventoryAvailable ? null : 'Inventory transaction snapshot is missing. Production and DB references loaded, but inventory cost and item group values are withheld until data/equipment_inventory.json is provided.',
+                $livePeriod ? "{$d365InventoryCount} October-forward D365 inventory transactions are synced, but D365 has no verified equipment activity, unit, and item-group crosswalk for this view. Inventory cost is therefore left unallocated instead of using a legacy snapshot." : ($inventoryAvailable ? null : 'Inventory transaction snapshot is missing. Production and DB references loaded, but inventory cost and item group values are withheld until data/equipment_inventory.json is provided.'),
                 $dbPeriodAvailable ? null : 'Fuel price and Employee Cost are unavailable because the DB sheet year does not match the selected period.',
             ])),
         ];
@@ -235,9 +239,8 @@ class EquipmentCostService
     {
         $months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
         foreach ($rows as $row) {
-            $normalized = $this->normalizeRow(array_combine(range(0, count($row) - 1), $row) ?: []);
-            $label = strtolower((string) ($normalized['3'] ?? ''));
-            $unit = strtolower((string) ($normalized['4'] ?? ''));
+            $label = strtolower((string) ($row[3] ?? ''));
+            $unit = strtolower((string) ($row[4] ?? ''));
             if ($label !== 'fuel price including transport' || !str_contains($unit, 'us$/litre')) continue;
             $prices = [];
             foreach ($months as $index => $month) {

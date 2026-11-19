@@ -70,6 +70,8 @@ class GoogleSheetsProductionSync
         if (count($values) < 4) throw new RuntimeException('Sheet Produksi tidak berisi header dan data yang cukup.');
         $dateColumn = array_search('PERIODE', array_map(static fn ($value): string => strtoupper(trim((string) $value)), $values[0] ?? []), true);
         if ($dateColumn === false) throw new RuntimeException('Kolom tanggal tidak ditemukan: header PERIODE tidak ada pada baris pertama sheet Produksi.');
+        $coalColumn = $this->findSectionSubheaderColumn($values[0] ?? [], $values[1] ?? [], 'Coal Getting', 'Actual', $dateColumn);
+        if ($coalColumn === null) throw new RuntimeException('Kolom Coal Getting · Actual tidak ditemukan pada sheet Produksi.');
         // The source sheet has an extra leading day-number column; anchor the
         // existing fixed column map to the PERIODE header instead of assuming A.
         $columnOffset = $dateColumn;
@@ -83,7 +85,7 @@ class GoogleSheetsProductionSync
             $period = substr($date, 0, 7);
             $productionPeriods[$period] = true;
             $get = static fn (?int $column): mixed => $column ? ($cells[$column - 1 + $columnOffset] ?? null) : null;
-            $coal = $this->number($get(19));
+            $coal = $this->number($get($coalColumn));
             $routes = ['bua_to_port' => ['PT BP' => $this->number($get(28)), 'PT SMA' => $this->number($get(30)), 'PT HRS' => $this->number($get(32))], 'wp_to_port' => ['PT BP (WP)' => $this->number($get(29)), 'PT SMA (WP)' => $this->number($get(31)), 'PT HRS (WP)' => $this->number($get(33))]];
             $rows[] = ['production_date' => $date, 'period' => $period, 'coal_getting_mt' => $coal, 'routes' => json_encode($routes), 'source' => 'google_sheets', 'updated_at' => now(), 'created_at' => now()];
             foreach ([['activity'=>'OB Removal','location'=>'Takalot','metric'=>'Freedig','column'=>2,'unit'=>'Bcm'],['activity'=>'OB Removal','location'=>'Takalot','metric'=>'Blasting','column'=>3,'unit'=>'Bcm'],['activity'=>'OB Removal','location'=>'Takalot','metric'=>'Parting','column'=>4,'unit'=>'Bcm'],['activity'=>'OB Removal','location'=>'Takalot','metric'=>'Soil','column'=>5,'unit'=>'Bcm'],['activity'=>'OB Removal','location'=>'Takalot','metric'=>'Mud','column'=>6,'unit'=>'Bcm'],['activity'=>'OB Removal','location'=>'North G','metric'=>'Freedig','column'=>7,'unit'=>'Bcm'],['activity'=>'OB Removal','location'=>'North G','metric'=>'Blasting','column'=>8,'unit'=>'Bcm'],['activity'=>'OB Removal','location'=>'North G','metric'=>'Parting','column'=>9,'unit'=>'Bcm'],['activity'=>'OB Removal','location'=>'North G','metric'=>'Soil','column'=>10,'unit'=>'Bcm'],['activity'=>'OB Removal','location'=>'North G','metric'=>'Mud','column'=>11,'unit'=>'Bcm'],['activity'=>'Coal Getting','location'=>'Takalot','metric'=>'coal_getting','column'=>17],['activity'=>'Coal Getting','location'=>'North G','metric'=>'coal_getting','column'=>18]] as $mapping) { $mapping['activity_type'] = $mapping['activity'] === 'OB Removal' ? $mapping['metric'] : null; $details[] = $this->detail($date, $mapping, $this->number($get($mapping['column']))); }
@@ -439,6 +441,22 @@ class GoogleSheetsProductionSync
         $normalize = static fn (mixed $value): string => strtolower(preg_replace('/\s+/', ' ', trim((string) $value)));
         $needle = $normalize($wanted);
         foreach ($headers as $index => $header) if ($normalize($header) === $needle) return $index + 1;
+        return null;
+    }
+
+    private function findSectionSubheaderColumn(array $headers, array $subheaders, string $section, string $wanted, int $columnOffset): ?int
+    {
+        $normalize = static fn (mixed $value): string => strtolower(preg_replace('/\s+/', ' ', trim((string) $value)));
+        $sectionIndex = null;
+        foreach ($headers as $index => $header) if ($normalize($header) === $normalize($section)) { $sectionIndex = $index; break; }
+        if ($sectionIndex === null) return null;
+        $end = count($headers);
+        for ($index = $sectionIndex + 1; $index < count($headers); $index++) {
+            if ($normalize($headers[$index] ?? '') !== '') { $end = $index; break; }
+        }
+        foreach ($subheaders as $index => $header) {
+            if ($index >= $sectionIndex && $index < $end && $normalize($header) === $normalize($wanted)) return $index + 1 - $columnOffset;
+        }
         return null;
     }
 

@@ -13,7 +13,7 @@ class InventoryValuationService
     {
         if ($period >= '2026-10' && in_array($mode, ['mtd', 'ytd'], true)) {
             $dynamic = $this->buildLiveFromSources($period, $mode);
-            if ($dynamic !== null) return $mode === 'ytd' ? $dynamic : $this->applyManualInputs($dynamic, $period, $mode, ['sale']);
+            if ($dynamic !== null) return $dynamic;
             throw new \RuntimeException("{$period} inventory overview requires live opening balances, Google Sheets movements, and imported D365 GL data. Baseline data is not used from October 2026 onward.");
         }
         $baseline = base_path("../baseline/reference_dump/inventory-valuation_{$period}_{$mode}.json");
@@ -58,7 +58,6 @@ class InventoryValuationService
             $previousPeriod = date('Y-m', strtotime($period.'-01 -1 month'));
             $openingData = $this->buildLiveFromSources($previousPeriod, 'mtd');
             if ($openingData === null) return null;
-            $openingData = $this->applyManualInputs($openingData, $previousPeriod, 'mtd', ['sale']);
         }
         $month = $this->buildLiveMonthFromSources($period, $openingData);
         if ($month === null || $mode === 'mtd') return $month;
@@ -335,7 +334,6 @@ class InventoryValuationService
             $priorDecember = sprintf('%04d-12', $year - 1);
             $ytd = $this->buildLiveFromSources($priorDecember, 'mtd');
             if ($ytd === null) return null;
-            $ytd = $this->applyManualInputs($ytd, $priorDecember, 'mtd', ['sale']);
             $ytd['stages'] = array_map(static function (array $stage): array {
                 $stage['beginningQtyMT'] = (float) ($stage['endingQtyMT'] ?? 0);
                 $stage['beginningValueUSD'] = (float) ($stage['endingValueUSD'] ?? 0);
@@ -352,7 +350,6 @@ class InventoryValuationService
         for ($month = $firstLiveMonth; $month <= $period; $month = date('Y-m', strtotime($month.'-01 +1 month'))) {
             $monthData = $month === $period ? $currentMonth : $this->buildLiveFromSources($month, 'mtd');
             if ($monthData === null) return null;
-            $monthData = $this->applyManualInputs($monthData, $month, 'mtd', ['sale']);
             $months[$month] = $monthData;
             if ($month === $period) $currentMonth = $monthData;
         }

@@ -37,7 +37,8 @@ class CostMatrixService
         @set_time_limit(120);
         $periods = $this->periods($period, $mode);
         $rows = $this->emptyRows();
-        $glEntries = \Illuminate\Support\Facades\DB::table('gl_entries')->whereIn('period', $periods)->get([
+        $glEntries = \Illuminate\Support\Facades\DB::table('gl_entries')->whereIn('period', $periods)
+            ->where('period', '>=', '2026-10')->where('source_type', 'd365')->get([
             'period','main_account','account_name','source_type','amount_reporting','valuation_to','costing_to',
             'activity','location','department','group_activity',
         ]);

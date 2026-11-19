@@ -132,6 +132,56 @@ class DailyCogpService
         return $results;
     }
 
+    /** Daily contractor hauling cost, using only synced Production quantities and DB rates. */
+    public function calculateContractorHauling(iterable $activityRows, iterable $accrualItems): array
+    {
+        $rates = [];
+        foreach ($accrualItems as $item) {
+            $row = is_array($item) ? $item : (method_exists($item, 'getAttributes') ? $item->getAttributes() : (array) $item);
+            $category = (string) ($row['category'] ?? '');
+            $code = (string) ($row['account_code'] ?? '');
+            $entity = strtoupper(preg_replace('/[^A-Z0-9]/', '', (string) ($row['entity'] ?? '')));
+            if (!in_array($code, ['5000407','5000408','5000409'], true) || !in_array($entity, ['HRS','SMA'], true)) continue;
+            $rates[(string) ($row['period'] ?? '').'|'.$category.'|'.$entity] = $this->nullableNumber($row['rate_usd'] ?? null);
+        }
+
+        $routeNames = [
+            'bua to port' => 'Coal Hauling BUA to Port',
+            'bua to washing plant' => 'Coal Hauling BUA to WP',
+            'washing plant to port' => 'Coal Hauling WP to Port',
+        ];
+        $result = [];
+        foreach ($activityRows as $activity) {
+            $row = is_array($activity) ? $activity : (method_exists($activity, 'getAttributes') ? $activity->getAttributes() : (array) $activity);
+            if (strcasecmp((string) ($row['activity'] ?? ''), 'Coal Hauling') !== 0 || strcasecmp((string) ($row['metric'] ?? ''), 'quantity') !== 0) continue;
+            $date = substr((string) ($row['production_date'] ?? ''), 0, 10);
+            if ($date === '') continue;
+            $result[$date] ??= ['amount'=>0.0,'missing'=>[],'hasVolume'=>false];
+            $qty = $this->nullableNumber($row['value'] ?? null);
+            if ($qty === null) continue;
+            $routeKey = strtolower(trim((string) ($row['route'] ?? '')));
+            $category = $routeNames[$routeKey] ?? null;
+            $contractor = strtoupper(preg_replace('/[^A-Z0-9]/', '', (string) ($row['contractor'] ?? '')));
+            if (str_contains($contractor, 'BP')) continue;
+            $result[$date]['hasVolume'] = true;
+            if (abs($qty) < 0.0000001) continue;
+            $entity = str_contains($contractor, 'HRS') ? 'HRS' : (str_contains($contractor, 'SMA') ? 'SMA' : null);
+            $rate = $category && $entity ? ($rates[substr($date, 0, 7).'|'.$category.'|'.$entity] ?? null) : null;
+            if ($rate === null) {
+                $result[$date]['missing'][] = ($entity ?? 'Unknown contractor').' '.($category ?? (string) ($row['route'] ?? 'route')).': effective rate unavailable';
+                continue;
+            }
+            $result[$date]['amount'] += $qty * $rate;
+        }
+        foreach ($result as &$row) {
+            if (!$row['hasVolume']) $row['amount'] = null;
+            elseif ($row['missing']) $row['amount'] = null;
+            unset($row['hasVolume']);
+        }
+        unset($row);
+        return $result;
+    }
+
     private function parameter(array $values, string $period, string $section, string $label, string $entity = ''): ?float
     {
         return $values[$period.'|'.$section.'|'.strtolower($label).'|'.strtoupper($entity)] ?? null;
