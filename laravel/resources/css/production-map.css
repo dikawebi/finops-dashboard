@@ -34,7 +34,7 @@
 .production-geography [data-overview-card="BP Port"]{left:56%;top:43%}
 .production-geography [data-overview-card="ISP"]{left:72%;top:28%}
 .production-geography [data-overview-card="Mother Vessel"]{left:90%;top:20%}
-.production-geography [data-overview-card="Coal Mining"]{left:16%;top:77%}
+.production-geography [data-overview-card="Coal Mining"]{left:17%;top:53%}
 .overview-flow-panel .overview-flow-detail{width:fit-content;max-width:100%;min-width:min(420px,100%);margin-top:4px;padding:16px 18px;border:1px solid #dce8f3;border-radius:10px;background:#f7fbff;color:#24435e;box-shadow:0 4px 14px #254b730d}
 .overview-flow-panel .overview-flow-detail>strong{display:block;margin-bottom:8px;font-size:.85rem;color:#1c4e78}
 .overview-flow-panel .overview-flow-detail>div{max-width:640px;font-size:.8rem;line-height:1.6}

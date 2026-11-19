@@ -8,7 +8,6 @@ export function mountProductionMap(panel, options) {
     const locations = map.querySelector('.overview-flow-cards');
     const [buaQuantity, buaRate = ''] = stockLine(buaStock).split(' · ');
     locations.insertAdjacentHTML('beforeend', card('Stockpile BUA', buaRate, 'Closing inventory', [['Closing stock', stockLine(buaStock)]], buaQuantity));
-    locations.querySelector('[data-overview-card="Coal Mining"]').hidden = true;
     ['North G'].forEach(name => {
         const value = flowSitesAvailable ? siteBreakdown.find(row => row[0] === name)?.[1] : null;
         locations.insertAdjacentHTML('beforeend', card(`Pit ${name}`, '', 'Coal getting · selected period', [['Coal Getting', value || 'Location detail unavailable for this period']], value || '—'));
@@ -48,11 +47,11 @@ function attachMapPopover(panel, map, options) {
     let active = null, pinned = false, timer, listeners, revision = 0;
     let costsPromise;
     const matchingDetails = async item => {
-        const { stages, qty, number, period, mode, dailyData, api } = options;
+        const { stages, qty, number, flowRate, period, mode, dailyData, api } = options;
         const stock = id => stages.find(stage => stage.id === id);
         const rowQty = (stage, test) => stage ? (stage.rows || []).filter(test).reduce((sum, row) => sum + Number(row.qtyMT || 0), 0) : null;
         const mt = value => value == null ? '—' : `${qty(value)} MT`;
-        const closing = stage => stage ? `${mt(stage.endingQtyMT)} · ${stage.endingQtyMT ? `USD ${number(stage.endingValueUSD / stage.endingQtyMT)} / MT` : '—'}` : '—';
+        const closing = stage => stage ? `${mt(stage.endingQtyMT)} · ${stage.endingQtyMT ? `USD ${flowRate(stage.endingValueUSD / stage.endingQtyMT)} / MT` : '—'}` : '—';
         if (item.dataset.overviewCard === 'Washing Plant') {
             const raw = stock('nonWash'), clean = stock('washed'), ash = stock('highAsh');
             const feed = rowQty(raw, row => row.type === 'outflow' && (row.source === 'washed' || row.label === 'Washing Plant Feed'));
@@ -79,7 +78,7 @@ function attachMapPopover(panel, map, options) {
             const matching = (costs.rows || []).filter(row => row.activity === route[1] && row.entity === entity);
             const values = matching.flatMap(row => months.map(month => row.months?.[month]));
             const cost = matching.length && values.every(value => value != null && Number.isFinite(Number(value))) ? values.reduce((sum,value) => sum + Number(value),0) : null;
-            return [entity, !volume ? '—' : `${mt(volume)} · ${cost == null ? 'USD — / MT' : `USD ${number(cost / volume)} / MT`}`];
+            return [entity, !volume ? '—' : `${mt(volume)} · ${cost == null ? 'USD — / MT' : `USD ${flowRate(cost / volume)} / MT`}`];
         });
         return {title, rows, note: `DB coal hauling volume · ${mode.toUpperCase()} · USD/MT = entity cost ÷ entity volume. Missing synchronized DB values are shown as —.`};
     };
