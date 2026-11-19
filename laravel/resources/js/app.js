@@ -276,9 +276,13 @@ async function overview(period, mode) {
         const isDaily = $('#overview-date-mode').value === 'daily';
         const chosenDate = chartDate();
         const view = $('#overview-production-view').value;
-        let dailyRows = dailyData.daily || [];
-        if (isDaily) dailyRows = dailyRows.filter(row => row.date === chosenDate);
-        const selectedDay = (dailyData.daily || []).find(row => row.date === chosenDate);
+        const productionByDate = new Map((dailyData.daily || []).map(row => [row.date, row]));
+        const costsByDate = new Map((dailyData.costs || []).map(row => [row.date, row]));
+        const chartDates = [...new Set([...productionByDate.keys(), ...costsByDate.keys()])]
+            .filter(date => !isDaily || date === chosenDate).sort();
+        const dailyRows = chartDates.map(date => productionByDate.get(date) || {date, coal:null, ob:null, hauling:null});
+        const costRows = chartDates.map(date => costsByDate.get(date) || {date, cogp:null, fuel:null, haulingContractor:null, haulingGL:null, ga:0, gaAvailable:false});
+        const selectedDay = productionByDate.get(chosenDate);
         const mineCard = $('[data-overview-card="Coal Mining"]');
         if (mineCard) {
             mineCard.querySelector('.overview-stage-qty').textContent = isDaily ? (selectedDay?.coal == null ? '—' : `${flowQty(selectedDay.coal)} MT`) : `${flowQty(metricValue('coalGetting'))} MT`;
@@ -349,7 +353,6 @@ async function overview(period, mode) {
                 bar.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); bar.click(); } });
             });
         }
-        const costRows = (dailyData.costs || []).filter(row => !isDaily || row.date === chosenDate);
         $('#overview-direct-note').textContent = `${isDaily ? `Daily ${formatDate(chosenDate)}` : mode.toUpperCase()} · COGP = Google Sheets production × DB accrual/fuel rates + dated D365 GL hauling; GA is D365 GL. Days with missing source inputs are left unavailable. October onward uses synced sources only; Jan–Sep uses baseline.`;
         if (!costRows.length) {
             $('#overview-direct-chart').innerHTML = '<p class="chart-empty">No daily COGP accrual or dated D365 GL data for this selection.</p>';
@@ -383,6 +386,21 @@ async function overview(period, mode) {
                 day.addEventListener('click', () => { selectedCostDay = selectedCostDay === day ? null : day; if (selectedCostDay) setActiveCostDay(day); else { day.classList.remove('is-active'); day.setAttribute('aria-pressed', 'false'); costInsight.innerHTML = 'Hover, focus, or select a date to inspect cost values.'; } });
                 day.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); day.click(); } });
             });
+        }
+        const productionScroll = $('#chart-daily-production').querySelector('.overview-graph-scroll');
+        const costScroll = $('#overview-direct-chart').querySelector('.overview-graph-scroll');
+        if (productionScroll && costScroll) {
+            let syncing = false;
+            const syncPosition = (source, target) => {
+                if (syncing) return;
+                syncing = true;
+                const sourceRange = source.scrollWidth - source.clientWidth;
+                const targetRange = target.scrollWidth - target.clientWidth;
+                target.scrollLeft = sourceRange > 0 ? (source.scrollLeft / sourceRange) * Math.max(0, targetRange) : 0;
+                syncing = false;
+            };
+            productionScroll.addEventListener('scroll', () => syncPosition(productionScroll, costScroll), {passive:true});
+            costScroll.addEventListener('scroll', () => syncPosition(costScroll, productionScroll), {passive:true});
         }
         const body = $('.overview-daily-details tbody');
         if (body) body.innerHTML = costRows.map(row => `<tr><td>${esc(formatDate(row.date))}</td><td class="num">${row.cogp === null || row.cogp === undefined ? '—' : money(row.cogp)}</td><td class="num">${row.fuel === null || row.fuel === undefined ? '—' : money(row.fuel)}</td><td class="num">${row.haulingContractor == null ? '—' : money(row.haulingContractor)}</td><td class="num">${row.haulingGL == null ? '—' : money(row.haulingGL)}</td><td class="num">${row.gaAvailable ? money(row.ga) : '—'}</td></tr>`).join('') || '<tr><td colspan="6">No daily data for this selection.</td></tr>';
