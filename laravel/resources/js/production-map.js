@@ -47,7 +47,7 @@ function attachMapPopover(panel, map, options) {
     let active = null, pinned = false, timer, listeners, revision = 0;
     let costsPromise;
     const matchingDetails = async item => {
-        const { stages, qty, number, flowRate, period, mode, dailyData, api } = options;
+        const { stages, qty, number, flowRate, period, mode, dailyData, dbMetrics, api } = options;
         const stock = id => stages.find(stage => stage.id === id);
         const rowQty = (stage, test) => stage ? (stage.rows || []).filter(test).reduce((sum, row) => sum + Number(row.qtyMT || 0), 0) : null;
         const mt = value => value == null ? '—' : `${qty(value)} MT`;
