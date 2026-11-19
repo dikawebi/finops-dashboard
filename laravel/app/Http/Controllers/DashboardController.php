@@ -361,6 +361,12 @@ class DashboardController extends Controller
                 if (!isset($groups[$key])) $groups[$key] = ['entity'=>$record->entity,'activity'=>$record->activity,'months'=>[]];
                 $groups[$key]['months'][$record->period] = (float) ($groups[$key]['months'][$record->period] ?? 0) + (float) $record->amount;
             }
+            $volumeGroups = [];
+            foreach (\Illuminate\Support\Facades\DB::table('db_entity_volumes')->whereIn('period', $periods)->get() as $volume) {
+                $key = json_encode([$volume->entity, $volume->activity], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                if (!isset($volumeGroups[$key])) $volumeGroups[$key] = ['entity'=>$volume->entity,'activity'=>$volume->activity,'months'=>[]];
+                $volumeGroups[$key]['months'][$volume->period] = (float) $volume->qty;
+            }
             $glPeriods = GlEntry::query()->whereIn('period', $periods)->where('period', '>=', '2026-10')->distinct()->pluck('period')->all();
             foreach ($glPeriods as $glPeriod) {
                 $grand = $costs->build($glPeriod, 'mtd')['grandTotal'];
@@ -388,7 +394,7 @@ class DashboardController extends Controller
             }
             $rowPeriodsWithGl = array_values($glPeriods);
             return response()->json(['success'=>true,'data'=>[
-                'period'=>$period,'mode'=>$mode,'dataSource'=>'Google Sheets DB sync','rows'=>$rows,
+                'period'=>$period,'mode'=>$mode,'dataSource'=>'Google Sheets DB sync','rows'=>$rows,'entityVolumes'=>array_values($volumeGroups),
                 'remarks'=>$remarkValues,'glOverheadPeriods'=>$rowPeriodsWithGl,'syncedPeriods'=>$syncedPeriods,
             ]]);
         }
