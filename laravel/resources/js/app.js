@@ -229,25 +229,42 @@ async function overview(period, mode) {
     let allocationRenderVersion = 0;
     const renderAllocation = async () => {
         const renderVersion = ++allocationRenderVersion;
+        const startedAt = performance.now();
         const group = $('#overview-allocation-group').value;
         const active = document.querySelector('.overview-allocation-tile[aria-pressed="true"]')?.id;
         const bucket = active === 'overview-filter-expense' ? 'expense' : active === 'overview-filter-cogp' ? 'cogp' : 'all';
         const title = bucket === 'cogp' ? 'COGP' : bucket === 'expense' ? 'Direct Expense, GA & Selling' : 'All costs';
+        const groupLabel = group.charAt(0).toUpperCase() + group.slice(1);
         $('#overview-allocation-note').textContent = `${title} · Top 10 by absolute amount. October uses imported D365 GL; YTD historical months follow the approved source.`;
+        const driverList = $('#overview-top-drivers');
+        driverList.setAttribute('aria-busy', 'true');
+        driverList.innerHTML = `<div class="overview-allocation-loading" role="status" aria-live="polite"><span class="overview-allocation-spinner" aria-hidden="true"></span><span><strong>Updating allocation</strong><small>Calculating ${esc(title)} by ${esc(groupLabel)}…</small></span></div>`;
         let entries = [];
-        if (group === 'account') {
-            const field = bucket === 'cogp' ? 'totalCOGP' : bucket === 'expense' ? 'totalExpense' : 'allCost';
+        let allocationError = null;
+        try {
+            if (group === 'account') {
+                const field = bucket === 'cogp' ? 'totalCOGP' : bucket === 'expense' ? 'totalExpense' : 'allCost';
                 entries = cost.rows.filter(row => !row.isParent && Math.abs(Number(row[field] || 0)) > 0.005).map(row => [`${row.code} ${row.name}`, Number(row[field])]);
-        } else {
-            $('#overview-allocation-note').textContent = `${title} · Aggregated from imported D365 GL dimensions only.`;
-            const result = await api(`/api/overview-allocation?period=${period}&mode=${mode}&group=${group}`);
-            if (renderVersion !== allocationRenderVersion) return;
-            entries = Object.entries(result.totals[bucket] || {}).map(([name, value]) => [name, Number(value)]);
+            } else {
+                $('#overview-allocation-note').textContent = `${title} · Aggregated from imported D365 GL dimensions only.`;
+                const result = await api(`/api/overview-allocation?period=${period}&mode=${mode}&group=${group}`);
+                if (renderVersion !== allocationRenderVersion) return;
+                entries = Object.entries(result.totals[bucket] || {}).map(([name, value]) => [name, Number(value)]);
+            }
+        } catch (error) {
+            allocationError = error;
         }
+        const remainingLoadingMs = Math.max(0, 180 - (performance.now() - startedAt));
+        if (remainingLoadingMs) await new Promise(resolve => setTimeout(resolve, remainingLoadingMs));
         if (renderVersion !== allocationRenderVersion) return;
+        driverList.setAttribute('aria-busy', 'false');
+        if (allocationError) {
+            driverList.innerHTML = `<p class="overview-allocation-error" role="alert">Could not load allocation: ${esc(allocationError.message || 'Please try again.')}</p>`;
+            return;
+        }
         entries.sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
         const top = entries.slice(0, 10);
-        $('#overview-top-drivers').innerHTML = top.map(([name, value]) => {
+        driverList.innerHTML = top.map(([name, value]) => {
             return `<div class="driver-row"><span data-locale-ignore>${esc(name)}</span><b>${money(value)}</b></div>`;
         }).join('') || '<p>No data for this selection.</p>';
     };
