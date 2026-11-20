@@ -111,6 +111,7 @@ class EquipmentCostService
         $d365UnmappedCost = 0.0;
         if ($livePeriod && $d365InventoryCount > 0) {
             $dimensionNames = $this->d365ActivityNames();
+            $itemGroups = $this->d365ItemGroups();
             $savedMappings = DB::table('equipment_activity_mappings')->pluck('target_activity', 'activity_code')->all();
             $knownActivities = array_values(array_unique(array_filter(array_merge(
                 $this->equipmentActivities(),
@@ -153,15 +154,17 @@ class EquipmentCostService
                     $d365UnmappedCount++;
                 }
 
-                $cost = $this->number($d365Row->cost_amount ?? $payload['CostAmount'] ?? null) ?? 0.0;
+                // D365 issues carry a negative CostAmount; show cost as a positive
+                // expense, matching the imported inventory convention in localhost:3000.
+                $cost = -($this->number($d365Row->cost_amount ?? $payload['CostAmount'] ?? null) ?? 0.0);
                 // Inventory issue quantity is shown as positive consumption, as in 3000.
-                // CostAmount intentionally keeps D365's original sign per user decision.
                 $quantity = -($this->number($d365Row->quantity ?? $payload['InventoryQuantity'] ?? null) ?? 0.0);
                 $itemNumber = trim((string) ($d365Row->item_number ?? $payload['ItemNumber'] ?? ''));
                 $itemLabel = $itemNumber !== '' ? $itemNumber : '(No item number)';
-                $this->addInventory($inventoryByActivity, $activity, $itemLabel, $cost, $quantity);
+                $itemGroup = $itemGroups[strtoupper($itemNumber)] ?? '(Unmapped Item Group)';
+                $this->addInventory($inventoryByActivity, $activity, $itemGroup, $cost, $quantity);
                 $displayUnit = $unit !== '' ? $unit : '(No Asset)';
-                $this->addInventory($inventoryByUnit, $activity.'|'.$displayUnit, $itemLabel, $cost, $quantity);
+                $this->addInventory($inventoryByUnit, $activity.'|'.$displayUnit, $itemGroup, $cost, $quantity);
                 $inventoryByUnit[$activity.'|'.$displayUnit]['activity'] = $activity;
                 $inventoryByUnit[$activity.'|'.$displayUnit]['unit'] = $displayUnit;
 
@@ -185,7 +188,7 @@ class EquipmentCostService
         $fuelPrices = $dbPeriodAvailable ? $this->fuelPrices($dbRows, (int) substr($period, 0, 4)) : [];
         $employeeCosts = $dbPeriodAvailable ? $this->employeeCosts($dbRows, $period, $mode) : [];
         $inventoryValuesAvailable = $livePeriod ? $d365InventoryCount > 0 : $inventoryAvailable;
-        $currencyLabel = $livePeriod ? 'D365 amount' : 'USD';
+        $currencyLabel = 'USD';
         $activityNames = array_unique(array_merge($this->equipmentActivities(), array_keys($monthlyProduction), array_keys($inventoryByActivity), array_keys($employeeCosts)));
         $activities = [];
         foreach ($activityNames as $activity) {
@@ -242,13 +245,13 @@ class EquipmentCostService
         usort($unitRows, fn ($a, $b) => [$a['activity'], $a['unit']] <=> [$b['activity'], $b['unit']]);
 
         return [
-            'period' => $period, 'mode' => $mode, 'currency' => $livePeriod ? null : 'USD', 'currencyLabel' => $currencyLabel, 'activities' => $activities, 'units' => $unitRows,
+            'period' => $period, 'mode' => $mode, 'currency' => 'USD', 'currencyLabel' => $currencyLabel, 'activities' => $activities, 'units' => $unitRows,
             'productionCount' => $productionCount,
             'activityMappings' => $d365MappingRows,
             'unmapped' => ['transactionCount'=>$d365UnmappedCount, 'costAmount'=>$d365UnmappedCost],
             'sources' => ['inventory'=>$livePeriod ? ['available'=>$d365InventoryCount > 0,'source'=>'D365 Inventory Movement Journal Entries (Posted)','transactionCount'=>$d365InventoryCount,'activityMappingAvailable'=>($d365MappedByProduction + $d365MappedByCrosswalk + $d365MappedByDimension) > 0,'mappedByProduction'=>$d365MappedByProduction,'mappedByCrosswalk'=>$d365MappedByCrosswalk,'mappedByDimension'=>$d365MappedByDimension,'unmappedCount'=>$d365UnmappedCount,'currencyCodeAvailable'=>false] : ['available'=>$inventoryAvailable,'path'=>$inventoryAvailable ? basename($inventoryPath) : null], 'production'=>'Google Sheets · Inhouse Mining', 'employeeAndFuel'=>['source'=>'Google Sheets · DB','available'=>$dbPeriodAvailable,'year'=>$dbYear]],
             'notes' => array_values(array_filter([
-                $livePeriod ? ($d365InventoryCount > 0 ? "Equipment Cost uses {$d365InventoryCount} posted D365 movement rows. All activity costs come from D365 CostAmount with its original sign. Production comes from Google Sheets · Inhouse Mining; unit-month matching takes precedence, followed by the reviewed crosswalk and D365 Activity dimension. {$d365UnmappedCount} transactions remain Unmapped. D365 entity does not expose CurrencyCode, so amounts are labeled D365 CostAmount and are not combined with USD employee cost." : 'No posted D365 Inventory Movement Journal Entries are staged for this period. Equipment Cost does not use the legacy inventory snapshot after September 2026.') : ($inventoryAvailable ? null : 'Inventory transaction snapshot is missing. Production and DB references loaded, but inventory cost and item group values are withheld until data/equipment_inventory.json is provided.'),
+                $livePeriod ? ($d365InventoryCount > 0 ? "Equipment Cost uses {$d365InventoryCount} posted D365 movement rows. D365 CostAmount is sign-reversed and displayed in USD, matching the localhost:3000 presentation. Item groups come from the D365 ReleasedProductsV2 ITEMGROUP field, looked up by ItemNumber; unmatched items remain Unmapped Item Group. Production comes from Google Sheets · Inhouse Mining; unit-month matching takes precedence, followed by the reviewed crosswalk and D365 Activity dimension. {$d365UnmappedCount} transactions remain Unmapped. CurrencyCode is not supplied by the movement entity; USD is the dashboard reporting convention." : 'No posted D365 Inventory Movement Journal Entries are staged for this period. Equipment Cost does not use the legacy inventory snapshot after September 2026.') : ($inventoryAvailable ? null : 'Inventory transaction snapshot is missing. Production and DB references loaded, but inventory cost and item group values are withheld until data/equipment_inventory.json is provided.'),
                 $dbPeriodAvailable ? null : 'Fuel price and Employee Cost are unavailable because the DB sheet year does not match the selected period.',
             ])),
         ];
@@ -321,6 +324,18 @@ class EquipmentCostService
             if ($code !== '') $names[$code] = trim((string) ($payload['Description'] ?? ''));
         }
         return $names;
+    }
+
+    private function d365ItemGroups(): array
+    {
+        $groups = [];
+        foreach (DB::table('d365_typed_records')->where('entity_key', 'released_products')->where('company', 'bp')->get(['payload']) as $row) {
+            $payload = json_decode((string) $row->payload, true) ?: [];
+            $item = strtoupper(trim((string) ($payload['ItemNumber'] ?? '')));
+            $group = strtoupper(trim((string) ($payload['ITEMGROUP'] ?? $payload['ItemGroup'] ?? $payload['Item group'] ?? '')));
+            if ($item !== '' && $group !== '') $groups[$item] = $group;
+        }
+        return $groups;
     }
 
     private function activityDimensionCode(string $displayValue): ?string
