@@ -111,7 +111,7 @@ class EquipmentCostService
         $d365UnmappedCost = 0.0;
         if ($livePeriod && $d365InventoryCount > 0) {
             $dimensionNames = $this->d365ActivityNames();
-            $itemGroups = $this->d365ItemGroups();
+            $itemGroups = $this->d365ItemGroups($d365InventoryRows->pluck('item_number')->all());
             $savedMappings = DB::table('equipment_activity_mappings')->pluck('target_activity', 'activity_code')->all();
             $knownActivities = array_values(array_unique(array_filter(array_merge(
                 $this->equipmentActivities(),
@@ -251,7 +251,7 @@ class EquipmentCostService
             'unmapped' => ['transactionCount'=>$d365UnmappedCount, 'costAmount'=>$d365UnmappedCost],
             'sources' => ['inventory'=>$livePeriod ? ['available'=>$d365InventoryCount > 0,'source'=>'D365 Inventory Movement Journal Entries (Posted)','transactionCount'=>$d365InventoryCount,'activityMappingAvailable'=>($d365MappedByProduction + $d365MappedByCrosswalk + $d365MappedByDimension) > 0,'mappedByProduction'=>$d365MappedByProduction,'mappedByCrosswalk'=>$d365MappedByCrosswalk,'mappedByDimension'=>$d365MappedByDimension,'unmappedCount'=>$d365UnmappedCount,'currencyCodeAvailable'=>false] : ['available'=>$inventoryAvailable,'path'=>$inventoryAvailable ? basename($inventoryPath) : null], 'production'=>'Google Sheets · Inhouse Mining', 'employeeAndFuel'=>['source'=>'Google Sheets · DB','available'=>$dbPeriodAvailable,'year'=>$dbYear]],
             'notes' => array_values(array_filter([
-                $livePeriod ? ($d365InventoryCount > 0 ? "Equipment Cost uses {$d365InventoryCount} posted D365 movement rows. D365 CostAmount is sign-reversed and displayed in USD, matching the localhost:3000 presentation. Item groups come from the D365 ReleasedProductsV2 ITEMGROUP field, looked up by ItemNumber; unmatched items remain Unmapped Item Group. Production comes from Google Sheets · Inhouse Mining; unit-month matching takes precedence, followed by the reviewed crosswalk and D365 Activity dimension. {$d365UnmappedCount} transactions remain Unmapped. CurrencyCode is not supplied by the movement entity; USD is the dashboard reporting convention." : 'No posted D365 Inventory Movement Journal Entries are staged for this period. Equipment Cost does not use the legacy inventory snapshot after September 2026.') : ($inventoryAvailable ? null : 'Inventory transaction snapshot is missing. Production and DB references loaded, but inventory cost and item group values are withheld until data/equipment_inventory.json is provided.'),
+                $livePeriod ? ($d365InventoryCount > 0 ? "Equipment Cost uses {$d365InventoryCount} posted D365 movement rows. D365 CostAmount is sign-reversed and displayed in USD, matching the localhost:3000 presentation. Item groups come from D365 ReleasedProductsV2 ProductGroupId, looked up by ItemNumber; unmatched items remain Unmapped Item Group. Production comes from Google Sheets · Inhouse Mining; unit-month matching takes precedence, followed by the reviewed crosswalk and D365 Activity dimension. {$d365UnmappedCount} transactions remain Unmapped. CurrencyCode is not supplied by the movement entity; USD is the dashboard reporting convention." : 'No posted D365 Inventory Movement Journal Entries are staged for this period. Equipment Cost does not use the legacy inventory snapshot after September 2026.') : ($inventoryAvailable ? null : 'Inventory transaction snapshot is missing. Production and DB references loaded, but inventory cost and item group values are withheld until data/equipment_inventory.json is provided.'),
                 $dbPeriodAvailable ? null : 'Fuel price and Employee Cost are unavailable because the DB sheet year does not match the selected period.',
             ])),
         ];
@@ -326,15 +326,32 @@ class EquipmentCostService
         return $names;
     }
 
-    private function d365ItemGroups(): array
+    private function d365ItemGroups(array $itemNumbers): array
     {
         $groups = [];
-        foreach (DB::table('d365_typed_records')->where('entity_key', 'released_products')->where('company', 'bp')->get(['payload']) as $row) {
-            $payload = json_decode((string) $row->payload, true) ?: [];
-            $item = strtoupper(trim((string) ($payload['ItemNumber'] ?? '')));
-            $group = strtoupper(trim((string) ($payload['ITEMGROUP'] ?? $payload['ItemGroup'] ?? $payload['Item group'] ?? '')));
-            if ($item !== '' && $group !== '') $groups[$item] = $group;
-        }
+        $needed = array_fill_keys(array_filter(array_map(static fn ($item) => strtoupper(trim((string) $item)), $itemNumbers)), true);
+        if (!$needed) return $groups;
+
+        // ReleasedProductsV2 can contain tens of thousands of large payloads.
+        // Scan in bounded chunks and stop when every item used by this period is found.
+        DB::table('d365_typed_records')
+            ->where('entity_key', 'released_products')
+            ->where('company', 'bp')
+            ->select(['id', 'payload'])
+            ->orderBy('id')
+            ->chunkById(500, function ($rows) use (&$groups, &$needed): bool {
+                foreach ($rows as $row) {
+                    $payload = json_decode((string) $row->payload, true) ?: [];
+                    $item = strtoupper(trim((string) ($payload['ItemNumber'] ?? '')));
+                    if ($item === '' || !isset($needed[$item])) continue;
+                    $group = strtoupper(trim((string) ($payload['ProductGroupId'] ?? $payload['ITEMGROUP'] ?? $payload['ItemGroup'] ?? $payload['Item group'] ?? '')));
+                    if ($group === '') continue;
+                    $groups[$item] = $group;
+                    unset($needed[$item]);
+                }
+                return !empty($needed);
+            });
+
         return $groups;
     }
 
