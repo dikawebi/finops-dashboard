@@ -293,6 +293,20 @@ class DashboardController extends Controller
         return response()->json(['success'=>true,'data'=>$service->build($period, $mode)]);
     }
 
+    public function saveEquipmentFuelRate(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'period' => ['required', 'date_format:Y-m'],
+            'rate_usd_per_litre' => ['required', 'numeric', 'min:0', 'max:100000'],
+        ]);
+        $now = now();
+        \Illuminate\Support\Facades\DB::table('equipment_fuel_rates')->updateOrInsert(
+            ['period' => $validated['period']],
+            ['rate_usd_per_litre' => $validated['rate_usd_per_litre'], 'updated_by' => $request->user()?->id, 'updated_at' => $now, 'created_at' => $now],
+        );
+        return response()->json(['success'=>true, 'message'=>'Fuel rate saved.', 'data'=>['period'=>$validated['period'], 'rate_usd_per_litre'=>(float)$validated['rate_usd_per_litre'], 'source'=>'Manual']]);
+    }
+
     public function saveEquipmentCostMapping(Request $request, string $activityCode): JsonResponse
     {
         abort_unless((bool) preg_match('/^4\d{6}$/', $activityCode), 422, 'Invalid D365 Activity code.');

@@ -25,6 +25,21 @@ class EquipmentCostService
         $tickets = $this->readValues($token, $spreadsheet, $baseSheet, 'A1:T1000');
         $dbRows = $this->readValues($token, $spreadsheet, $dbSheet, 'A1:W1000');
 
+        $dbYear = null;
+        if (preg_match('/(20\d{2})/', (string) ($dbRows[1][6] ?? ''), $yearMatch)) $dbYear = (int) $yearMatch[1];
+        $dbPeriodAvailable = $dbYear === (int) substr($period, 0, 4);
+        $firstRateMonth = $mode === 'ytd' ? substr($period, 0, 4).'-01' : $period;
+        $sheetFuelPrices = $dbPeriodAvailable ? $this->fuelPrices($dbRows, (int) substr($period, 0, 4)) : [];
+        $syncedFuelPrices = DB::table('db_daily_cogp_parameters')->whereBetween('period', [$firstRateMonth, $period])
+            ->where('label', 'fuel price including transport')->pluck('value', 'period')->map(fn ($value) => (float) $value)->all();
+        $sheetFuelPrices = array_replace($sheetFuelPrices, $syncedFuelPrices);
+        $manualFuelRates = DB::table('equipment_fuel_rates')->whereBetween('period', [$firstRateMonth, $period])
+            ->pluck('rate_usd_per_litre', 'period')->map(fn ($value) => (float) $value)->all();
+        $effectiveFuelRates = array_replace($sheetFuelPrices, $manualFuelRates);
+        $selectedFuelRate = $effectiveFuelRates[$period] ?? null;
+        $selectedFuelRateSource = array_key_exists($period, $manualFuelRates) ? 'Manual' : (array_key_exists($period, $sheetFuelPrices) ? 'Google Sheets · DB' : 'Unavailable');
+        $fuelRowsRepriced = 0;
+
         $inventoryPath = $config['equipment_inventory_path'] ?? base_path('../data/equipment_inventory.json');
         $livePeriod = $period >= '2026-10';
         // Keep the approved legacy baseline only through September. October onward
@@ -51,6 +66,11 @@ class EquipmentCostService
             $cost = -($this->number($row['cost_amount'] ?? $row['costamount'] ?? 0) ?? 0);
             $quantity = -($this->number($row['quantity'] ?? 0) ?? 0);
             $month = substr($date, 0, 7);
+            $unitNorm = strtoupper(preg_replace('/[^A-Z0-9]/', '', (string) ($row['unit'] ?? '')));
+            if (str_contains(strtoupper($itemGroup), 'FUEL') && in_array($unitNorm, ['L', 'LTR', 'LITRE', 'LITER', 'LITRES', 'LITERS'], true) && array_key_exists($month, $effectiveFuelRates)) {
+                $cost = $quantity * $effectiveFuelRates[$month];
+                $fuelRowsRepriced++;
+            }
             $this->addInventory($inventoryByActivity, $activity, $itemGroup, $cost, $quantity);
             if ($unit !== '') {
                 $this->addInventory($inventoryByUnit, $activity.'|'.$unit, $itemGroup, $cost, $quantity);
@@ -58,7 +78,6 @@ class EquipmentCostService
                 $inventoryByUnit[$activity.'|'.$unit]['unit'] = $unit;
             }
             $groupNorm = strtoupper(preg_replace('/[^A-Z0-9]/', '', $itemGroup));
-            $unitNorm = strtoupper(preg_replace('/[^A-Z0-9]/', '', (string) ($row['unit'] ?? '')));
             if (str_contains($groupNorm, 'FUEL') && in_array($unitNorm, ['L', 'LTR', 'LITRE', 'LITER', 'LITRES', 'LITERS'], true)) {
                 if (!isset($fuelLitres[$activity.'|'.$unit.'|'.$month])) $fuelLitres[$activity.'|'.$unit.'|'.$month] = 0.0;
                 $fuelLitres[$activity.'|'.$unit.'|'.$month] += $quantity;
@@ -111,7 +130,7 @@ class EquipmentCostService
         $d365UnmappedCost = 0.0;
         if ($livePeriod && $d365InventoryCount > 0) {
             $dimensionNames = $this->d365ActivityNames();
-            $itemGroups = $this->d365ItemGroups($d365InventoryRows->pluck('item_number')->all());
+            $itemCatalog = $this->d365ItemGroups($d365InventoryRows->pluck('item_number')->all());
             $savedMappings = DB::table('equipment_activity_mappings')->pluck('target_activity', 'activity_code')->all();
             $knownActivities = array_values(array_unique(array_filter(array_merge(
                 $this->equipmentActivities(),
@@ -161,7 +180,14 @@ class EquipmentCostService
                 $quantity = -($this->number($d365Row->quantity ?? $payload['InventoryQuantity'] ?? null) ?? 0.0);
                 $itemNumber = trim((string) ($d365Row->item_number ?? $payload['ItemNumber'] ?? ''));
                 $itemLabel = $itemNumber !== '' ? $itemNumber : '(No item number)';
-                $itemGroup = $itemGroups[strtoupper($itemNumber)] ?? '(Unmapped Item Group)';
+                $catalogItem = $itemCatalog[strtoupper($itemNumber)] ?? [];
+                $itemGroup = $catalogItem['group'] ?? '(Unmapped Item Group)';
+                $inventoryUnit = strtoupper(preg_replace('/[^A-Z0-9]/', '', (string) ($catalogItem['unit'] ?? $payload['InventoryUnitSymbol'] ?? '')));
+                $groupNorm = strtoupper(preg_replace('/[^A-Z0-9]/', '', $itemGroup));
+                if (str_contains($groupNorm, 'FUEL') && in_array($inventoryUnit, ['L', 'LTR', 'LITRE', 'LITER', 'LITRES', 'LITERS'], true) && array_key_exists($month, $effectiveFuelRates)) {
+                    $cost = $quantity * $effectiveFuelRates[$month];
+                    $fuelRowsRepriced++;
+                }
                 $this->addInventory($inventoryByActivity, $activity, $itemGroup, $cost, $quantity);
                 $displayUnit = $unit !== '' ? $unit : '(No Asset)';
                 $this->addInventory($inventoryByUnit, $activity.'|'.$displayUnit, $itemGroup, $cost, $quantity);
@@ -182,10 +208,6 @@ class EquipmentCostService
             usort($d365MappingRows, fn (array $a, array $b): int => $b['transactionCount'] <=> $a['transactionCount']);
         }
 
-        $dbYear = null;
-        if (preg_match('/(20\d{2})/', (string) ($dbRows[1][6] ?? ''), $yearMatch)) $dbYear = (int) $yearMatch[1];
-        $dbPeriodAvailable = $dbYear === (int) substr($period, 0, 4);
-        $fuelPrices = $dbPeriodAvailable ? $this->fuelPrices($dbRows, (int) substr($period, 0, 4)) : [];
         $employeeCosts = $dbPeriodAvailable ? $this->employeeCosts($dbRows, $period, $mode) : [];
         $inventoryValuesAvailable = $livePeriod ? $d365InventoryCount > 0 : $inventoryAvailable;
         $currencyLabel = 'USD';
@@ -224,8 +246,8 @@ class EquipmentCostService
                 if ($fuelActivity !== $unit['activity'] || $fuelUnit !== $unit['unit']) continue;
                 $hasFuel = true;
                 $fuel += $litres;
-                if (!array_key_exists($fuelMonth, $fuelPrices)) $estimateComplete = false;
-                else $fuelEstimate += $litres * $fuelPrices[$fuelMonth];
+                if (!array_key_exists($fuelMonth, $effectiveFuelRates)) $estimateComplete = false;
+                else $fuelEstimate += $litres * $effectiveFuelRates[$fuelMonth];
             }
             $unitRows[] = [
                 'activity' => $unit['activity'], 'unit' => $unit['unit'], 'haulingMT' => $unit['haulingMT'], 'loaderMT' => $unit['loaderMT'],
@@ -249,9 +271,11 @@ class EquipmentCostService
             'productionCount' => $productionCount,
             'activityMappings' => $d365MappingRows,
             'unmapped' => ['transactionCount'=>$d365UnmappedCount, 'costAmount'=>$d365UnmappedCost],
+            'fuelRate' => ['period'=>$period,'rateUsdPerLitre'=>$selectedFuelRate,'source'=>$selectedFuelRateSource,'recalculatedRows'=>$fuelRowsRepriced,'formula'=>'Fuel quantity (L) × rate (USD/L)'],
             'sources' => ['inventory'=>$livePeriod ? ['available'=>$d365InventoryCount > 0,'source'=>'D365 Inventory Movement Journal Entries (Posted)','transactionCount'=>$d365InventoryCount,'activityMappingAvailable'=>($d365MappedByProduction + $d365MappedByCrosswalk + $d365MappedByDimension) > 0,'mappedByProduction'=>$d365MappedByProduction,'mappedByCrosswalk'=>$d365MappedByCrosswalk,'mappedByDimension'=>$d365MappedByDimension,'unmappedCount'=>$d365UnmappedCount,'currencyCodeAvailable'=>false] : ['available'=>$inventoryAvailable,'path'=>$inventoryAvailable ? basename($inventoryPath) : null], 'production'=>'Google Sheets · Inhouse Mining', 'employeeAndFuel'=>['source'=>'Google Sheets · DB','available'=>$dbPeriodAvailable,'year'=>$dbYear]],
             'notes' => array_values(array_filter([
-                $livePeriod ? ($d365InventoryCount > 0 ? "Equipment Cost uses {$d365InventoryCount} posted D365 movement rows. D365 CostAmount is sign-reversed and displayed in USD, matching the localhost:3000 presentation. Item groups come from D365 ReleasedProductsV2 ProductGroupId, looked up by ItemNumber; unmatched items remain Unmapped Item Group. Production comes from Google Sheets · Inhouse Mining; unit-month matching takes precedence, followed by the reviewed crosswalk and D365 Activity dimension. {$d365UnmappedCount} transactions remain Unmapped. CurrencyCode is not supplied by the movement entity; USD is the dashboard reporting convention." : 'No posted D365 Inventory Movement Journal Entries are staged for this period. Equipment Cost does not use the legacy inventory snapshot after September 2026.') : ($inventoryAvailable ? null : 'Inventory transaction snapshot is missing. Production and DB references loaded, but inventory cost and item group values are withheld until data/equipment_inventory.json is provided.'),
+                $livePeriod ? ($d365InventoryCount > 0 ? "Equipment Cost uses {$d365InventoryCount} posted D365 movement rows. FUEL cost is recalculated as signed-reversed quantity × the selected monthly rate where the Released Products inventory unit is litres; other item groups use signed-reversed D365 CostAmount. ProductGroupId is looked up by ItemNumber; unmatched items remain Unmapped Item Group. Production comes from Google Sheets · Inhouse Mining; unit-month matching takes precedence, followed by the reviewed crosswalk and D365 Activity dimension. {$d365UnmappedCount} transactions remain Unmapped. CurrencyCode is not supplied by the movement entity; USD is the dashboard reporting convention." : 'No posted D365 Inventory Movement Journal Entries are staged for this period. Equipment Cost does not use the legacy inventory snapshot after September 2026.') : ($inventoryAvailable ? null : 'Inventory transaction snapshot is missing. Production and DB references loaded, but inventory cost and item group values are withheld until data/equipment_inventory.json is provided.'),
+                $selectedFuelRate === null ? 'No fuel rate is available for the selected month. Fuel rows retain their D365 or historical source amount until a rate is entered or synced.' : "Fuel rate for {$period}: {$selectedFuelRate} USD/L ({$selectedFuelRateSource}); {$fuelRowsRepriced} fuel rows recalculated.",
                 $dbPeriodAvailable ? null : 'Fuel price and Employee Cost are unavailable because the DB sheet year does not match the selected period.',
             ])),
         ];
@@ -346,7 +370,7 @@ class EquipmentCostService
                     if ($item === '' || !isset($needed[$item])) continue;
                     $group = strtoupper(trim((string) ($payload['ProductGroupId'] ?? $payload['ITEMGROUP'] ?? $payload['ItemGroup'] ?? $payload['Item group'] ?? '')));
                     if ($group === '') continue;
-                    $groups[$item] = $group;
+                    $groups[$item] = ['group'=>$group,'unit'=>strtoupper(trim((string) ($payload['InventoryUnitSymbol'] ?? '')))];
                     unset($needed[$item]);
                 }
                 return !empty($needed);

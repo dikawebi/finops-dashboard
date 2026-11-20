@@ -79,6 +79,17 @@ translations.push(
     ['Mother Vessel', 'Kapal Induk']
 );
 
+translations.push(
+    ['MONTHLY COST PARAMETER', 'PARAMETER BIAYA BULANAN'],
+    ['Fuel rate', 'Tarif bahan bakar'],
+    ['Fuel amount is recalculated as fuel quantity (L) × rate (USD/L). Other item group amounts keep their source cost.', 'Nilai biaya Fuel dihitung ulang dari kuantitas (L) × tarif (USD/L). Nilai kelompok barang lain tetap memakai biaya dari sumbernya.'],
+    ['USD per litre', 'USD per liter'],
+    ['Save rate', 'Simpan tarif'],
+    ['No fuel rows recalculated yet', 'Belum ada baris Fuel yang dihitung ulang'],
+    ['Enter a valid rate in USD per litre.', 'Masukkan tarif USD per liter yang valid.'],
+    ['Saving rate…', 'Menyimpan tarif…']
+);
+
 const preserveSourceTerms = new Set([
     'Production', 'Coal Mining', 'Washing Plant', 'Mother Vessel', 'Port',
     'Coal Production', 'Coal Hauling', 'Selling', 'Inhouse Mining', 'Location', 'Activity',
