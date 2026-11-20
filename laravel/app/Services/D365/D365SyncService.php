@@ -18,12 +18,12 @@ class D365SyncService
         ['key' => 'ledger_entry_journals', 'label' => 'Ledger Entry Journals', 'entity' => 'LedgerEntryJournalBiEntities', 'mode' => 'incremental', 'source_field' => 'SourceKey', 'date_field' => null, 'company_field' => null],
         ['key' => 'vendors', 'label' => 'Vendors', 'entity' => 'VendorsV2', 'mode' => 'snapshot', 'source_field' => 'SourceKey', 'date_field' => null, 'company_field' => 'dataAreaId'],
         ['key' => 'customers', 'label' => 'Customers', 'entity' => 'CustomersV3', 'mode' => 'snapshot', 'source_field' => 'SourceKey', 'date_field' => null, 'company_field' => 'dataAreaId'],
-        ['key' => 'inventory_trans', 'label' => 'Inventory Transactions', 'entity' => 'InventTransBiEntities', 'mode' => 'incremental', 'source_field' => 'SourceKey', 'date_field' => 'DateFinancial', 'company_field' => 'dataAreaId'],
+        ['key' => 'inventory_movement_entries', 'label' => 'Inventory Movement Journal Entries (Posted)', 'entity' => 'InventoryMovementJournalEntriesV4', 'mode' => 'period_replace', 'source_field' => null, 'date_field' => 'TransactionDate', 'company_field' => 'dataAreaId', 'company_value' => 'bp'],
     ];
 
     public function client(): D365ODataClient { return new D365ODataClient(config('services.d365', [])); }
     public function entityByKey(string $key): ?array { return collect(self::ENTITIES)->firstWhere('key', $key); }
-    public function transactionEntityKeys(): array { return ['gl_entries', 'gl_journal_entries', 'ledger_journal_lines', 'ledger_entry_journals', 'inventory_trans']; }
+    public function transactionEntityKeys(): array { return ['gl_entries', 'gl_journal_entries', 'ledger_journal_lines', 'ledger_entry_journals', 'inventory_movement_entries']; }
     public function resetTransactionData(): void
     {
         $entities = $this->transactionEntityKeys();
@@ -51,6 +51,10 @@ class D365SyncService
 
     public function syncEntity(array $entity, ?int $limit = null, ?string $dateFrom = null, ?string $dateTo = null, bool $forceFull = false): array
     {
+        if ($entity['key'] === 'inventory_movement_entries') {
+            return $this->syncPostedInventoryMovementEntries($entity, $dateFrom, $dateTo);
+        }
+
         $logId = DB::table('d365_sync_logs')->insertGetId(['entity_key' => $entity['key'], 'entity_name' => $entity['entity'], 'status' => 'running', 'created_at' => now(), 'updated_at' => now()]);
         $fetched = $inserted = $updated = $pages = 0;
         $maxSourceKey = null;
@@ -90,7 +94,129 @@ class D365SyncService
         }
     }
 
-    public function syncAll(?int $limit = null, ?string $dateFrom = null, ?string $dateTo = null, bool $forceFull = false): array { $order = ['main_accounts', 'dimension_values', 'mapping_valuation_by_findims', 'vendors', 'customers', 'gl_journal_entries', 'gl_entries', 'ledger_journal_lines', 'ledger_entry_journals', 'inventory_trans']; $results = []; foreach ($order as $key) { if ($this->stopRequested()) break; $results[] = $this->syncEntity($this->entityByKey($key), $limit, $dateFrom, $dateTo, $forceFull); } return $results; }
+    private function syncPostedInventoryMovementEntries(array $entity, ?string $dateFrom, ?string $dateTo): array
+    {
+        $logId = DB::table('d365_sync_logs')->insertGetId(['entity_key' => $entity['key'], 'entity_name' => $entity['entity'], 'status' => 'running', 'created_at' => now(), 'updated_at' => now()]);
+        $fetched = 0;
+        try {
+            if (! $dateFrom || ! $dateTo) throw new D365Exception('Pilih periode tanggal untuk Inventory Movement Journal Entries.');
+            if ($this->stopRequested()) throw new D365Exception('Sync dihentikan oleh user.');
+
+            $from = (new \DateTimeImmutable($dateFrom))->format('Y-m-d');
+            $toExclusive = (new \DateTimeImmutable($dateTo))->modify('+1 day')->format('Y-m-d');
+            $company = (string) ($entity['company_value'] ?? config('services.d365.company', 'bp'));
+            $quote = static fn (string $value): string => "'".str_replace("'", "''", $value)."'";
+            $transactionFilter = 'dataAreaId eq '.$quote($company).' and TransactionDate ge '.$from.' and TransactionDate lt '.$toExclusive;
+            $client = $this->client();
+            $lines = [];
+            foreach ($client->streamEntity($entity['entity'], null, $transactionFilter) as $row) {
+                if ($this->stopRequested()) throw new D365Exception('Sync dihentikan oleh user.');
+                $fetched++;
+                $lines[] = $row;
+                if ($fetched % 100 === 0) {
+                    DB::table('d365_sync_logs')->where('id', $logId)->update(['fetched' => $fetched, 'progress_percent' => min(70, intdiv($fetched, 50)), 'message' => 'Mengambil transaksi berdasarkan TransactionDate…', 'updated_at' => now()]);
+                }
+            }
+
+            $journalNumbers = collect($lines)->pluck('JournalNumber')->filter(fn ($value): bool => filled($value))->map(fn ($value): string => (string) $value)->unique()->values();
+            $postedHeaders = [];
+            foreach ($journalNumbers->chunk(25) as $batch) {
+                if ($this->stopRequested()) throw new D365Exception('Sync dihentikan oleh user.');
+                $journalFilter = $batch->map(fn (string $number): string => 'JournalNumber eq '.$quote($number))->implode(' or ');
+                $headerFilter = 'dataAreaId eq '.$quote($company)
+                    .' and IsPosted eq Microsoft.Dynamics.DataEntities.NoYes'.$quote('Yes')
+                    .' and ('.$journalFilter.')';
+                foreach ($client->streamEntity('InventoryMovementJournalHeaders', null, $headerFilter) as $header) {
+                    $key = (string) ($header['dataAreaId'] ?? '').'|'.(string) ($header['JournalNumber'] ?? '');
+                    if ($key !== '|') $postedHeaders[$key] = $header;
+                }
+            }
+
+            $now = now();
+            $typedRows = [];
+            foreach ($lines as $line) {
+                $companyCode = (string) ($line['dataAreaId'] ?? '');
+                $journalNumber = (string) ($line['JournalNumber'] ?? '');
+                $headerKey = $companyCode.'|'.$journalNumber;
+                if (! isset($postedHeaders[$headerKey])) continue;
+                $header = $postedHeaders[$headerKey];
+                $lineNumber = (string) ($line['LineNumber'] ?? '');
+                if ($companyCode === '' || $journalNumber === '' || $lineNumber === '') {
+                    throw new D365Exception('Transaksi posted tidak memiliki company, JournalNumber, atau LineNumber; staging periode dibatalkan.');
+                }
+
+                $sourceKey = hash('sha256', json_encode([$companyCode, $journalNumber, $lineNumber], JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
+                if (isset($typedRows[$sourceKey])) {
+                    throw new D365Exception("Duplicate company/journal/line key for {$journalNumber}, line {$lineNumber}; staging periode dibatalkan.");
+                }
+                $transactionDate = $this->date($line['TransactionDate'] ?? null);
+                if (! $transactionDate) throw new D365Exception("Tanggal transaksi tidak valid pada jurnal {$journalNumber}, line {$lineNumber}.");
+                $postedAt = $this->dateTime($header['PostedDateTime'] ?? null);
+                $payload = $line;
+                $payload['IsPosted'] = $header['IsPosted'] ?? 'Yes';
+                $payload['HeaderDescription'] = $header['Description'] ?? '';
+                $payload['PostedDateTime'] = $header['PostedDateTime'] ?? null;
+                $dimensions = [
+                    'defaultLedgerDimensionDisplayValue' => $line['DefaultLedgerDimensionDisplayValue'] ?? '',
+                    'offsetMainAccountIdDisplayValue' => $line['OffsetMainAccountIdDisplayValue'] ?? '',
+                ];
+                $typedRows[$sourceKey] = [
+                    'entity_key' => $entity['key'], 'source_key' => $sourceKey, 'company' => $companyCode,
+                    'asset' => filled($line['WBPDTNumber'] ?? null) ? trim((string) $line['WBPDTNumber']) : null,
+                    'item_number' => filled($line['ItemNumber'] ?? null) ? (string) $line['ItemNumber'] : null,
+                    'account_code' => null, 'account_name' => null, 'journal_number' => $journalNumber,
+                    'voucher' => (string) ($line['Voucher'] ?? ''), 'accounting_date' => $transactionDate, 'transaction_date' => $transactionDate,
+                    'currency' => (string) ($line['CurrencyCode'] ?? ''), 'amount_accounting' => null,
+                    'amount_reporting' => null, 'amount_transaction' => null,
+                    'cost_amount' => is_numeric($line['CostAmount'] ?? null) ? (float) $line['CostAmount'] : null,
+                    'quantity' => is_numeric($line['InventoryQuantity'] ?? null) ? (float) $line['InventoryQuantity'] : null,
+                    'is_posted' => true, 'posted_at' => $postedAt,
+                    'description' => (string) ($header['Description'] ?? ''),
+                    'dimensions' => json_encode($dimensions, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
+                    'payload' => json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
+                    'created_at' => $now, 'updated_at' => $now,
+                ];
+            }
+
+            $sourceKeys = array_keys($typedRows);
+            $existingPeriodKeys = DB::table('d365_typed_records')->where('entity_key', $entity['key'])
+                ->where('company', $company)->whereBetween('transaction_date', [$from, $dateTo])
+                ->pluck('source_key')->map(fn ($value): string => (string) $value)->all();
+            $existingMatchingKeys = $sourceKeys
+                ? DB::table('d365_typed_records')->where('entity_key', $entity['key'])->whereIn('source_key', $sourceKeys)
+                    ->pluck('source_key')->map(fn ($value): string => (string) $value)->all()
+                : [];
+            $existingKeys = array_values(array_unique(array_merge($existingPeriodKeys, $existingMatchingKeys)));
+            $existingSet = array_fill_keys($existingMatchingKeys, true);
+            $updated = count(array_filter($sourceKeys, fn (string $key): bool => isset($existingSet[$key])));
+            $inserted = count($sourceKeys) - $updated;
+            $rawRows = [];
+            foreach ($typedRows as $key => $typed) {
+                $rawRows[] = ['entity_key' => $entity['key'], 'entity_name' => $entity['entity'], 'source_key' => $key, 'company' => $typed['company'], 'payload' => $typed['payload'], 'created_at' => $now, 'updated_at' => $now];
+            }
+
+            DB::table('d365_sync_logs')->where('id', $logId)->update(['fetched' => $fetched, 'inserted' => $inserted, 'updated' => $updated, 'progress_percent' => 95, 'message' => sprintf('Header lookup selesai: %d jurnal posted; menulis %d transaksi ke staging…', count($postedHeaders), count($typedRows)), 'updated_at' => $now]);
+
+            DB::transaction(function () use ($entity, $company, $from, $dateTo, $existingKeys, $typedRows, $rawRows): void {
+                if ($existingKeys) {
+                    DB::table('d365_typed_records')->where('entity_key', $entity['key'])->whereIn('source_key', $existingKeys)->delete();
+                    DB::table('d365_raw_records')->where('entity_key', $entity['key'])->whereIn('source_key', $existingKeys)->delete();
+                }
+                foreach (array_chunk(array_values($typedRows), 250) as $chunk) DB::table('d365_typed_records')->insert($chunk);
+                foreach (array_chunk($rawRows, 250) as $chunk) DB::table('d365_raw_records')->insert($chunk);
+            });
+
+            $message = sprintf('Month staging replaced with %d posted rows from %d transactions; %d journal headers matched IsPosted = Yes. Unposted rows were skipped.', count($typedRows), $fetched, count($postedHeaders));
+            DB::table('d365_sync_logs')->where('id', $logId)->update(['status' => 'success', 'fetched' => $fetched, 'inserted' => $inserted, 'updated' => $updated, 'pages' => (int) ceil($fetched / 1000), 'progress_percent' => 100, 'message' => $message, 'updated_at' => $now]);
+            return ['status' => 'success', 'entity' => $entity, 'fetched' => $fetched, 'inserted' => $inserted, 'updated' => $updated, 'posted' => count($typedRows), 'headers' => count($postedHeaders)];
+        } catch (\Throwable $exception) {
+            $status = $this->stopRequested() ? 'stopped' : 'failed';
+            DB::table('d365_sync_logs')->where('id', $logId)->update(['status' => $status, 'fetched' => $fetched, 'message' => $exception->getMessage(), 'updated_at' => now()]);
+            return ['status' => $status, 'entity' => $entity, 'fetched' => $fetched, 'error' => $exception->getMessage()];
+        }
+    }
+
+    public function syncAll(?int $limit = null, ?string $dateFrom = null, ?string $dateTo = null, bool $forceFull = false): array { $order = ['main_accounts', 'dimension_values', 'mapping_valuation_by_findims', 'vendors', 'customers', 'gl_journal_entries', 'gl_entries', 'ledger_journal_lines', 'ledger_entry_journals', 'inventory_movement_entries']; $results = []; foreach ($order as $key) { if ($this->stopRequested()) break; $results[] = $this->syncEntity($this->entityByKey($key), $limit, $dateFrom, $dateTo, $forceFull); } return $results; }
     public function requestStop(): void { Cache::put('d365_sync_stop', true, now()->addHour()); }
     public function clearStop(): void { Cache::forget('d365_sync_stop'); }
     public function stopRequested(): bool { return (bool) Cache::get('d365_sync_stop', false); }
@@ -140,5 +266,15 @@ class D365SyncService
         if (isset($dimensions[0]) && is_array($dimensions[0])) $dimensions = $dimensions[0];
         return ['entity_key' => $entity['key'], 'source_key' => $sourceKey, 'company' => $this->company($row, $entity), 'account_code' => (string) ($row['MainAccount'] ?? $row['MainAccountId'] ?? $row['LedgerAccount'] ?? ''), 'account_name' => (string) ($row['Name'] ?? ''), 'journal_number' => (string) ($row['JournalNumber'] ?? $row['JournalNum'] ?? ''), 'voucher' => (string) ($row['SubledgerVoucher'] ?? $row['Voucher'] ?? ''), 'accounting_date' => $this->date($row['AccountingDate'] ?? $row['DateFinancial'] ?? $row['DocumentDate'] ?? $row['TransDate'] ?? null), 'currency' => (string) ($row['TransactionCurrencyCode'] ?? $row['CurrencyCode'] ?? ''), 'amount_accounting' => $row['AccountingCurrencyAmount'] ?? $row['AmountCurDebit'] ?? null, 'amount_reporting' => $row['ReportingCurrencyAmount'] ?? null, 'amount_transaction' => $row['TransactionCurrencyAmount'] ?? null, 'quantity' => $row['Quantity'] ?? $row['Qty'] ?? null, 'description' => (string) ($row['Text'] ?? $row['Txt'] ?? ''), 'dimensions' => json_encode($dimensions), 'payload' => json_encode($row), 'created_at' => now(), 'updated_at' => now()];
     }
-    private function date(mixed $value): ?string { if (!$value) return null; try { return date('Y-m-d', strtotime((string) $value)); } catch (\Throwable) { return null; } }
+    private function date(mixed $value): ?string
+    {
+        if (! $value) return null;
+        if (preg_match('/^(\d{4}-\d{2}-\d{2})/', (string) $value, $matches)) return $matches[1];
+        try { return (new \DateTimeImmutable((string) $value, new \DateTimeZone('UTC')))->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d'); } catch (\Throwable) { return null; }
+    }
+    private function dateTime(mixed $value): ?string
+    {
+        if (! $value) return null;
+        try { return (new \DateTimeImmutable((string) $value))->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s'); } catch (\Throwable) { return null; }
+    }
 }

@@ -34,7 +34,7 @@ class EquipmentCostService
         $end = (new \DateTimeImmutable($period.'-01'))->modify('last day of this month')->format('Y-m-d');
         $yearStart = substr($period, 0, 4).'-01-01';
         $from = $mode === 'ytd' ? $yearStart : $start;
-        $d365InventoryCount = $livePeriod ? \Illuminate\Support\Facades\DB::table('d365_typed_records')->where('entity_key', 'inventory_trans')->whereBetween('accounting_date', [$from, $end])->count() : null;
+        $d365InventoryCount = $livePeriod ? \Illuminate\Support\Facades\DB::table('d365_typed_records')->where('entity_key', 'inventory_movement_entries')->whereBetween('transaction_date', [$from, $end])->where('is_posted', true)->count() : null;
 
         $inventoryByActivity = $inventoryByUnit = $fuelLitres = [];
         foreach ($inventoryRows as $raw) {
@@ -151,9 +151,9 @@ class EquipmentCostService
 
         return [
             'period' => $period, 'mode' => $mode, 'currency' => 'USD', 'activities' => $activities, 'units' => $unitRows,
-            'sources' => ['inventory'=>$livePeriod ? ['available'=>false,'source'=>'D365 Inventory Transactions','transactionCount'=>$d365InventoryCount,'activityMappingAvailable'=>false] : ['available'=>$inventoryAvailable,'path'=>$inventoryAvailable ? basename($inventoryPath) : null], 'production'=>'Google Sheets · Inhouse Mining', 'employeeAndFuel'=>['source'=>'Google Sheets · DB','available'=>$dbPeriodAvailable,'year'=>$dbYear]],
+            'sources' => ['inventory'=>$livePeriod ? ['available'=>false,'source'=>'D365 Inventory Movement Journal Entries (Posted)','transactionCount'=>$d365InventoryCount,'activityMappingAvailable'=>false] : ['available'=>$inventoryAvailable,'path'=>$inventoryAvailable ? basename($inventoryPath) : null], 'production'=>'Google Sheets · Inhouse Mining', 'employeeAndFuel'=>['source'=>'Google Sheets · DB','available'=>$dbPeriodAvailable,'year'=>$dbYear]],
             'notes' => array_values(array_filter([
-                $livePeriod ? "{$d365InventoryCount} October-forward D365 inventory transactions are synced, but D365 has no verified equipment activity, unit, and item-group crosswalk for this view. Inventory cost is therefore left unallocated instead of using a legacy snapshot." : ($inventoryAvailable ? null : 'Inventory transaction snapshot is missing. Production and DB references loaded, but inventory cost and item group values are withheld until data/equipment_inventory.json is provided.'),
+                $livePeriod ? "{$d365InventoryCount} posted D365 Inventory Movement Journal Entries are available in staging. They are not included in Equipment Cost totals yet; review the full rows and reconcile item group and asset mappings before using them in this report." : ($inventoryAvailable ? null : 'Inventory transaction snapshot is missing. Production and DB references loaded, but inventory cost and item group values are withheld until data/equipment_inventory.json is provided.'),
                 $dbPeriodAvailable ? null : 'Fuel price and Employee Cost are unavailable because the DB sheet year does not match the selected period.',
             ])),
         ];

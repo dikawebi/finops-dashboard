@@ -60,9 +60,10 @@ class D365Controller extends Controller
     {
         $entity = (string) $request->query('entity', 'gl_entries');
         abort_unless($this->sync->entityByKey($entity), 422, 'Entity tidak dikenal.');
-        $query = DB::table('d365_typed_records')->where('entity_key', $entity)->orderByDesc('accounting_date')->orderBy('source_key');
-        if ($request->filled('date_from')) $query->whereDate('accounting_date', '>=', $request->date_from);
-        if ($request->filled('date_to')) $query->whereDate('accounting_date', '<=', $request->date_to);
+        $dateColumn = $entity === 'inventory_movement_entries' ? 'transaction_date' : 'accounting_date';
+        $query = DB::table('d365_typed_records')->where('entity_key', $entity)->orderByDesc($dateColumn)->orderBy('source_key');
+        if ($request->filled('date_from')) $query->whereDate($dateColumn, '>=', $request->date_from);
+        if ($request->filled('date_to')) $query->whereDate($dateColumn, '<=', $request->date_to);
         $rows = $query->paginate(50)->withQueryString();
         if ($request->boolean('full')) {
             $rows->getCollection()->transform(function ($row): array {
@@ -72,10 +73,17 @@ class D365Controller extends Controller
                     'entity_key' => $row->entity_key,
                     'source_key' => $row->source_key,
                     'company' => $row->company,
+                    'asset' => $row->asset,
+                    'item_number' => $row->item_number,
                     'account_code' => $row->account_code,
                     'journal_number' => $row->journal_number,
                     'voucher' => $row->voucher,
                     'accounting_date' => $row->accounting_date,
+                    'transaction_date' => $row->transaction_date,
+                    'cost_amount' => $row->cost_amount,
+                    'quantity' => $row->quantity,
+                    'is_posted' => $row->is_posted,
+                    'posted_at' => $row->posted_at,
                     'payload' => $payload,
                 ];
             });
