@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -26,21 +27,24 @@ class EquipmentCostService
 
         $inventoryPath = $config['equipment_inventory_path'] ?? base_path('../data/equipment_inventory.json');
         $livePeriod = $period >= '2026-10';
-        // The legacy snapshot has no validated row-level link to October D365
-        // transactions, equipment units, or activities. Never use it after cutover.
-        $inventoryAvailable = !$livePeriod && is_file($inventoryPath);
+        // Keep the approved legacy baseline only through September. October onward
+        // must come from posted D365 movement lines, never from the imported snapshot.
+        $inventoryAvailable = is_file($inventoryPath);
         $inventoryRows = $inventoryAvailable ? $this->inventoryRows(json_decode(file_get_contents($inventoryPath), true, 512, JSON_THROW_ON_ERROR)) : [];
         $start = $mode === 'ytd' ? $period.'-01' : $period.'-01';
         $end = (new \DateTimeImmutable($period.'-01'))->modify('last day of this month')->format('Y-m-d');
         $yearStart = substr($period, 0, 4).'-01-01';
         $from = $mode === 'ytd' ? $yearStart : $start;
-        $d365InventoryCount = $livePeriod ? \Illuminate\Support\Facades\DB::table('d365_typed_records')->where('entity_key', 'inventory_movement_entries')->whereBetween('transaction_date', [$from, $end])->where('is_posted', true)->count() : null;
+        $d365From = max($from, '2026-10-01');
+        $d365InventoryRows = $livePeriod ? DB::table('d365_typed_records')->where('entity_key', 'inventory_movement_entries')->where('company', 'bp')->whereBetween('transaction_date', [$d365From, $end])->where('is_posted', true)->get(['transaction_date', 'asset', 'item_number', 'cost_amount', 'quantity', 'dimensions', 'payload']) : collect();
+        $d365InventoryCount = $livePeriod ? $d365InventoryRows->count() : null;
 
         $inventoryByActivity = $inventoryByUnit = $fuelLitres = [];
         foreach ($inventoryRows as $raw) {
             $row = $this->normalizeRow($raw);
             $date = $this->date($row['financial_date'] ?? $row['financialdate'] ?? $row['physical_date'] ?? $row['physicaldate'] ?? null);
             if (!$date || $date < $from || $date > $end) continue;
+            if ($date >= '2026-10-01') continue;
             $activity = $this->canonicalActivity(trim((string) ($row['aktivitas'] ?? $row['activity'] ?? '')) ?: '(Unassigned)');
             $unit = $this->unitCode($row['asset'] ?? $row['unit'] ?? '');
             $itemGroup = trim((string) ($row['item_group'] ?? $row['itemgroup'] ?? '')) ?: '(Unassigned)';
@@ -61,17 +65,18 @@ class EquipmentCostService
             }
         }
 
-        $monthlyProduction = $ticketsByActivity = $units = [];
+        $monthlyProduction = $ticketsByActivity = $units = $productionActivitiesByUnitMonth = [];
         foreach ($tickets as $index => $row) {
             if ($index === 0) continue;
             $date = $this->date($row[1] ?? null);
             if ($date && $date >= $from && $date <= $end) {
-                $loadingActivity = 'Coal Loading at WP to Port';
+                $loadingActivity = $this->canonicalActivity('Coal Loading at WP to Port');
                 foreach (range(15, 19) as $column) {
                     $loadingMT = $this->number($row[$column] ?? null);
                     $equipment = $this->unitCode($tickets[1][$column] ?? '');
                     if ($loadingMT === null || $loadingMT <= 0 || $equipment === '') continue;
                     $monthlyProduction[$loadingActivity] = ($monthlyProduction[$loadingActivity] ?? 0) + $loadingMT;
+                    $productionActivitiesByUnitMonth[substr($date, 0, 7).'|'.$equipment][$loadingActivity] = true;
                     $equipmentKey = $loadingActivity.'|'.$equipment;
                     $units[$equipmentKey] ??= ['activity'=>$loadingActivity,'unit'=>$equipment,'haulingMT'=>0.0,'loaderMT'=>0.0];
                     $units[$equipmentKey]['loaderMT'] += $loadingMT;
@@ -87,6 +92,7 @@ class EquipmentCostService
             $month = substr($date, 0, 7);
             $monthlyProduction[$activity] = ($monthlyProduction[$activity] ?? 0) + $mt;
             $ticketsByActivity[$activity][] = ['haulingUnit' => $haulingUnit, 'loaderUnit' => $loaderUnit, 'mt' => $mt, 'month' => $month];
+            foreach (array_unique(array_filter([$haulingUnit, $loaderUnit])) as $productionUnit) $productionActivitiesByUnitMonth[$month.'|'.$productionUnit][$activity] = true;
             foreach ([$haulingUnit => 'hauling', $loaderUnit => 'loader'] as $unit => $role) {
                 if ($unit === '') continue;
                 $key = $activity.'|'.$unit;
@@ -95,27 +101,93 @@ class EquipmentCostService
             }
         }
 
+        $d365ActivityStats = [];
+        $d365MappingRows = [];
+        $d365MappedByProduction = 0;
+        $d365MappedByCrosswalk = 0;
+        $d365UnmappedCount = 0;
+        $d365UnmappedCost = 0.0;
+        if ($livePeriod && $d365InventoryCount > 0) {
+            $dimensionNames = $this->d365ActivityNames();
+            $savedMappings = DB::table('equipment_activity_mappings')->pluck('target_activity', 'activity_code')->all();
+            $knownActivities = $this->equipmentActivities();
+            foreach ($d365InventoryRows as $d365Row) {
+                $payload = json_decode((string) $d365Row->payload, true) ?: [];
+                $dimensions = json_decode((string) $d365Row->dimensions, true) ?: [];
+                $activityCode = $this->activityDimensionCode((string) ($dimensions['defaultLedgerDimensionDisplayValue'] ?? $payload['DefaultLedgerDimensionDisplayValue'] ?? ''));
+                $activityDescription = $activityCode ? ($dimensionNames[$activityCode] ?? 'Unknown D365 Activity') : 'Activity dimension unavailable';
+                $savedTarget = $activityCode ? ($savedMappings[$activityCode] ?? null) : null;
+                $unit = $this->unitCode($d365Row->asset ?? '');
+                $date = $this->date($d365Row->transaction_date ?? null);
+                if (!$date) continue;
+                $month = substr($date, 0, 7);
+                $candidates = $unit ? array_keys($productionActivitiesByUnitMonth[$month.'|'.$unit] ?? []) : [];
+                $activity = 'Unmapped';
+                $mappingMethod = 'unmapped';
+                if (count($candidates) === 1 && in_array($candidates[0], $knownActivities, true)) {
+                    $activity = $candidates[0];
+                    $mappingMethod = 'production_unit_month';
+                    $d365MappedByProduction++;
+                } elseif ($savedTarget && in_array($savedTarget, $knownActivities, true)) {
+                    $activity = $savedTarget;
+                    $mappingMethod = 'activity_crosswalk';
+                    $d365MappedByCrosswalk++;
+                } else {
+                    $d365UnmappedCount++;
+                }
+
+                $cost = $this->number($d365Row->cost_amount ?? $payload['CostAmount'] ?? null) ?? 0.0;
+                // Inventory issue quantity is shown as positive consumption, as in 3000.
+                // CostAmount intentionally keeps D365's original sign per user decision.
+                $quantity = -($this->number($d365Row->quantity ?? $payload['InventoryQuantity'] ?? null) ?? 0.0);
+                $itemNumber = trim((string) ($d365Row->item_number ?? $payload['ItemNumber'] ?? ''));
+                $itemLabel = $itemNumber !== '' ? $itemNumber : '(No item number)';
+                $this->addInventory($inventoryByActivity, $activity, $itemLabel, $cost, $quantity);
+                $displayUnit = $unit !== '' ? $unit : '(No Asset)';
+                $this->addInventory($inventoryByUnit, $activity.'|'.$displayUnit, $itemLabel, $cost, $quantity);
+                $inventoryByUnit[$activity.'|'.$displayUnit]['activity'] = $activity;
+                $inventoryByUnit[$activity.'|'.$displayUnit]['unit'] = $displayUnit;
+
+                $activityKey = $activityCode ?: '(No activity code)';
+                $d365ActivityStats[$activityKey] ??= ['activityCode' => $activityCode, 'description' => $activityDescription, 'transactionCount' => 0, 'costAmount' => 0.0, 'mappedByProduction' => 0, 'mappedByCrosswalk' => 0, 'unmapped' => 0, 'targetActivity' => $savedTarget];
+                $d365ActivityStats[$activityKey]['transactionCount']++;
+                $d365ActivityStats[$activityKey]['costAmount'] += $cost;
+                if ($mappingMethod === 'production_unit_month') $d365ActivityStats[$activityKey]['mappedByProduction']++;
+                elseif ($mappingMethod === 'activity_crosswalk') $d365ActivityStats[$activityKey]['mappedByCrosswalk']++;
+                else $d365ActivityStats[$activityKey]['unmapped']++;
+                if ($mappingMethod === 'unmapped') $d365UnmappedCost += $cost;
+            }
+            $d365MappingRows = array_values($d365ActivityStats);
+            usort($d365MappingRows, fn (array $a, array $b): int => $b['transactionCount'] <=> $a['transactionCount']);
+        }
+
         $dbYear = null;
         if (preg_match('/(20\d{2})/', (string) ($dbRows[1][6] ?? ''), $yearMatch)) $dbYear = (int) $yearMatch[1];
         $dbPeriodAvailable = $dbYear === (int) substr($period, 0, 4);
         $fuelPrices = $dbPeriodAvailable ? $this->fuelPrices($dbRows, (int) substr($period, 0, 4)) : [];
         $employeeCosts = $dbPeriodAvailable ? $this->employeeCosts($dbRows, $period, $mode) : [];
+        $inventoryValuesAvailable = $livePeriod ? $d365InventoryCount > 0 : $inventoryAvailable;
+        $currencyLabel = $livePeriod ? 'D365 amount' : 'USD';
         $activityNames = array_unique(array_merge($this->equipmentActivities(), array_keys($monthlyProduction), array_keys($inventoryByActivity), array_keys($employeeCosts)));
         $activities = [];
         foreach ($activityNames as $activity) {
             $productionMT = (float) ($monthlyProduction[$activity] ?? 0);
             $inventoryCost = (float) ($inventoryByActivity[$activity]['costUSD'] ?? 0);
             $employee = $employeeCosts[$activity] ?? ['value' => null, 'complete' => false];
+            $unitNames = [];
+            foreach ($units as $unit) if ($unit['activity'] === $activity) $unitNames[$unit['unit']] = true;
+            foreach ($inventoryByUnit as $inventory) if (($inventory['activity'] ?? null) === $activity && filled($inventory['unit'] ?? null) && $inventory['unit'] !== '(No Asset)') $unitNames[$inventory['unit']] = true;
+            $employeeForTotal = $livePeriod ? 0.0 : (float) ($employee['value'] ?? 0);
             $activities[] = [
                 'activity' => $activity,
                 'productionMT' => $productionMT > 0 ? $productionMT : null,
-                'unitCount' => count(array_filter($units, fn ($unit) => $unit['activity'] === $activity)),
-                'inventoryCostUSD' => $inventoryAvailable ? $inventoryCost : null,
+                'unitCount' => count($unitNames),
+                'inventoryCostAmount' => $inventoryValuesAvailable ? $inventoryCost : null,
                 'employeeCostUSD' => $employee['value'],
                 'employeeCostComplete' => $employee['complete'],
-                'totalCostUSD' => $inventoryAvailable ? $inventoryCost + (float) ($employee['value'] ?? 0) : null,
-                'inventoryCostPerMT' => $inventoryAvailable && $productionMT > 0 ? $inventoryCost / $productionMT : null,
-                'itemGroups' => $this->chartGroups($this->groupsWithEmployeeCost($inventoryByActivity[$activity]['groups'] ?? [], $employee['value'])),
+                'totalCostAmount' => $inventoryValuesAvailable ? $inventoryCost + $employeeForTotal : null,
+                'inventoryCostPerMT' => $inventoryValuesAvailable && $productionMT > 0 ? $inventoryCost / $productionMT : null,
+                'itemGroups' => $this->chartGroups($this->groupsWithEmployeeCost($inventoryByActivity[$activity]['groups'] ?? [], $livePeriod ? null : $employee['value']), !$livePeriod),
                 'hasInventoryCost' => isset($inventoryByActivity[$activity]),
                 'hasProduction' => $productionMT > 0,
             ];
@@ -135,25 +207,27 @@ class EquipmentCostService
             }
             $unitRows[] = [
                 'activity' => $unit['activity'], 'unit' => $unit['unit'], 'haulingMT' => $unit['haulingMT'], 'loaderMT' => $unit['loaderMT'],
-                'fuelLitres' => $hasFuel ? $fuel : null,
+                'fuelLitres' => $livePeriod ? null : ($hasFuel ? $fuel : null),
                 'fuelPerHaulingMT' => $unit['haulingMT'] > 0 && $hasFuel ? $fuel / $unit['haulingMT'] : null,
                 'fuelPerLoaderMT' => $unit['loaderMT'] > 0 && $hasFuel ? $fuel / $unit['loaderMT'] : null,
-                'fuelCostEstimateUSD' => $hasFuel && $estimateComplete ? $fuelEstimate : null,
-                'otherInventoryCostUSD' => $inventoryAvailable ? $inventory['costUSD'] : null,
-                'totalInventoryCostUSD' => $inventoryAvailable ? $inventory['costUSD'] : null,
-                'itemGroups' => $inventory['groups'] ?? [],
+                'fuelCostEstimateUSD' => !$livePeriod && $hasFuel && $estimateComplete ? $fuelEstimate : null,
+                'otherInventoryCostAmount' => $inventoryValuesAvailable ? $inventory['costUSD'] : null,
+                'totalInventoryCostAmount' => $inventoryValuesAvailable ? $inventory['costUSD'] : null,
+                'itemGroups' => $this->chartGroups($inventory['groups'] ?? [], !$livePeriod),
             ];
         }
         foreach ($inventoryByUnit as $key => $inventory) {
-            if (!isset($units[$key])) $unitRows[] = ['activity'=>$inventory['activity'],'unit'=>$inventory['unit'],'haulingMT'=>null,'loaderMT'=>null,'fuelLitres'=>null,'fuelPerHaulingMT'=>null,'fuelPerLoaderMT'=>null,'fuelCostEstimateUSD'=>null,'otherInventoryCostUSD'=>$inventory['costUSD'],'totalInventoryCostUSD'=>$inventory['costUSD'],'itemGroups'=>$inventory['groups']];
+            if (!isset($units[$key])) $unitRows[] = ['activity'=>$inventory['activity'],'unit'=>$inventory['unit'],'haulingMT'=>null,'loaderMT'=>null,'fuelLitres'=>null,'fuelPerHaulingMT'=>null,'fuelPerLoaderMT'=>null,'fuelCostEstimateUSD'=>null,'otherInventoryCostAmount'=>$inventory['costUSD'],'totalInventoryCostAmount'=>$inventory['costUSD'],'itemGroups'=>$this->chartGroups($inventory['groups'] ?? [], !$livePeriod)];
         }
         usort($unitRows, fn ($a, $b) => [$a['activity'], $a['unit']] <=> [$b['activity'], $b['unit']]);
 
         return [
-            'period' => $period, 'mode' => $mode, 'currency' => 'USD', 'activities' => $activities, 'units' => $unitRows,
-            'sources' => ['inventory'=>$livePeriod ? ['available'=>false,'source'=>'D365 Inventory Movement Journal Entries (Posted)','transactionCount'=>$d365InventoryCount,'activityMappingAvailable'=>false] : ['available'=>$inventoryAvailable,'path'=>$inventoryAvailable ? basename($inventoryPath) : null], 'production'=>'Google Sheets · Inhouse Mining', 'employeeAndFuel'=>['source'=>'Google Sheets · DB','available'=>$dbPeriodAvailable,'year'=>$dbYear]],
+            'period' => $period, 'mode' => $mode, 'currency' => $livePeriod ? null : 'USD', 'currencyLabel' => $currencyLabel, 'activities' => $activities, 'units' => $unitRows,
+            'activityMappings' => $d365MappingRows,
+            'unmapped' => ['transactionCount'=>$d365UnmappedCount, 'costAmount'=>$d365UnmappedCost],
+            'sources' => ['inventory'=>$livePeriod ? ['available'=>$d365InventoryCount > 0,'source'=>'D365 Inventory Movement Journal Entries (Posted)','transactionCount'=>$d365InventoryCount,'activityMappingAvailable'=>($d365MappedByProduction + $d365MappedByCrosswalk) > 0,'mappedByProduction'=>$d365MappedByProduction,'mappedByCrosswalk'=>$d365MappedByCrosswalk,'unmappedCount'=>$d365UnmappedCount,'currencyCodeAvailable'=>false] : ['available'=>$inventoryAvailable,'path'=>$inventoryAvailable ? basename($inventoryPath) : null], 'production'=>'Google Sheets · Inhouse Mining', 'employeeAndFuel'=>['source'=>'Google Sheets · DB','available'=>$dbPeriodAvailable,'year'=>$dbYear]],
             'notes' => array_values(array_filter([
-                $livePeriod ? "{$d365InventoryCount} posted D365 Inventory Movement Journal Entries are available in staging. They are not included in Equipment Cost totals yet; review the full rows and reconcile item group and asset mappings before using them in this report." : ($inventoryAvailable ? null : 'Inventory transaction snapshot is missing. Production and DB references loaded, but inventory cost and item group values are withheld until data/equipment_inventory.json is provided.'),
+                $livePeriod ? ($d365InventoryCount > 0 ? "Equipment Cost uses {$d365InventoryCount} posted D365 movement rows. CostAmount retains its original D365 sign; production unit-month match takes precedence, then the reviewed Activity crosswalk. {$d365UnmappedCount} transactions remain Unmapped. D365 entity does not expose CurrencyCode, so amounts are labeled D365 CostAmount and are not combined with USD employee cost." : 'No posted D365 Inventory Movement Journal Entries are staged for this period. Equipment Cost does not use the legacy inventory snapshot after September 2026.') : ($inventoryAvailable ? null : 'Inventory transaction snapshot is missing. Production and DB references loaded, but inventory cost and item group values are withheld until data/equipment_inventory.json is provided.'),
                 $dbPeriodAvailable ? null : 'Fuel price and Employee Cost are unavailable because the DB sheet year does not match the selected period.',
             ])),
         ];
@@ -201,11 +275,11 @@ class EquipmentCostService
         $target[$key]['groups'][$itemGroup] = ($target[$key]['groups'][$itemGroup] ?? 0) + $cost;
     }
 
-    private function chartGroups(array $groups): array
+    private function chartGroups(array $groups, bool $negativeMeansCredit = true): array
     {
-        $positiveTotal = array_sum(array_filter($groups, fn ($value) => $value > 0));
+        $absoluteTotal = array_sum(array_map('abs', $groups));
         $result = [];
-        foreach ($groups as $label => $value) $result[] = ['label'=>$label,'value'=>$value,'percentage'=>$value > 0 && $positiveTotal > 0 ? $value / $positiveTotal * 100 : 0,'credit'=>$value < 0];
+        foreach ($groups as $label => $value) $result[] = ['label'=>$label,'value'=>$value,'percentage'=>$absoluteTotal > 0 ? abs($value) / $absoluteTotal * 100 : 0,'credit'=>$negativeMeansCredit && $value < 0];
         usort($result, fn ($a, $b) => abs($b['value']) <=> abs($a['value']));
         return $result;
     }
@@ -213,6 +287,25 @@ class EquipmentCostService
     private function equipmentActivities(): array
     {
         return ['Coal Hauling BUA to Port','Coal Hauling BUA to WP','Coal Hauling WP to Port','Coal Loading BUA to Port','Coal Loading BUA to WP','Coal Loading WP to Port'];
+    }
+
+    private function d365ActivityNames(): array
+    {
+        $names = [];
+        foreach (DB::table('d365_typed_records')->where('entity_key', 'dimension_values')->get(['payload']) as $row) {
+            $payload = json_decode((string) $row->payload, true) ?: [];
+            if (($payload['FinancialDimension'] ?? null) !== 'Activity') continue;
+            $code = trim((string) ($payload['DimensionValue'] ?? ''));
+            if ($code !== '') $names[$code] = trim((string) ($payload['Description'] ?? ''));
+        }
+        return $names;
+    }
+
+    private function activityDimensionCode(string $displayValue): ?string
+    {
+        preg_match_all('/(?<![0-9])(4[0-9]{6})(?![0-9])/', $displayValue, $matches);
+        $codes = array_values(array_unique($matches[1] ?? []));
+        return count($codes) === 1 ? $codes[0] : null;
     }
 
     private function canonicalActivity(string $activity): string

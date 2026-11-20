@@ -54,6 +54,7 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureDashboardAccess::class])->
     Route::get('/overview-daily', [DashboardController::class, 'overviewDaily']);
     Route::get('/overview-allocation', [DashboardController::class, 'overviewAllocation']);
     Route::get('/equipment-cost', [DashboardController::class, 'equipmentCost']);
+    Route::put('/equipment-cost/mappings/{activityCode}', [DashboardController::class, 'saveEquipmentCostMapping']);
     Route::get('/cost-per-mt', [DashboardController::class, 'costPerMt']);
     Route::get('/excel-cost-example', [DashboardController::class, 'excelCostExample']);
     Route::get('/db-cost-summary', [DashboardController::class, 'dbCostSummary']);

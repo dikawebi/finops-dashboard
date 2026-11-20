@@ -293,6 +293,26 @@ class DashboardController extends Controller
         return response()->json(['success'=>true,'data'=>$service->build($period, $mode)]);
     }
 
+    public function saveEquipmentCostMapping(Request $request, string $activityCode): JsonResponse
+    {
+        abort_unless((bool) preg_match('/^4\d{6}$/', $activityCode), 422, 'Invalid D365 Activity code.');
+        $activities = [
+            'Coal Hauling BUA to Port', 'Coal Hauling BUA to WP', 'Coal Hauling WP to Port',
+            'Coal Loading BUA to Port', 'Coal Loading BUA to WP', 'Coal Loading WP to Port',
+        ];
+        $validated = $request->validate([
+            'target_activity' => ['nullable', 'string', 'in:'.implode(',', $activities)],
+        ]);
+
+        \Illuminate\Support\Facades\DB::table('equipment_activity_mappings')->upsert(
+            [['activity_code' => $activityCode, 'target_activity' => $validated['target_activity'] ?? null, 'created_at' => now(), 'updated_at' => now()]],
+            ['activity_code'],
+            ['target_activity', 'updated_at'],
+        );
+
+        return response()->json(['success' => true, 'activity_code' => $activityCode, 'target_activity' => $validated['target_activity'] ?? null]);
+    }
+
     public function integration(): JsonResponse
     {
         $d365 = config('services.d365');
