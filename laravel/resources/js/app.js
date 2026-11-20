@@ -936,71 +936,103 @@ async function inventory(period, mode) {
 
 async function equipmentCost(period, mode) {
     const data = await api(`/api/equipment-cost?period=${encodeURIComponent(period)}&mode=${encodeURIComponent(mode)}`);
-    const activityOptions = (data.activities || []).map(item => `<option value="${esc(item.activity)}">${esc(item.activity)}</option>`).join('');
+    const previousActivity = $('#equipmentActivityFilter')?.value || '';
     const d365Amount = data.currency !== 'USD';
     const amountLabel = data.currencyLabel || 'USD';
     const formatAmount = value => d365Amount ? `${esc(amountLabel)} ${signedNumber(Number(value || 0), 2)}` : money(value);
     const moneyOrMissing = value => value === null || value === undefined ? `${esc(amountLabel)} -` : formatAmount(value);
-    const mapTargets = ['Coal Hauling BUA to Port','Coal Hauling BUA to WP','Coal Hauling WP to Port','Coal Loading BUA to Port','Coal Loading BUA to WP','Coal Loading WP to Port'];
-    const mappingRows = (data.activityMappings || []).map(item => `<tr><td>${esc(item.activityCode || '—')}</td><td>${esc(item.description)}</td><td class="num">${qty(item.transactionCount)}</td><td class="num">${formatAmount(item.costAmount)}</td><td class="num">${qty(item.mappedByProduction)}</td><td class="num">${qty(item.mappedByCrosswalk)}</td><td><select data-equipment-map-select="${esc(item.activityCode || '')}" ${item.activityCode ? '' : 'disabled'}><option value="">Unmapped / no approved route</option>${mapTargets.map(target => `<option value="${esc(target)}" ${item.targetActivity === target ? 'selected' : ''}>${esc(target)}</option>`).join('')}</select></td><td><button class="btn btn-outline btn-small" type="button" data-equipment-map-save="${esc(item.activityCode || '')}" ${item.activityCode ? '' : 'disabled'}>Save</button></td></tr>`).join('') || '<tr><td colspan="8" class="table-empty">No D365 Activity rows for this period.</td></tr>';
-    const mappingPanel = d365Amount ? card('D365 Activity Crosswalk', `<p class="integration-note">Production unit + month is the first mapping rule. This crosswalk is used only when production does not identify one activity. Rows without a valid match remain Unmapped.</p><div class="equipment-table-tools"><span>${qty(data.sources?.inventory?.mappedByProduction || 0)} mapped from production · ${qty(data.sources?.inventory?.mappedByCrosswalk || 0)} from crosswalk · ${qty(data.unmapped?.transactionCount || 0)} Unmapped</span><span id="equipmentMappingStatus" role="status"></span></div><div class="table-responsive equipment-cost-table"><table class="table-accounting"><thead><tr><th>Activity code</th><th>D365 Activity</th><th>Transactions</th><th>CostAmount</th><th>Production match</th><th>Crosswalk match</th><th>Equipment activity</th><th></th></tr></thead><tbody>${mappingRows}</tbody></table></div>`) : '';
+    const activities = data.activities || [];
+    const activityOptions = activities.map(item => `<option value="${esc(item.activity)}">${esc(item.activity)}</option>`).join('');
+    const mapTargets = [...new Set(activities.map(item => item.activity).filter(name => name && name !== 'Unmapped'))].sort((a, b) => a.localeCompare(b));
+    const mappingRows = (data.activityMappings || []).map(item => `<tr><td>${esc(item.activityCode || '—')}</td><td>${esc(item.description)}</td><td class="num">${qty(item.transactionCount)}</td><td class="num">${formatAmount(item.costAmount)}</td><td class="num">${qty(item.mappedByProduction)}</td><td class="num">${qty(item.mappedByDimension)}</td><td class="num">${qty(item.mappedByCrosswalk)}</td><td><select data-equipment-map-select="${esc(item.activityCode || '')}" ${item.activityCode ? '' : 'disabled'}><option value="">Unmapped</option>${mapTargets.map(target => `<option value="${esc(target)}" ${item.targetActivity === target ? 'selected' : ''}>${esc(target)}</option>`).join('')}</select></td><td><button class="btn btn-outline btn-small" type="button" data-equipment-map-save="${esc(item.activityCode || '')}" ${item.activityCode ? '' : 'disabled'}>Save</button></td></tr>`).join('') || '<tr><td colspan="9" class="table-empty">No D365 Activity rows for this period.</td></tr>';
+    const mappingPanel = d365Amount ? `<details class="equipment-mapping-disclosure"><summary>Review D365 Activity mapping <span>${qty(data.sources?.inventory?.mappedByProduction || 0)} production · ${qty(data.sources?.inventory?.mappedByDimension || 0)} D365 Activity · ${qty(data.sources?.inventory?.mappedByCrosswalk || 0)} crosswalk · ${qty(data.unmapped?.transactionCount || 0)} Unmapped</span></summary><p class="integration-note">Production unit + month is applied first when it identifies one activity. Otherwise the D365 Activity dimension supplies the activity; saved crosswalks can override that fallback.</p><div id="equipmentMappingStatus" class="equipment-mapping-status" role="status"></div><div class="table-responsive equipment-cost-table"><table class="table-accounting"><thead><tr><th>Activity code</th><th>D365 Activity</th><th>Transactions</th><th>CostAmount</th><th>Production</th><th>D365 dimension</th><th>Crosswalk</th><th>Equipment activity</th><th></th></tr></thead><tbody>${mappingRows}</tbody></table></div></details>` : '';
     const inventorySource = data.sources?.inventory;
-    $('#pageContent').innerHTML = `<div class="equipment-page-header"><div><span>ACTIVITY OVERVIEW</span><h2>Production &amp; cost</h2><p>Compare production and inventory costs by activity.</p></div><b>INHOUSE MINING</b></div><div class="equipment-filters"><label>Activity<select id="equipmentActivityFilter"><option value="all">All activities</option>${activityOptions}</select></label><label>Search Unit<input id="equipmentUnitSearch" type="search" placeholder="Type a unit code"></label></div>${(data.notes || []).map(note => `<div class="financial-notice equipment-note">${esc(note)}</div>`).join('')}<div class="equipment-source-line"><span>Inventory: ${inventorySource?.available ? (d365Amount ? `${esc(inventorySource.source)} · ${qty(inventorySource.transactionCount || 0)} posted transactions` : 'historical baseline loaded') : inventorySource?.source ? `${esc(inventorySource.source)} · no posted transactions for this period` : 'not available'}</span><span>Production: ${esc(data.sources?.production || 'Google Sheets')}</span><span>${d365Amount ? 'D365 currency field: not provided' : `Employee Cost / Fuel: ${data.sources?.employeeAndFuel?.available ? `DB sheet · ${esc(data.sources.employeeAndFuel.year)}` : 'DB reference unavailable for this period'}`}</span></div>${mappingPanel}<div id="equipmentActivityCards"></div>${card('Equipment by Activity', '<div class="equipment-table-tools"><span id="equipmentUnitCount" class="integration-note"></span><span class="integration-note">Search applies to this table only.</span></div><div id="equipmentUnitTable"></div>')}`;
+    const sourceStatus = d365Amount
+        ? `${qty(inventorySource?.transactionCount || 0)} posted D365 cost transactions · Production from Google Sheets, Inhouse Mining · ${qty(data.productionCount || 0)} production records`
+        : `${esc(inventorySource?.path || 'Historical inventory baseline')} · Production from Google Sheets, Inhouse Mining`;
+    const notes = (data.notes || []).map(note => `<div class="financial-notice equipment-note">${esc(note)}</div>`).join('');
+    $('#pageContent').innerHTML = `<section class="equipment-report"><div class="section-header equipment-report-header"><div class="section-title"><h2>Equipment Cost — Inhouse Mining</h2><p>Review production and equipment costs by activity.</p></div></div><details class="equipment-method"><summary>How to read this report</summary><p>Production quantities are read from the selected month in Google Sheets, sheet Inhouse Mining. For October 2026 onward, every activity cost is calculated from posted D365 Inventory Movement Journal Entries using the original CostAmount sign. Unit and month production matches follow the localhost:3000 approach; unmatched activity labels use the D365 Activity dimension or the reviewed crosswalk. D365 does not provide a currency code in this entity, so CostAmount is not labeled USD.</p></details><div class="equipment-filters"><label>Activity<select id="equipmentActivityFilter"><option value="">All activities</option>${activityOptions}</select></label><label>Unit<input id="equipmentUnitSearch" type="search" placeholder="Search unit"></label><button id="equipmentRefresh" class="btn btn-outline" type="button">Refresh</button></div><div class="equipment-source-line"><span>${sourceStatus}</span><span>${esc(amountLabel)} currency: ${d365Amount ? 'not specified by D365 entity' : 'USD'}</span></div>${notes}<section class="equipment-overview"><div class="equipment-section-heading"><div><span>ACTIVITY OVERVIEW</span><h3>Production &amp; cost</h3><p>Production and financial activities · Scroll horizontally to see more activities.</p></div><span class="equipment-section-tag">INHOUSE MINING</span></div><div id="equipmentActivityCards" class="equipment-activity-strip"></div></section><section class="equipment-unit-section"><h3>Unit Cost and Production</h3><p id="equipmentUnitNote" class="equipment-unit-note"></p><div class="equipment-table-tools"><span id="equipmentUnitCount" class="integration-note"></span><span class="integration-note">Item details are shown from D365 ItemNumber.</span></div><div id="equipmentUnitTable"></div></section>${mappingPanel}</section>`;
+    if (previousActivity && [...$('#equipmentActivityFilter').options].some(option => option.value === previousActivity)) $('#equipmentActivityFilter').value = previousActivity;
 
     const renderActivities = () => {
         const selected = $('#equipmentActivityFilter').value;
-        const activities = (data.activities || []).filter(item => selected === 'all' || item.activity === selected);
-        const cards = activities.map(item => {
+        const ordered = [...activities].sort((a, b) => {
+            const priority = name => /^coal hauling\b/i.test(name) ? 0 : /^coal loading\b/i.test(name) ? 1 : 2;
+            return priority(a.activity) - priority(b.activity)
+                || Number(b.hasProduction) - Number(a.hasProduction)
+                || Math.abs(Number(b.totalCostAmount || 0)) - Math.abs(Number(a.totalCostAmount || 0))
+                || a.activity.localeCompare(b.activity);
+        });
+        const cards = ordered.map(item => {
             const groups = item.itemGroups || [];
+            const topGroups = groups.slice(0, 4);
+            if (groups.length > topGroups.length) {
+                const remaining = groups.slice(topGroups.length);
+                topGroups.push({ label: `Other items (${remaining.length})`, value: remaining.reduce((sum, group) => sum + Number(group.value || 0), 0), percentage: remaining.reduce((sum, group) => sum + Number(group.percentage || 0), 0) });
+            }
             const totalAbsolute = groups.reduce((sum, group) => sum + Math.abs(Number(group.value || 0)), 0);
             let angle = 0;
             const colors = ['#1769e0', '#0e9f9a', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b', '#14b8a6'];
-            const stops = groups.filter(group => Number(group.value) !== 0).map((group, index) => {
+            const stops = topGroups.filter(group => Number(group.value) !== 0).map((group, index) => {
                 const start = angle; angle += totalAbsolute ? Math.abs(Number(group.value)) / totalAbsolute * 360 : 0;
                 return `${colors[index % colors.length]} ${start}deg ${angle}deg`;
             });
-            const legend = groups.map((group, index) => `<div><i style="--equipment-color:${group.value < 0 ? '#b42318' : colors[index % colors.length]}"></i><span>${esc(group.label)}${group.credit ? ' · Credit' : ''}</span><b>${formatAmount(group.value)}</b><em>${qty(group.percentage)}%</em></div>`).join('') || `<div><i style="--equipment-color:#dce4ee"></i><span>EMPLOYEE COST (DB)</span><b>—</b><em>—</em></div>`;
-            const chart = `<div class="equipment-breakdown"><div class="equipment-chart-heading"><b>COST BREAKDOWN</b><b>${esc(amountLabel)}</b></div><div class="equipment-chart-row"><div class="equipment-donut" style="--equipment-chart:${stops.length ? stops.join(',') : '#e2e8f0 0deg 360deg'}"></div><div class="equipment-legend">${legend}</div></div></div>`;
-            const subtitle = item.hasProduction ? 'Production available' : 'Production unavailable';
-            const costHeading = d365Amount ? 'D365 INVENTORY COST · RAW SIGN' : 'INVENTORY + EMPLOYEE COST';
-            const footnote = d365Amount ? `${subtitle} · D365 CostAmount is shown with its source sign; currency is not exposed by this entity.` : `Includes Employee Cost from DB · ${subtitle} · Employee Cost is not allocated to units${item.employeeCostUSD !== null && !item.employeeCostComplete ? ' · Employee Cost incomplete' : ''}`;
-            return `<article class="equipment-activity-card"><div class="equipment-activity-title"><div><span>ACTIVITY</span><h3>${esc(item.activity)}</h3></div><div class="equipment-total-cost"><span>${costHeading}</span><b>${moneyOrMissing(item.totalCostAmount)}</b></div></div><div class="equipment-kpis"><div><span>Production</span><b>${item.productionMT === null ? '—' : `${qty(item.productionMT)} MT`}</b></div><div><span>Units</span><b>${item.unitCount ? qty(item.unitCount) : '—'}</b></div><div><span>${d365Amount ? 'CostAmount / MT' : 'Cost / MT'}</span><b>${moneyOrMissing(item.inventoryCostPerMT)}</b></div></div>${chart}<p class="equipment-activity-footnote">${footnote}</p></article>`;
+            const legend = topGroups.map((group, index) => `<div><i style="--equipment-color:${group.value < 0 ? '#b42318' : colors[index % colors.length]}"></i><span title="${esc(group.label)}">${esc(group.label)}</span><b>${formatAmount(group.value)}</b><em>${qty(group.percentage)}%</em></div>`).join('') || `<div><i style="--equipment-color:#dce4ee"></i><span>${d365Amount ? 'No item detail' : 'No cost detail'}</span><b>—</b><em>—</em></div>`;
+            const chart = `<div class="equipment-breakdown"><div class="equipment-chart-heading"><b>${d365Amount ? 'TOP D365 ITEMS' : 'COST BREAKDOWN'}</b><b>${esc(amountLabel)}</b></div><div class="equipment-chart-row"><div class="equipment-donut" style="--equipment-chart:${stops.length ? stops.join(',') : '#e2e8f0 0deg 360deg'}"></div><div class="equipment-legend">${legend}</div></div></div>`;
+            const productionAvailable = item.productionMT !== null && item.productionMT > 0;
+            const perMt = productionAvailable && item.totalCostAmount !== null ? Number(item.totalCostAmount) / Number(item.productionMT) : null;
+            return `<article class="equipment-activity-card ${selected === item.activity ? 'equipment-card-selected' : ''}" data-equipment-activity="${esc(item.activity)}" role="button" tabindex="0" aria-pressed="${selected === item.activity}"><div class="equipment-activity-title"><div><span>ACTIVITY</span><h3>${esc(item.activity)}</h3></div><div class="equipment-total-cost"><span>${d365Amount ? 'D365 INVENTORY COST' : 'INVENTORY COST'}</span><b>${moneyOrMissing(item.totalCostAmount)}</b></div></div><div class="equipment-kpis"><div><span>Production</span><b>${productionAvailable ? `${qty(item.productionMT)} MT` : '—'}</b></div><div><span>Units</span><b>${item.unitCount ? qty(item.unitCount) : '—'}</b></div><div><span>Cost / MT</span><b>${perMt === null ? '—' : moneyOrMissing(perMt)}</b></div></div>${chart}<p class="equipment-activity-footnote">${d365Amount ? 'CostAmount retains its D365 sign · item breakdown grouped by ItemNumber' : 'Historical baseline cost · production from Inhouse Mining'}</p></article>`;
         }).join('');
-        $('#equipmentActivityCards').innerHTML = `<div class="equipment-activity-grid">${cards || '<div class="integration-note">No activity matches the selected period.</div>'}</div>`;
+        $('#equipmentActivityCards').innerHTML = cards || '<div class="integration-note">No activity matches the selected period.</div>';
+        $('#equipmentActivityCards').querySelectorAll('[data-equipment-activity]').forEach(element => {
+            const selectActivity = () => {
+                $('#equipmentActivityFilter').value = selected === element.dataset.equipmentActivity ? '' : element.dataset.equipmentActivity;
+                renderActivities();
+                renderUnits();
+            };
+            element.addEventListener('click', selectActivity);
+            element.addEventListener('keydown', event => {
+                if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectActivity(); }
+            });
+        });
     };
     const renderUnits = () => {
         const query = $('#equipmentUnitSearch').value.trim().toUpperCase();
-        const rows = (data.units || []).filter(row => !query || row.unit.toUpperCase().includes(query));
-        $('#equipmentUnitCount').textContent = `${qty(rows.length)} of ${qty((data.units || []).length)} unit rows`;
+        const selected = $('#equipmentActivityFilter').value;
+        const allRows = data.units || [];
+        const rows = allRows.filter(row => (!selected || row.activity === selected) && (!query || row.unit.toUpperCase().includes(query)));
+        $('#equipmentUnitCount').textContent = `${qty(rows.length)} of ${qty(allRows.filter(row => !selected || row.activity === selected).length)} unit/activity rows`;
+        $('#equipmentUnitNote').textContent = `${selected ? `Showing units for ${selected}.` : 'Select an activity card or use the Activity filter.'} Production quantity is from Google Sheets · Inhouse Mining. Transaction cost and item detail are from posted D365 sync.`;
         const html = rows.map(row => {
-            const groupDetails = (row.itemGroups || []).map(group => `${esc(group.label)}: ${formatAmount(group.value)}`).join('<br>') || '—';
-            const fuelEstimate = row.fuelCostEstimateUSD === null || row.fuelCostEstimateUSD === undefined ? 'USD -' : money(row.fuelCostEstimateUSD);
-            return `<tr><td>${esc(row.activity)}</td><td><b>${esc(row.unit)}</b></td><td class="num">${row.haulingMT === null ? '—' : qty(row.haulingMT)}</td><td class="num">${row.loaderMT === null ? '—' : qty(row.loaderMT)}</td><td class="num">${row.fuelLitres === null ? '—' : qty(row.fuelLitres)}</td><td class="num">${row.fuelPerHaulingMT === null ? '—' : qty(row.fuelPerHaulingMT)}</td><td class="num">${row.fuelPerLoaderMT === null ? '—' : qty(row.fuelPerLoaderMT)}</td><td class="num">${fuelEstimate}</td><td class="num">${moneyOrMissing(row.otherInventoryCostAmount)}</td><td class="num"><b>${moneyOrMissing(row.totalInventoryCostAmount)}</b></td><td>${groupDetails}</td></tr>`;
+            const groupDetails = (row.itemGroups || []).slice(0, 8).map(group => `<div class="equipment-item-line"><span>${esc(group.label)}</span><b>${formatAmount(group.value)}</b></div>`).join('') || '—';
+            const production = Number(row.haulingMT || row.loaderMT || 0);
+            return `<tr><td><b>${esc(row.unit)}</b></td><td>${esc(row.activity)}</td><td class="num">${production > 0 ? `${qty(production)} MT` : '—'}</td><td class="num">${moneyOrMissing(row.totalInventoryCostAmount)}</td><td class="num">${qty(row.transactionCount || 0)}</td><td><details class="equipment-item-details"><summary>${(row.itemGroups || []).length} items</summary><div>${groupDetails}</div></details></td></tr>`;
         }).join('');
-        $('#equipmentUnitTable').innerHTML = `<div class="table-responsive equipment-cost-table"><table class="table-accounting"><thead><tr><th>Activity</th><th>Unit</th><th>Hauling MT</th><th>Loader MT</th><th>Fuel litres</th><th>Fuel / Hauling MT</th><th>Fuel / Loader MT</th><th>Est. fuel USD</th><th>Other inventory ${esc(amountLabel)}</th><th>Total inventory ${esc(amountLabel)}</th><th>${d365Amount ? 'Item number detail' : 'Item group detail'}</th></tr></thead><tbody>${html || '<tr><td colspan="11">No units found for this period or search.</td></tr>'}</tbody></table></div>`;
+        $('#equipmentUnitTable').innerHTML = `<div class="table-responsive equipment-cost-table"><table class="table-accounting"><thead><tr><th>Unit</th><th>Activity</th><th>Production (MT)</th><th>${d365Amount ? 'D365 CostAmount' : 'Inventory Cost (USD)'}</th><th>Transactions</th><th>${d365Amount ? 'D365 ItemNumber detail' : 'Item group detail'}</th></tr></thead><tbody>${html || '<tr><td colspan="6">No matching equipment data.</td></tr>'}</tbody></table></div>`;
     };
-        $('#equipmentActivityFilter').addEventListener('change', renderActivities);
+    $('#equipmentActivityFilter').addEventListener('change', () => { renderActivities(); renderUnits(); });
     $('#equipmentUnitSearch').addEventListener('input', renderUnits);
-        $('#pageContent').querySelectorAll('[data-equipment-map-save]').forEach(button => button.addEventListener('click', async () => {
-            const code = button.dataset.equipmentMapSave;
-            const select = $('#pageContent').querySelector(`[data-equipment-map-select="${CSS.escape(code)}"]`);
-            const status = $('#equipmentMappingStatus');
-            button.disabled = true;
-            try {
-                const response = await fetch(`/api/equipment-cost/mappings/${encodeURIComponent(code)}`, { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }, body: JSON.stringify({ target_activity: select.value || null }) });
-                const result = await response.json().catch(() => null);
-                if (!response.ok) throw new Error(result?.message || `Request failed: ${response.status}`);
-                if (status) status.textContent = `Saved mapping for ${code}.`;
-                await equipmentCost(period, mode);
-                const refreshedStatus = $('#equipmentMappingStatus');
-                if (refreshedStatus) refreshedStatus.textContent = `Saved mapping for ${code}.`;
-                return;
-            } catch (error) {
-                if (status) status.textContent = error.message || 'Could not save crosswalk.';
-                button.disabled = false;
-            }
-        }));
-    renderActivities(); renderUnits();
+    $('#equipmentRefresh').addEventListener('click', () => equipmentCost(period, mode));
+    $('#pageContent').querySelectorAll('[data-equipment-map-save]').forEach(button => button.addEventListener('click', async () => {
+        const code = button.dataset.equipmentMapSave;
+        const select = $('#pageContent').querySelector(`[data-equipment-map-select="${CSS.escape(code)}"]`);
+        const status = $('#equipmentMappingStatus');
+        button.disabled = true;
+        try {
+            const response = await fetch(`/api/equipment-cost/mappings/${encodeURIComponent(code)}`, { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }, body: JSON.stringify({ target_activity: select.value || null }) });
+            const result = await response.json().catch(() => null);
+            if (!response.ok) throw new Error(result?.message || `Request failed: ${response.status}`);
+            if (status) status.textContent = `Saved mapping for ${code}.`;
+            await equipmentCost(period, mode);
+            const refreshedStatus = $('#equipmentMappingStatus');
+            if (refreshedStatus) refreshedStatus.textContent = `Saved mapping for ${code}.`;
+        } catch (error) {
+            if (status) status.textContent = error.message || 'Could not save crosswalk.';
+            button.disabled = false;
+        }
+    }));
+    renderActivities();
+    renderUnits();
 }
 
 async function financial(period, mode) {

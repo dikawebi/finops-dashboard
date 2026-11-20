@@ -296,12 +296,8 @@ class DashboardController extends Controller
     public function saveEquipmentCostMapping(Request $request, string $activityCode): JsonResponse
     {
         abort_unless((bool) preg_match('/^4\d{6}$/', $activityCode), 422, 'Invalid D365 Activity code.');
-        $activities = [
-            'Coal Hauling BUA to Port', 'Coal Hauling BUA to WP', 'Coal Hauling WP to Port',
-            'Coal Loading BUA to Port', 'Coal Loading BUA to WP', 'Coal Loading WP to Port',
-        ];
         $validated = $request->validate([
-            'target_activity' => ['nullable', 'string', 'in:'.implode(',', $activities)],
+            'target_activity' => ['nullable', 'string', 'max:128'],
         ]);
 
         \Illuminate\Support\Facades\DB::table('equipment_activity_mappings')->upsert(
