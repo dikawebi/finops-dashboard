@@ -280,4 +280,7 @@ body{min-height:100vh}.app-shell{display:flex;min-height:100vh;background:var(--
 .equipment-fuel-rate-meta b{color:#345478}
 .equipment-fuel-rate-meta span{color:#8491a3}
 .equipment-fuel-rate #equipmentFuelRateStatus{grid-column:2/-1;min-height:15px;color:#16834b;font-size:10px}
+.equipment-fuel-rate{grid-template-columns:minmax(220px,1fr) minmax(140px,180px) minmax(140px,180px) minmax(120px,auto) auto}
+.equipment-fuel-rate-copy small{display:block;margin-top:4px;color:#8794a6;font-size:9px}
+@media(max-width:1050px){.equipment-fuel-rate{grid-template-columns:minmax(190px,1fr) minmax(140px,180px) minmax(140px,180px)}.equipment-fuel-rate-meta{grid-column:2}.equipment-fuel-rate button{grid-column:3}.equipment-fuel-rate #equipmentFuelRateStatus{grid-column:1/-1}}
 @media(max-width:760px){.equipment-fuel-rate{grid-template-columns:1fr 1fr;align-items:end}.equipment-fuel-rate-copy{grid-column:1/-1}.equipment-fuel-rate-meta{align-self:center}.equipment-fuel-rate #equipmentFuelRateStatus{grid-column:1/-1}.equipment-fuel-rate button{min-height:36px}}

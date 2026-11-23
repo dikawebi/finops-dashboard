@@ -82,12 +82,15 @@ translations.push(
 translations.push(
     ['MONTHLY COST PARAMETER', 'PARAMETER BIAYA BULANAN'],
     ['Fuel rate', 'Tarif bahan bakar'],
-    ['Fuel amount is recalculated as fuel quantity (L) × rate (USD/L). Other item group amounts keep their source cost.', 'Nilai biaya Fuel dihitung ulang dari kuantitas (L) × tarif (USD/L). Nilai kelompok barang lain tetap memakai biaya dari sumbernya.'],
-    ['USD per litre', 'USD per liter'],
-    ['Save rate', 'Simpan tarif'],
-    ['No fuel rows recalculated yet', 'Belum ada baris Fuel yang dihitung ulang'],
-    ['Enter a valid rate in USD per litre.', 'Masukkan tarif USD per liter yang valid.'],
-    ['Saving rate…', 'Menyimpan tarif…']
+    ['Fuel amount (USD) = quantity (L) × fuel rate (IDR/L) ÷ exchange rate (IDR/USD). Both inputs are required; other item groups keep their source cost.', 'Jumlah fuel (USD) = kuantitas (L) × tarif fuel (IDR/L) ÷ kurs (IDR/USD). Kedua input wajib diisi; kelompok barang lain tetap menggunakan biaya sumber.'],
+    ['IDR per litre', 'IDR per liter'],
+    ['IDR per USD', 'IDR per USD'],
+    ['Save rates', 'Simpan tarif'],
+    ['Fuel costs use source amount until both rates are set', 'Biaya fuel memakai nilai sumber sampai kedua tarif diisi'],
+    ['Enter a valid fuel rate in IDR per litre.', 'Masukkan tarif fuel IDR per liter yang valid.'],
+    ['Enter the monthly exchange rate in IDR per USD.', 'Masukkan kurs bulanan IDR per USD.'],
+    ['Saving rate…', 'Menyimpan tarif…'],
+    ['No Google Sheets USD/L reference', 'Tidak ada referensi USD/L dari Google Sheets']
 );
 
 const preserveSourceTerms = new Set([
