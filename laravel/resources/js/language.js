@@ -80,17 +80,13 @@ translations.push(
 );
 
 translations.push(
-    ['MONTHLY COST PARAMETER', 'PARAMETER BIAYA BULANAN'],
     ['Fuel rate', 'Tarif bahan bakar'],
-    ['Fuel amount (USD) = quantity (L) × fuel rate (IDR/L) ÷ exchange rate (IDR/USD). Both inputs are required; other item groups keep their source cost.', 'Jumlah fuel (USD) = kuantitas (L) × tarif fuel (IDR/L) ÷ kurs (IDR/USD). Kedua input wajib diisi; kelompok barang lain tetap menggunakan biaya sumber.'],
-    ['IDR per litre', 'IDR per liter'],
-    ['IDR per USD', 'IDR per USD'],
-    ['Save rates', 'Simpan tarif'],
-    ['Fuel costs use source amount until both rates are set', 'Biaya fuel memakai nilai sumber sampai kedua tarif diisi'],
-    ['Enter a valid fuel rate in IDR per litre.', 'Masukkan tarif fuel IDR per liter yang valid.'],
-    ['Enter the monthly exchange rate in IDR per USD.', 'Masukkan kurs bulanan IDR per USD.'],
-    ['Saving rate…', 'Menyimpan tarif…'],
-    ['No Google Sheets USD/L reference', 'Tidak ada referensi USD/L dari Google Sheets']
+    ['Unavailable for selected period', 'Tidak tersedia untuk periode terpilih'],
+    ['Google Sheets, DB', 'Google Sheets, DB'],
+    ['Fuel amount = D365 fuel quantity (L) × monthly USD/L rate', 'Jumlah fuel = kuantitas fuel D365 (L) × rate USD/L bulanan'],
+    ['transactions recalculated', 'transaksi dihitung ulang'],
+    ['monthly USD/L rate from Google Sheets · DB, matching localhost:3000.', 'rate USD/L bulanan dari Google Sheets · DB, sama seperti localhost:3000.'],
+    ['. Other item groups use posted D365 CostAmount.', '. Kelompok item lain memakai CostAmount D365 posted.']
 );
 
 const preserveSourceTerms = new Set([
