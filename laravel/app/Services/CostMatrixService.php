@@ -18,17 +18,23 @@ class CostMatrixService
         'allCost','cek','valMining','valHauling','valWP','valPort','valNotValuated','totalValuation',
         'costMining','costHauling','costHaulingBUAToWP','costHaulingBUAToPort','costHaulingWPToPort',
         'unallocatedHauling','costWP','costPort','costGA','costSelling','totalCosting','totalCOGP',
-        'directGA','sellingExpense','totalExpense',
+        'directGA','sellingExpense','financeCost','royaltyCost','totalExpense',
     ];
 
     public function __construct(private readonly D365AllocationService $allocation) {}
 
-    public function build(string $period, string $mode = 'mtd', bool $includeAccruals = true): array
+    public function build(string $period, string $mode = 'mtd', bool $includeAccruals = true, string $reportType = 'external'): array
     {
+        $reportType = $reportType === 'internal' ? 'internal' : 'external';
         $periods = $this->periods($period, $mode);
         $fingerprint = $this->sourceFingerprint($periods);
-        $key = 'cost-matrix:'.hash('sha256', $period.'|'.$mode.'|'.(int) $includeAccruals.'|'.$fingerprint);
-        return Cache::remember($key, now()->addSeconds(60), fn (): array => $this->compute($period, $mode, $includeAccruals));
+        $key = 'cost-matrix:'.hash('sha256', $period.'|'.$mode.'|'.(int) $includeAccruals.'|'.$reportType.'|'.$fingerprint);
+        return Cache::remember($key, now()->addSeconds(60), function () use ($period, $mode, $includeAccruals, $reportType): array {
+            $data = $this->compute($period, $mode, $includeAccruals);
+            if ($reportType === 'internal') $this->applyInternalRules($data);
+            $data['reportType'] = $reportType;
+            return $data;
+        });
     }
 
     private function compute(string $period, string $mode, bool $includeAccruals): array
@@ -201,8 +207,10 @@ class CostMatrixService
         // 7–9 always report to GA regardless of allocation dimensions.
         if (in_array($head, ['7','8','9'], true)) {
             $row['costGA'] = bcadd($row['costGA'], $amount, 6);
+            $row['financeCost'] = bcadd($row['financeCost'], $amount, 6);
             return;
         }
+        if (in_array((string) $entry->main_account, ['6000003','6000004'], true)) $row['royaltyCost'] = bcadd($row['royaltyCost'], $amount, 6);
 
         $isDirect = preg_replace('/[\s_-]+/', '', $costing) === 'directexpense';
         if ($isDirect) {
@@ -233,8 +241,8 @@ class CostMatrixService
         $row['unallocatedHauling'] = bcsub($row['costHauling'], $this->sum([$row['costHaulingBUAToWP'],$row['costHaulingBUAToPort'],$row['costHaulingWPToPort']]), 6);
         $row['totalCosting'] = $this->sum([$row['costMining'],$row['costHauling'],$row['costWP'],$row['costPort'],$row['costGA'],$row['costSelling']]);
         $row['totalCOGP'] = $this->sum([$row['costMining'],$row['costHauling'],$row['costWP'],$row['costPort']]);
-        $row['directGA'] = $this->sum([$row['valNotValuated'],$row['costGA']]);
-        $row['sellingExpense'] = $row['costSelling'];
+        $row['directGA'] = bcsub($this->sum([$row['valNotValuated'],$row['costGA']]), $row['financeCost'], 6);
+        $row['sellingExpense'] = bcsub($row['costSelling'], $row['royaltyCost'], 6);
         $row['totalExpense'] = $this->sum([$row['totalValuation'],$row['costGA'],$row['costSelling']]);
         $row['cek'] = '0';
     }
@@ -243,10 +251,29 @@ class CostMatrixService
     {
         $grand['unallocatedHauling'] = bcsub($grand['costHauling'], $this->sum([$grand['costHaulingBUAToWP'],$grand['costHaulingBUAToPort'],$grand['costHaulingWPToPort']]), 6);
         $grand['totalCOGP'] = $this->sum([$grand['costMining'],$grand['costHauling'],$grand['costWP'],$grand['costPort']]);
-        $grand['directGA'] = $this->sum([$grand['valNotValuated'],$grand['costGA']]);
-        $grand['sellingExpense'] = $grand['costSelling'];
+        $grand['directGA'] = bcsub($this->sum([$grand['valNotValuated'],$grand['costGA']]), $grand['financeCost'], 6);
+        $grand['sellingExpense'] = bcsub($grand['costSelling'], $grand['royaltyCost'], 6);
         $grand['totalExpense'] = $this->sum([$grand['totalValuation'],$grand['costGA'],$grand['costSelling']]);
         return $grand;
+    }
+
+    private function applyInternalRules(array &$data): void
+    {
+        // The reference internal view excludes Wash Plant Rent from production cost.
+        $rent = collect($data['rows'])->first(static fn (array $row): bool => (string) ($row['code'] ?? '') === '5000105' && !($row['isParent'] ?? false));
+        $excluded = (float) ($rent['costWP'] ?? 0);
+        if (abs($excluded) > 0.000001) {
+            $parentCode = (string) ($rent['parent'] ?? '');
+            foreach ($data['rows'] as &$row) {
+                if ((string) ($row['code'] ?? '') === '5000105' || (($row['isParent'] ?? false) && (string) ($row['code'] ?? '') === $parentCode)) {
+                    foreach (['costWP','totalCOGP','totalCosting','allCost'] as $field) $row[$field] = bcsub((string) ($row[$field] ?? 0), (string) $excluded, 6);
+                }
+            }
+            unset($row);
+            foreach (['costWP','totalCOGP','totalCosting','allCost'] as $field) $data['grandTotal'][$field] = bcsub((string) ($data['grandTotal'][$field] ?? 0), (string) $excluded, 6);
+        }
+        $data['excludedWashPlantRentUSD'] = $excluded;
+        $data['internalWPAllocationBasis'] = 'D365 GL Costing to; WA category detail is not included in the current 8000 sync';
     }
 
     private function historicalEntries(array $periods, array $monthsWithGl): array

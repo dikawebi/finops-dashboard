@@ -80,6 +80,14 @@ translations.push(
 );
 
 translations.push(
+    ['Report', 'Laporan'],
+    ['External', 'Eksternal'],
+    ['Internal basis:', 'Basis internal:'],
+    ['External basis:', 'Basis eksternal:'],
+    ['Direct Expense, GA, Selling, Finance & Royalty', 'Beban Langsung, GA, Penjualan, Keuangan & Royalti'],
+    ['Finance Cost', 'Biaya Keuangan'],
+    ['Royalty Coal Sales', 'Royalti Penjualan Batu Bara'],
+    ['Mining locations', 'Lokasi penambangan'],
     ['Fuel rate', 'Tarif bahan bakar'],
     ['Unavailable for selected period', 'Tidak tersedia untuk periode terpilih'],
     ['Google Sheets, DB', 'Google Sheets, DB'],

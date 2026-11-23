@@ -9,17 +9,20 @@ use Illuminate\Support\Facades\DB;
 
 class InventoryValuationService
 {
-    public function build(string $period, string $mode = 'mtd'): array
+    public function build(string $period, string $mode = 'mtd', string $reportType = 'external'): array
     {
+        $reportType = $reportType === 'internal' ? 'internal' : 'external';
         if ($period >= '2026-10' && in_array($mode, ['mtd', 'ytd'], true)) {
-            $dynamic = $this->buildLiveFromSources($period, $mode);
+            $dynamic = $this->buildLiveFromSources($period, $mode, $reportType);
             if ($dynamic !== null) return $dynamic;
             throw new \RuntimeException("{$period} inventory overview requires live opening balances, Google Sheets movements, and imported D365 GL data. Baseline data is not used from October 2026 onward.");
         }
         $baseline = base_path("../baseline/reference_dump/inventory-valuation_{$period}_{$mode}.json");
         if (is_file($baseline)) {
             $data = json_decode(file_get_contents($baseline), true, 512, JSON_THROW_ON_ERROR)['data'];
-            return $this->applyManualInputs($data, $period, $mode);
+            $data = $this->applyManualInputs($data, $period, $mode);
+            $data['reportType'] = $reportType;
+            return $data;
         }
         $source = base_path('../data_snapshot/extracted/inventory_movements.json');
         $movements = is_file($source) ? json_decode(file_get_contents($source), true, 512, JSON_THROW_ON_ERROR)['periods'] ?? [] : [];
@@ -42,11 +45,13 @@ class InventoryValuationService
             $this->add($balances, 'kunz', -($data['kunzSalesMT'] ?? 0));
         }
         foreach ($balances as &$balance) $balance['costPerMT'] = $balance['qtyMT'] == 0.0 ? null : $balance['valueUSD'] / $balance['qtyMT'];
-        return $this->applyManualInputs(['currency' => 'USD', 'period' => $period, 'dataSource' => 'workbook', 'locations' => array_values($balances)], $period, $mode);
+        $data = $this->applyManualInputs(['currency' => 'USD', 'period' => $period, 'dataSource' => 'workbook', 'locations' => array_values($balances)], $period, $mode);
+        $data['reportType'] = $reportType;
+        return $data;
     }
 
     /** Roll inventory forward from the September historical close using only live month data. */
-    private function buildLiveFromSources(string $period, string $mode): ?array
+    private function buildLiveFromSources(string $period, string $mode, string $reportType = 'external'): ?array
     {
         $cutover = '2026-10';
         if ($period < $cutover) return null;
@@ -56,15 +61,15 @@ class InventoryValuationService
             $openingData = json_decode(file_get_contents($september), true, 512, JSON_THROW_ON_ERROR)['data'];
         } else {
             $previousPeriod = date('Y-m', strtotime($period.'-01 -1 month'));
-            $openingData = $this->buildLiveFromSources($previousPeriod, 'mtd');
+            $openingData = $this->buildLiveFromSources($previousPeriod, 'mtd', $reportType);
             if ($openingData === null) return null;
         }
-        $month = $this->buildLiveMonthFromSources($period, $openingData);
+        $month = $this->buildLiveMonthFromSources($period, $openingData, $reportType);
         if ($month === null || $mode === 'mtd') return $month;
-        return $this->buildLiveYtdFromSources($period, $month);
+        return $this->buildLiveYtdFromSources($period, $month, $reportType);
     }
 
-    private function buildLiveMonthFromSources(string $period, array $openingData): ?array
+    private function buildLiveMonthFromSources(string $period, array $openingData, string $reportType = 'external'): ?array
     {
         $template = $openingData;
         $movementRows = DB::table('inventory_movements')->where('period', $period)->where('source', 'google_sheets')->get();
@@ -74,7 +79,8 @@ class InventoryValuationService
 
         // Inventory costing in the reference uses only synced GL rows; monthly
         // DB-derived auto accruals belong in Report Cost/Financial Statements.
-        $cost = app(CostMatrixService::class)->build($period, 'mtd', false)['grandTotal'];
+        $costMatrix = app(CostMatrixService::class)->build($period, 'mtd', false, $reportType);
+        $cost = $costMatrix['grandTotal'];
         $costs = [
             'bua' => (float) ($cost['costMining'] ?? 0),
             'nonWash' => (float) ($cost['costHaulingBUAToWP'] ?? 0),
@@ -299,6 +305,10 @@ class InventoryValuationService
         $template['periodKey'] = $period;
         $template['period'] = $period;
         $template['dataSource'] = 'google-sheets+d365-gl';
+        $template['reportType'] = $reportType;
+        $template['reportBasis'] = $reportType === 'internal'
+            ? 'Internal report view using the 8000 synced Google Sheets movements and D365 GL costs; Wash Plant Rent is excluded from COGP. The localhost:3000 WA COGP-COGS snapshot is not imported here.'
+            : 'External inventory moving-average stock flow using synced Google Sheets movements and D365 GL costs.';
         $template['quantitySource'] = 'google-sheets';
         $template['totalEndingQtyMT'] = $included->sum(fn ($s) => (float) $s['endingQtyMT']);
         $template['totalEndingValueUSD'] = $stages->filter(fn ($s) => ($s['includedInValueTotal'] ?? true) !== false)->sum(fn ($s) => (float) $s['endingValueUSD']);
@@ -320,7 +330,7 @@ class InventoryValuationService
         return $template;
     }
 
-    private function buildLiveYtdFromSources(string $period, array $currentMonth): ?array
+    private function buildLiveYtdFromSources(string $period, array $currentMonth, string $reportType = 'external'): ?array
     {
         $year = (int) substr($period, 0, 4);
         if ($year === 2026) {
@@ -332,7 +342,7 @@ class InventoryValuationService
             $quantitySource = 'baseline-through-september+google-sheets';
         } else {
             $priorDecember = sprintf('%04d-12', $year - 1);
-            $ytd = $this->buildLiveFromSources($priorDecember, 'mtd');
+            $ytd = $this->buildLiveFromSources($priorDecember, 'mtd', $reportType);
             if ($ytd === null) return null;
             $ytd['stages'] = array_map(static function (array $stage): array {
                 $stage['beginningQtyMT'] = (float) ($stage['endingQtyMT'] ?? 0);
@@ -348,7 +358,7 @@ class InventoryValuationService
         }
         $months = [];
         for ($month = $firstLiveMonth; $month <= $period; $month = date('Y-m', strtotime($month.'-01 +1 month'))) {
-            $monthData = $month === $period ? $currentMonth : $this->buildLiveFromSources($month, 'mtd');
+            $monthData = $month === $period ? $currentMonth : $this->buildLiveFromSources($month, 'mtd', $reportType);
             if ($monthData === null) return null;
             $months[$month] = $monthData;
             if ($month === $period) $currentMonth = $monthData;
@@ -385,9 +395,13 @@ class InventoryValuationService
 
         $ytd['periodKey'] = $period;
         $ytd['period'] = $period;
+        $ytd['reportType'] = $reportType;
+        $ytd['reportBasis'] = $reportType === 'internal'
+            ? 'Internal report view using the 8000 synced Google Sheets movements and D365 GL costs; Wash Plant Rent is excluded from COGP. The localhost:3000 WA COGP-COGS snapshot is not imported here.'
+            : 'External inventory moving-average stock flow using synced Google Sheets movements and D365 GL costs.';
         $ytd['dataSource'] = $dataSource;
         $ytd['quantitySource'] = $quantitySource;
-        $cost = app(CostMatrixService::class)->build($period, 'ytd', false)['grandTotal'];
+        $cost = app(CostMatrixService::class)->build($period, 'ytd', false, $reportType)['grandTotal'];
         $ytd['costMapping'] = [
             'hasData'=>true,'buaUSD'=>(float) ($cost['costMining'] ?? 0),
             'washingUSD'=>(float) ($cost['costWP'] ?? 0),'portUSD'=>(float) ($cost['costPort'] ?? 0),

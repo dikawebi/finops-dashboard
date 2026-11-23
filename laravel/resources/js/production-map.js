@@ -1,17 +1,13 @@
 import '../css/production-map.css';
 // Geographic presentation only: quantities and costs are supplied by the overview.
 export function mountProductionMap(panel, options) {
-    const { card, buaStock, stockLine, siteBreakdown, flowSitesAvailable } = options;
+    const { card, buaStock, stockLine } = options;
     const map = panel.querySelector('.overview-flow-map');
     map.classList.add('production-geography');
     map.querySelectorAll('.overview-bypass, .overview-vessel-direct, .overview-scene').forEach(node => node.remove());
     const locations = map.querySelector('.overview-flow-cards');
     const [buaQuantity, buaRate = ''] = stockLine(buaStock).split(' · ');
     locations.insertAdjacentHTML('beforeend', card('Stockpile BUA', buaRate, 'Closing inventory', [['Closing stock', stockLine(buaStock)]], buaQuantity));
-    ['North G'].forEach(name => {
-        const value = flowSitesAvailable ? siteBreakdown.find(row => row[0] === name)?.[1] : null;
-        locations.insertAdjacentHTML('beforeend', card(`Pit ${name}`, '', 'Coal getting · selected period', [['Coal Getting', value || 'Location detail unavailable for this period']], value || '—'));
-    });
     const metricLabels = { 'Coal Mining': 'Coal getting', 'Pit Takalot': 'Coal getting', 'Pit North G': 'Coal getting', 'Stockpile BUA': 'Closing stock', 'Washing Plant': 'Clean coal', 'BP Port': 'Closing stock', 'ISP': 'Closing stock', 'Mother Vessel': 'Sales volume' };
     locations.querySelectorAll('[data-overview-card]').forEach(item => {
         item.querySelector('.overview-scene')?.remove();
@@ -74,7 +70,7 @@ function attachMapPopover(panel, map, options) {
                 const total = operation == null || fuel == null ? null : operation + fuel;
                 return [label, qtyValue == null ? '—' : `${qty(qtyValue)} ${['OB Removal include blasting','OB removal freedig','OB Overdistance','Topsoil','Mud'].includes(label) ? 'Bcm' : 'MT'}`, operation == null ? '—' : `USD ${number(operation)}`, fuel == null ? '—' : `USD ${number(fuel)}`, total == null ? '—' : `USD ${number(total)}`, total == null || !metric('coalGetting') ? '—' : `USD ${flowRate(total / metric('coalGetting'))} / MT`];
             });
-            return { title:'Coal Mining — Activity details', columns:['Activity','Quantity','Operation cost','Fuel cost','Total cost','Cost / MT coal'], tableRows, note:`Source: synchronized Google Sheets DB tab · ${mode.toUpperCase()} ${period}. Quantities follow the localhost:3000 activity definitions. Cost / MT coal = operation and fuel cost ÷ Coal Getting. Account codes are omitted.` };
+            return { title:'Coal Mining — Activity details', columns:['Activity','Quantity','Operation cost','Fuel cost','Total cost','Cost / MT coal'], tableRows, note:`Mining is presented as one combined location group: Takalot · North G. Source: synchronized Google Sheets DB tab · ${mode.toUpperCase()} ${period}. Quantities follow the localhost:3000 activity definitions. Cost / MT coal = operation and fuel cost ÷ Coal Getting. Account codes are omitted.` };
         }
         if (item.dataset.overviewCard === 'Washing Plant') {
             const raw = stock('nonWash'), clean = stock('washed'), ash = stock('highAsh');

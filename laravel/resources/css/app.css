@@ -272,3 +272,6 @@ body{min-height:100vh}.app-shell{display:flex;min-height:100vh;background:var(--
 .equipment-fuel-source{display:grid;gap:4px;margin:0 0 14px;padding:11px 14px;border:1px solid #cbd9e8;border-left:4px solid #168b88;border-radius:9px;background:#fff;color:#52647e;font-size:11px}
 .equipment-fuel-source b{color:#1d2c43;font-size:12px}
 .equipment-fuel-source small{color:#71819a;font-size:10px}
+.report-type-control{display:flex;align-items:center;gap:8px;flex:0 0 auto}.report-type-control .mode-toggle{margin:0}.variance-arrow.positive{color:#dc2626!important}.variance-arrow.negative{color:#16a34a!important}
+@media(max-width:1050px){.app-main>.filterbar{height:auto;min-height:58px;flex-wrap:wrap;gap:10px;padding-top:8px;padding-bottom:8px}.report-type-control{gap:5px}}
+@media(max-width:760px){.app-main>.filterbar .report-type-control{flex:1 1 calc(50% - 6px)}.app-main>.filterbar .mode-control-group{flex:1 1 calc(50% - 6px)}.app-main>.filterbar .report-type-control .mode-toggle,.app-main>.filterbar .mode-control-group .mode-toggle{flex:1}.app-main>.filterbar .report-type-control .mode-toggle button,.app-main>.filterbar .mode-control-group .mode-toggle button{flex:1}}

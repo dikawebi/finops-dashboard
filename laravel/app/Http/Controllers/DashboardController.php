@@ -25,7 +25,9 @@ class DashboardController extends Controller
     public function costMatrix(Request $request, CostMatrixService $service): JsonResponse
     {
         [$period, $mode] = $this->periodMode($request);
-        $data = $service->build($period, $mode);
+        $report = (string) $request->query('report', 'external');
+        abort_unless(in_array($report, ['internal','external'], true), 422, 'Invalid report type.');
+        $data = $service->build($period, $mode, true, $report);
         if ($period >= '2026-10' && !in_array($period, $data['d365Periods'] ?? [], true)) {
             return response()->json(['success'=>false,'message'=>"{$period} cost overview requires imported D365 GL data. Baseline data is not used from October 2026 onward."], 409);
         }
@@ -60,8 +62,10 @@ class DashboardController extends Controller
     {
         $period = (string) $request->query('period', '2026-10');
         $mode = (string) $request->query('mode', 'mtd');
+        $report = (string) $request->query('report', 'external');
         abort_unless((bool) preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $period), 422, 'Invalid period.');
         abort_unless(in_array($mode, ['mtd', 'ytd'], true), 422, 'Invalid mode.');
+        abort_unless(in_array($report, ['internal','external'], true), 422, 'Invalid report type.');
         if ($period >= '2026-10') {
             $requiredPeriods = [];
             for ($month = '2026-10'; $month <= $period; $month = date('Y-m', strtotime($month.'-01 +1 month'))) $requiredPeriods[] = $month;
@@ -75,7 +79,7 @@ class DashboardController extends Controller
             if ($missing) return response()->json(['success'=>false,'message'=>'Inventory live roll-forward is missing Google Sheets production/movement sync or D365 GL for: '.implode(', ', $missing).'. Baseline data is not used from October 2026 onward.'], 409);
         }
         try {
-            return response()->json(['success' => true, 'data' => $service->build($period, $mode)]);
+            return response()->json(['success' => true, 'data' => $service->build($period, $mode, $report)]);
         } catch (\RuntimeException $exception) {
             if ($period >= '2026-10') return response()->json(['success'=>false,'message'=>$exception->getMessage()], 409);
             throw $exception;
@@ -148,6 +152,8 @@ class DashboardController extends Controller
     public function overviewDaily(Request $request, D365AllocationService $allocation, DailyCogpService $dailyCogp): JsonResponse
     {
         [$period, $mode] = $this->periodMode($request);
+        $report = (string) $request->query('report', 'external');
+        abort_unless(in_array($report, ['internal','external'], true), 422, 'Invalid report type.');
         if ($period >= '2026-10' && !DailyProduction::query()->where('period', $period)->where('source', 'google_sheets')->exists()) {
             return response()->json(['success'=>false,'message'=>"{$period} daily production requires Google Sheets sync. Baseline data is not used from October 2026 onward."], 409);
         }
@@ -187,7 +193,9 @@ class DashboardController extends Controller
             $valuation = strtolower(preg_replace('/[\s_-]+/', '', trim((string) ($mapping['valuation_to'] ?? $entry->valuation_to))));
             $head = substr($code, 0, 1);
             $isDirect = preg_replace('/[\s_-]+/', '', $costing) === 'directexpense';
-            $isExpense = in_array($head, ['7','8','9'], true) || preg_match('/^ga$|admin|overhead/', $costing) || ($isDirect && $valuation === 'notvaluated');
+            $isExpense = $report === 'internal'
+                ? (in_array($head, ['5','6'], true) && !in_array($code, ['6000003','6000004'], true) && $isDirect && (str_contains($valuation, 'mining') || str_contains($valuation, 'pit')))
+                : (in_array($head, ['7','8','9'], true) || preg_match('/^ga$|admin|overhead/', $costing) || ($isDirect && $valuation === 'notvaluated'));
             $costs[$date] ??= ['date'=>$date,'ga'=>0.0,'haulingGL'=>0.0];
             if ($isExpense) {
                 $costs[$date]['ga'] += (float) $entry->amount_reporting;
@@ -236,7 +244,7 @@ class DashboardController extends Controller
         return response()->json(['success'=>true,'data'=>[
             'haulingEntities'=>$haulingEntities,'miningBreakdown'=>$miningBreakdown,
             'daily'=>array_values($dailyMap),'costs'=>$costSeries,
-            'source'=>'Synced Google Sheets production + DB accrual inputs for COGP; D365 dated GL for GA','mode'=>$mode,'period'=>$period,
+            'source'=>'Synced Google Sheets production + DB accrual inputs for COGP; D365 dated GL for the selected report basis','reportType'=>$report,'mode'=>$mode,'period'=>$period,
             'sheetsLastSyncedAt'=>SystemConfig::get('sheetsSync', [])['last_synced_at'] ?? null,
         ]]);
     }
@@ -244,6 +252,8 @@ class DashboardController extends Controller
     public function overviewAllocation(Request $request, D365AllocationService $allocation, CostMatrixService $costMatrix): JsonResponse
     {
         [$period, $mode] = $this->periodMode($request);
+        $report = (string) $request->query('report', 'external');
+        abort_unless(in_array($report, ['internal','external'], true), 422, 'Invalid report type.');
         $group = (string) $request->query('group', 'account');
         abort_unless(in_array($group, ['location','activity','department'], true), 422, 'Invalid allocation grouping.');
         $from = $mode === 'ytd' ? substr($period, 0, 4).'-01' : $period;
@@ -269,19 +279,18 @@ class DashboardController extends Controller
             $mapping = $mappingCache[$key] ??= $allocation->resolveGlEntry($entry);
             $entry->costing_to = $mapping['costing_to'] ?? $entry->costing_to;
             $entry->valuation_to = $mapping['valuation_to'] ?? $entry->valuation_to;
+            if ($report === 'internal' && $code === '5000105' && preg_match('/wash|wp/i', (string) $entry->costing_to)) continue;
             $bucket = $costMatrix->reportBucket($entry);
             if ($bucket === null) continue;
             $dimensionCode = trim((string) ($entry->{$group} ?? ''));
             $dimension = $dimensionCode === ''
                 ? 'Unspecified'
-                : (($dimensionNames[$dimensionCode] ?? null) !== null
-                    ? $dimensionNames[$dimensionCode].' ('.$dimensionCode.')'
-                    : $dimensionCode);
+                : ($dimensionNames[$dimensionCode] ?? $dimensionCode);
             $amount = (float) $entry->amount_reporting;
             $totals[$bucket][$dimension] = ($totals[$bucket][$dimension] ?? 0) + $amount;
             $totals['all'][$dimension] = ($totals['all'][$dimension] ?? 0) + $amount;
         }
-        return response()->json(['success'=>true,'data'=>['period'=>$period,'mode'=>$mode,'group'=>$group,'source'=>'D365 GL transactions','totals'=>$totals]]);
+        return response()->json(['success'=>true,'data'=>['period'=>$period,'mode'=>$mode,'reportType'=>$report,'group'=>$group,'source'=>'D365 GL transactions','totals'=>$totals]]);
     }
 
     public function equipmentCost(Request $request, EquipmentCostService $service): JsonResponse
@@ -336,7 +345,9 @@ class DashboardController extends Controller
     public function costPerMt(Request $request, CostPerMtService $service): JsonResponse
     {
         [$period, $mode] = $this->periodMode($request);
-        return response()->json(['success' => true, 'data' => $service->build($period, $mode)]);
+        $report = (string) $request->query('report', 'external');
+        abort_unless(in_array($report, ['internal','external'], true), 422, 'Invalid report type.');
+        return response()->json(['success' => true, 'data' => $service->build($period, $mode, $report)]);
     }
 
     public function excelCostExample(): JsonResponse
@@ -472,24 +483,26 @@ class DashboardController extends Controller
     public function variance(Request $request, CostMatrixService $service): JsonResponse
     {
         [$period, $mode] = $this->periodMode($request);
+        $report = (string) $request->query('report', 'external');
+        abort_unless(in_array($report, ['internal','external'], true), 422, 'Invalid report type.');
         $previous = date('Y-m', strtotime($period . '-01 -1 month'));
         // Variance is a month-to-month report. The global MTD/YTD toggle must
         // not turn the current side into YTD while the previous side stays MTD.
-        $current = $service->build($period, 'mtd');
-        $prior = $service->build($previous, 'mtd');
+        $current = $service->build($period, 'mtd', true, $report);
+        $prior = $service->build($previous, 'mtd', true, $report);
         $variance = [];
         $location = trim((string) $request->query('location', 'allCost'));
         $currentRows = collect($current['rows'])->keyBy('code');
         $priorRows = collect($prior['rows'])->keyBy('code');
         $hasCurrent = ($current['dataSource'] ?? 'none') !== 'none' || !empty($current['accrualPeriods']);
         $hasPrevious = ($prior['dataSource'] ?? 'none') !== 'none' || !empty($prior['accrualPeriods']);
-        $varianceFields = ['allCost', 'costMining', 'costHaulingBUAToWP', 'costHaulingBUAToPort', 'costHaulingWPToPort', 'costWP', 'costPort', 'valMining', 'valHauling', 'valWP', 'valPort', 'directGA', 'sellingExpense'];
+        $varianceFields = ['allCost', 'costMining', 'costHaulingBUAToWP', 'costHaulingBUAToPort', 'costHaulingWPToPort', 'costWP', 'costPort', 'valMining', 'valHauling', 'valWP', 'valPort', 'directGA', 'sellingExpense', 'financeCost', 'royaltyCost'];
         abort_unless(in_array($location, $varianceFields, true), 422, 'Invalid variance category.');
         $remarks = CostVarianceRemark::period($period)->where('category', $location)->get()->keyBy('account_code');
         $cogpFields = ['costMining', 'costHaulingBUAToWP', 'costHaulingBUAToPort', 'costHaulingWPToPort', 'costWP', 'costPort'];
         // Valuation allocations are Direct Expense columns. directGA already
         // includes Not Valuated, so do not add valNotValuated a second time.
-        $directFields = ['valMining', 'valHauling', 'valWP', 'valPort', 'directGA', 'sellingExpense'];
+        $directFields = ['valMining', 'valHauling', 'valWP', 'valPort', 'directGA', 'sellingExpense', 'financeCost', 'royaltyCost'];
         $sumFields = static fn (array $source, array $fields): float => array_sum(array_map(static fn (string $field): float => (float) ($source[$field] ?? 0), $fields));
         foreach ($currentRows->keys()->merge($priorRows->keys())->unique() as $code) {
             $row = $currentRows->get($code);
@@ -503,14 +516,14 @@ class DashboardController extends Controller
                 'remark' => $remarks->get($code)?->remark, 'isParent' => $sourceRow['isParent']];
         }
         $locationOptions = $varianceFields;
-        return response()->json(['success' => true, 'data' => ['period' => $period, 'previousPeriod' => $previous, 'current' => $current, 'previous' => $prior, 'hasCurrent'=>$hasCurrent, 'hasPrevious'=>$hasPrevious, 'rows' => $variance, 'locations' => $locationOptions]]);
+        return response()->json(['success' => true, 'data' => ['period' => $period, 'previousPeriod' => $previous, 'reportType'=>$report, 'current' => $current, 'previous' => $prior, 'hasCurrent'=>$hasCurrent, 'hasPrevious'=>$hasPrevious, 'rows' => $variance, 'locations' => $locationOptions]]);
     }
 
     public function saveVarianceRemark(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'period' => ['required', 'date_format:Y-m'],
-            'category' => ['required', 'in:allCost,costMining,costHaulingBUAToWP,costHaulingBUAToPort,costHaulingWPToPort,costWP,costPort,valMining,valHauling,valWP,valPort,directGA,sellingExpense'],
+            'category' => ['required', 'in:allCost,costMining,costHaulingBUAToWP,costHaulingBUAToPort,costHaulingWPToPort,costWP,costPort,valMining,valHauling,valWP,valPort,directGA,sellingExpense,financeCost,royaltyCost'],
             'account_code' => ['required', 'string', 'max:20'],
             'remark' => ['nullable', 'string', 'max:2000'],
         ]);

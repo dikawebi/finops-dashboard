@@ -7,16 +7,18 @@ use App\Models\MonthlyMetric;
 /** Laravel port of the reference project's computeCostPerMT formula. */
 class CostPerMtService
 {
-    public function __construct(private readonly CostMatrixService $costs) {}
+    public function __construct(private readonly CostMatrixService $costs, private readonly InventoryValuationService $inventory) {}
 
-    public function build(string $period, string $mode = 'mtd'): array
+    public function build(string $period, string $mode = 'mtd', string $reportType = 'external'): array
     {
-        $current = $this->calculate($period, $mode);
+        $reportType = $reportType === 'internal' ? 'internal' : 'external';
+        $current = $this->calculate($period, $mode, $reportType);
+        $comparisonCurrent = $mode === 'mtd' ? $current : $this->calculate($period, 'mtd', $reportType);
         $previousPeriod = date('Y-m', strtotime($period.'-01 -1 month'));
-        $previous = $this->calculate($previousPeriod, 'mtd');
+        $previous = $this->calculate($previousPeriod, 'mtd', $reportType);
         $previousStages = collect($previous['stages'])->keyBy('stage');
         $current['comparisonPeriod'] = $previousPeriod;
-        $current['comparison'] = collect($current['stages'])->map(function (array $stage) use ($previousStages): array {
+        $current['comparison'] = collect($comparisonCurrent['stages'])->map(function (array $stage) use ($previousStages): array {
             $previousRate = $previousStages->get($stage['stage'])['costPerMT'] ?? null;
             $rate = $stage['costPerMT'];
             return ['stage'=>$stage['stage'],'currentCostPerMT'=>$rate,'previousCostPerMT'=>$previousRate,
@@ -26,10 +28,14 @@ class CostPerMtService
         return $current;
     }
 
-    private function calculate(string $period, string $mode): array
+    private function calculate(string $period, string $mode, string $reportType): array
     {
-        $matrix = $this->costs->build($period, $mode);
+        if ($reportType === 'internal') return $this->calculateInternal($period, $mode);
+        $matrix = $this->costs->build($period, $mode, true, $reportType);
         $periods = $this->periods($period, $mode);
+        $syncedGlPeriods = array_fill_keys($matrix['d365Periods'] ?? [], true);
+        $missingCostPeriods = array_values(array_filter($periods, static fn (string $month): bool => $month >= '2026-10' && !isset($syncedGlPeriods[$month])));
+        $incompleteCost = $missingCostPeriods !== [];
         $metrics = MonthlyMetric::whereIn('period', $periods)->get()->groupBy('metric_key');
         $volume = function (string $key) use ($metrics, $periods): array {
             $byMonth = $metrics->get($key, collect())->keyBy('period');
@@ -54,19 +60,24 @@ class CostPerMtService
             ['stage'=>'Coal Hauling','valuationCost'=>$grand['valHauling'],'operatingCost'=>$grand['costHauling'],'totalCost'=>$this->add($grand['valHauling'],$grand['costHauling']),'volume'=>$hauling],
             ['stage'=>'Washing Plant','valuationCost'=>$grand['valWP'],'operatingCost'=>$grand['costWP'],'totalCost'=>$this->add($grand['valWP'],$grand['costWP']),'volume'=>$wash],
             ['stage'=>'BP PORT & Jetty','valuationCost'=>$grand['valPort'],'operatingCost'=>$grand['costPort'],'totalCost'=>$this->add($grand['valPort'],$grand['costPort']),'volume'=>$port],
-            ['stage'=>'General Admin','valuationCost'=>$grand['valNotValuated'],'operatingCost'=>$grand['costGA'],'totalCost'=>$grand['directGA'],'volume'=>$coal],
-            ['stage'=>'Selling Expense','valuationCost'=>'0','operatingCost'=>$grand['costSelling'],'totalCost'=>$grand['costSelling'],'volume'=>$port],
+            ['stage'=>'General Admin','valuationCost'=>$grand['valNotValuated'],'operatingCost'=>bcsub((string) $grand['directGA'], (string) $grand['valNotValuated'], 6),'totalCost'=>$grand['directGA'],'volume'=>$coal],
+            ['stage'=>'Selling Expense','valuationCost'=>'0','operatingCost'=>$grand['sellingExpense'],'totalCost'=>$grand['sellingExpense'],'volume'=>$port],
         ];
 
         foreach ($stages as &$stage) {
             $item = $stage['volume'];
             $stageVolume = $item['complete'] ? $item['value'] : null;
             $stage['metricTons'] = $stageVolume;
-            $stage['costPerMT'] = $stageVolume !== null && $stageVolume > 0 && !$incompleteVolume ? (float) $stage['totalCost'] / $stageVolume : null;
-            $stage['costPerTotalMT'] = $coal['complete'] && $coal['value'] > 0 && !$incompleteVolume ? (float) $stage['totalCost'] / $coal['value'] : null;
+            $stage['costPerMT'] = !$incompleteCost && $stageVolume !== null && $stageVolume > 0 && !$incompleteVolume ? (float) $stage['totalCost'] / $stageVolume : null;
+            $stage['costPerTotalMT'] = !$incompleteCost && $coal['complete'] && $coal['value'] > 0 && !$incompleteVolume ? (float) $stage['totalCost'] / $coal['value'] : null;
             unset($stage['volume']);
         }
         unset($stage);
+
+        if ($incompleteCost) {
+            foreach ($stages as &$stage) foreach (['valuationCost','operatingCost','totalCost'] as $field) $stage[$field] = null;
+            unset($stage);
+        }
 
         $accountGroups = $this->accountGroups($matrix['rows']);
         $volumeMissing = $coal['missing'];
@@ -74,11 +85,54 @@ class CostPerMtService
             'coalGetting'=>$coal['missing'],'hauling'=>array_values(array_unique(array_merge(...array_column($haulingParts, 'missing')))),
             'washFeed'=>$wash['missing'],'portLoading'=>$port['missing'],
         ];
-        return ['currency'=>'USD','amountScale'=>1,'mode'=>$mode,'period'=>$period,
+        return ['currency'=>'USD','amountScale'=>1,'mode'=>$mode,'period'=>$period,'reportType'=>$reportType,
             'dataSource'=>$matrix['dataSource'] ?? 'none','missingVolumePeriods'=>$volumeMissing,
+            'missingCostPeriods'=>$missingCostPeriods,'incompleteCost'=>$incompleteCost,
             'stageMissingVolumePeriods'=>$stageVolumeMissing,'incompleteVolume'=>$incompleteVolume,'volumeSource'=>'Google Sheets DB','totalVolumeProducedMT'=>$coal['value'],
-            'grandTotalCost'=>$grand['allCost'],'overallCostPerMT'=>$coal['value'] > 0 && !$incompleteVolume ? (float) $grand['allCost'] / $coal['value'] : null,
-            'stages'=>$stages,'costByAccountGroup'=>$accountGroups];
+            'grandTotalCost'=>$incompleteCost ? null : $grand['allCost'],'overallCostPerMT'=>$coal['value'] > 0 && !$incompleteVolume && !$incompleteCost ? (float) $grand['allCost'] / $coal['value'] : null,
+            'stages'=>$stages,'costByAccountGroup'=>$incompleteCost ? [] : $accountGroups];
+    }
+
+    /** Internal Cost/MT follows localhost:3000: available WA stock value / available stock quantity. */
+    private function calculateInternal(string $period, string $mode): array
+    {
+        // The 8000 integration does not import the 3000 WA COGP-COGS snapshot.
+        // Use the same WA formula over the already-synced 8000 movements and D365 GL costs.
+        $inventory = $this->inventory->build($period, 'mtd', 'internal');
+        $stagesById = collect($inventory['stages'] ?? [])->keyBy('id');
+        $definitions = [
+            ['Mining', 'bua'],
+            ['Washing Plant', 'washed'],
+            ['BP PORT & Jetty', 'port'],
+            ['ISP', 'kunz'],
+        ];
+        $stages = [];
+        foreach ($definitions as [$label, $id]) {
+            $stock = $stagesById->get($id);
+            $total = $stock === null ? null : (float) ($stock['availableValueUSD'] ?? 0);
+            $quantity = $stock === null ? null : (float) ($stock['availableQtyMT'] ?? 0);
+            $addedCost = $stock === null ? 0.0 : (float) ($stock['addedCostUSD'] ?? 0);
+            $stages[] = [
+                'stage'=>$label,
+                'valuationCost'=>$total === null ? null : $total - $addedCost,
+                'operatingCost'=>$total === null ? null : $addedCost,
+                'totalCost'=>$total,
+                'metricTons'=>$quantity,
+                'costPerMT'=>$quantity > 0 ? (float) ($stock['movingAverageRateUSD'] ?? ($total / $quantity)) : null,
+                'costPerTotalMT'=>null,
+            ];
+        }
+        $coal = MonthlyMetric::query()->where('period', $period)->where('metric_key', 'coalGetting')->value('value');
+        return [
+            'currency'=>'USD','amountScale'=>1,'mode'=>$mode,'period'=>$period,'reportType'=>'internal',
+            'basisLabel'=>'WA weighted-average available stock','dataSource'=>$inventory['dataSource'] ?? 'none',
+            'volumeSource'=>'Google Sheets DB','totalVolumeProducedMT'=>$coal === null ? null : (float) $coal,
+            'grandTotalCost'=>null,'overallCostPerMT'=>null,'incompleteVolume'=>false,
+            'missingVolumePeriods'=>[],'stageMissingVolumePeriods'=>[],
+            'stages'=>$stages,'costByAccountGroup'=>[],
+            'internalDataBasis'=>'Formula and inventory stages match localhost:3000 (available WA value ÷ available quantity, for BUA, washed, port, and ISP). Values come from 8000 synced Google Sheets movements + D365 GL; no 3000 WA COGP-COGS snapshot is imported.',
+            'internalWarnings'=>$inventory['validationWarnings'] ?? [],
+        ];
     }
 
     private function accountGroups(array $rows): array
