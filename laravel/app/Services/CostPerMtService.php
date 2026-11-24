@@ -7,7 +7,7 @@ use App\Models\MonthlyMetric;
 /** Laravel port of the reference project's computeCostPerMT formula. */
 class CostPerMtService
 {
-    public function __construct(private readonly CostMatrixService $costs, private readonly InternalWaCostPerMtService $internalWa) {}
+    public function __construct(private readonly CostMatrixService $costs, private readonly InternalWaInventoryService $internalWa) {}
 
     public function build(string $period, string $mode = 'mtd', string $reportType = 'external'): array
     {
@@ -96,12 +96,23 @@ class CostPerMtService
     /** Internal Cost/MT follows localhost:3000 using the same live WA COGP-COGS sheet inputs. */
     private function calculateInternal(string $period, string $mode): array
     {
-        $inventory = $this->internalWa->calculate($period);
-        $stages = $inventory['stages'] ?? array_map(static fn (string $stage): array => [
-            'stage'=>$stage,'valuationCost'=>null,'operatingCost'=>null,'totalCost'=>null,'metricTons'=>null,'costPerMT'=>null,'costPerTotalMT'=>null,
-        ], ['Mining','Washing Plant','BP PORT & Jetty','ISP']);
+        $inventory = $this->internalWa->build($period, 'mtd');
+        $inventoryStages = collect($inventory['stages'] ?? [])->keyBy('id');
+        $definitions = [['Mining','bua'],['Washing Plant','washed'],['BP PORT & Jetty','port'],['ISP','kunz']];
+        $stages = $inventory['available'] ? array_map(static function (array $definition) use ($inventoryStages): array {
+            [$label,$id] = $definition;
+            $stock = $inventoryStages->get($id);
+            $total = $stock === null ? null : (float) ($stock['availableValueUSD'] ?? 0);
+            $quantity = $stock === null ? null : (float) ($stock['availableQtyMT'] ?? 0);
+            $addedCost = $stock === null ? 0.0 : (float) ($stock['addedCostUSD'] ?? 0);
+            return ['stage'=>$label,'valuationCost'=>$total === null ? null : $total - $addedCost,'operatingCost'=>$total === null ? null : $addedCost,
+                'totalCost'=>$total,'metricTons'=>$quantity,'costPerMT'=>$quantity > 0 ? (float) ($stock['movingAverageRateUSD'] ?? ($total / $quantity)) : null,'costPerTotalMT'=>null];
+        }, $definitions) : array_map(static fn (array $definition): array => [
+            'stage'=>$definition[0],'valuationCost'=>null,'operatingCost'=>null,'totalCost'=>null,'metricTons'=>null,'costPerMT'=>null,'costPerTotalMT'=>null,
+        ], $definitions);
         $coal = MonthlyMetric::query()->where('period', $period)->where('metric_key', 'coalGetting')->value('value');
         $internalWarnings = $inventory['validationWarnings'] ?? [];
+        $internalWarnings = array_merge($internalWarnings, $inventory['historyIssues'] ?? []);
         if (!empty($inventory['missingPeriods'])) $internalWarnings[] = 'Google Sheets WA COGP-COGS belum tersinkron untuk periode: '.implode(', ', $inventory['missingPeriods']).'.';
         return [
             'currency'=>'USD','amountScale'=>1,'mode'=>$mode,'period'=>$period,'reportType'=>'internal',

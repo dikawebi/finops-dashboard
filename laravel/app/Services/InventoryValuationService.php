@@ -13,6 +13,11 @@ class InventoryValuationService
     {
         $reportType = $reportType === 'internal' ? 'internal' : 'external';
         if ($period >= '2026-10' && in_array($mode, ['mtd', 'ytd'], true)) {
+            if ($reportType === 'internal') {
+                $internal = app(InternalWaInventoryService::class)->build($period, $mode);
+                if (!$internal['available']) throw new \RuntimeException("{$period} Internal Inventory Valuation requires synced Google Sheets WA COGP-COGS data for every month from January. Missing: ".implode(', ', $internal['missingPeriods']).'.');
+                return $internal;
+            }
             $dynamic = $this->buildLiveFromSources($period, $mode, $reportType);
             if ($dynamic !== null) return $dynamic;
             throw new \RuntimeException("{$period} inventory overview requires live opening balances, Google Sheets movements, and imported D365 GL data. Baseline data is not used from October 2026 onward.");
