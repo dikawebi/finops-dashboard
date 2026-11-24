@@ -86,21 +86,20 @@ class EquipmentCostService
             $date = $this->date($row[1] ?? null);
             $netto = $this->number($row[8] ?? null);
             $haulingUnit = $this->unitCode($row[3] ?? '');
-            $loaderUnit = $this->unitCode($row[4] ?? '');
             $transporter = strtoupper(preg_replace('/[^A-Z0-9]/', '', (string) ($row[11] ?? '')));
             $activity = $this->canonicalActivity(trim((string) ($row[12] ?? '')));
             if (!$date || $date < $from || $date > $end || $netto === null || !$haulingUnit || !$activity || !str_starts_with($transporter, 'PTBP')) continue;
             $mt = $netto / 1000;
             $month = substr($date, 0, 7);
             $monthlyProduction[$activity] = ($monthlyProduction[$activity] ?? 0) + $mt;
-            $ticketsByActivity[$activity][] = ['haulingUnit' => $haulingUnit, 'loaderUnit' => $loaderUnit, 'mt' => $mt, 'month' => $month];
-            foreach (array_unique(array_filter([$haulingUnit, $loaderUnit])) as $productionUnit) $productionActivitiesByUnitMonth[$month.'|'.$productionUnit][$activity] = true;
-            foreach ([$haulingUnit => 'hauling', $loaderUnit => 'loader'] as $unit => $role) {
-                if ($unit === '') continue;
-                $key = $activity.'|'.$unit;
-                $units[$key] ??= ['activity' => $activity, 'unit' => $unit, 'haulingMT' => 0.0, 'loaderMT' => 0.0];
-                $units[$key][$role.'MT'] += $mt;
-            }
+            $ticketsByActivity[$activity][] = ['haulingUnit' => $haulingUnit, 'mt' => $mt, 'month' => $month];
+            // Match localhost:3000: weighbridge tickets assign activity to the
+            // hauling unit only. Loader production is read once from the
+            // dedicated monthly P:T summary block below.
+            $productionActivitiesByUnitMonth[$month.'|'.$haulingUnit][$activity] = true;
+            $key = $activity.'|'.$haulingUnit;
+            $units[$key] ??= ['activity' => $activity, 'unit' => $haulingUnit, 'haulingMT' => 0.0, 'loaderMT' => 0.0];
+            $units[$key]['haulingMT'] += $mt;
         }
         // Match localhost:3000: P:T contains the monthly loading summary on
         // the fixed total row, not daily quantities to be repeated per ticket.
