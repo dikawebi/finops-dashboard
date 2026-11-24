@@ -159,12 +159,13 @@ function updateNavigation(period, mode) {
 
 async function overview(period, mode) {
     const previousPeriod = period.endsWith('-01') ? null : (() => { const [year, month] = period.split('-').map(Number); return month === 1 ? `${year - 1}-12` : `${year}-${String(month - 1).padStart(2, '0')}`; })();
-    const [cost, inventory, production, dailyData, dbCostSummary] = await Promise.all([
+    const [cost, inventory, production, dailyData, dbCostSummary, internalCostPerMt] = await Promise.all([
         api(`/api/cost-matrix?period=${period}&mode=${mode}&report=${state.reportType}`),
         api(`/api/inventory-valuation?period=${period}&mode=${mode}&report=${state.reportType}`),
         api(`/api/production-summary?period=${period}&mode=${mode}`),
         api(`/api/overview-daily?period=${period}&mode=${mode}&report=${state.reportType}`),
         api(`/api/db-cost-summary?period=${period}&mode=${mode}`),
+        state.reportType === 'internal' ? api(`/api/cost-per-mt?period=${period}&mode=${mode}&report=internal`) : Promise.resolve(null),
     ]);
     const [previousInventory, previousProduction] = previousPeriod ? await Promise.all([
         api(`/api/inventory-valuation?period=${previousPeriod}&mode=${mode}&report=${state.reportType}`).catch(() => null),
@@ -213,7 +214,10 @@ async function overview(period, mode) {
     const previousSoldQty = salesQty(previousSales);
     const soldCost = Math.abs([...portSales, ...ispSales].reduce((sum, row) => sum + Number(row.valueUSD || 0), 0));
     const coalGetting = metricValue('coalGetting');
-    const miningRate = coalGetting > 0 ? Number(cost.grandTotal.costMining || 0) / coalGetting : null;
+    const internalMiningRate = internalCostPerMt?.stages?.find(stage => stage.stage === 'Mining')?.costPerMT;
+    const miningRate = state.reportType === 'internal'
+        ? (internalMiningRate == null ? null : Number(internalMiningRate))
+        : coalGetting > 0 ? Number(cost.grandTotal.costMining || 0) / coalGetting : null;
     const washFeed = metricValue('washFeed');
     const washReject = metricValue('washReject');
     const washCoal = metricValue('washCoal');
