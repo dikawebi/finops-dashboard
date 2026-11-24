@@ -17,14 +17,17 @@ export function mountProductionMap(panel, options) {
         const values = item.querySelector('.overview-card-values');
         values.prepend(label);
         const comparison = options.periodComparison;
-        const current = comparison?.current?.[item.dataset.overviewCard];
-        const previous = comparison?.previous?.[item.dataset.overviewCard];
-        if (Number.isFinite(current) && Number.isFinite(previous)) {
+        const current = comparison?.currentRates?.[item.dataset.overviewCard];
+        const previous = comparison?.previousRates?.[item.dataset.overviewCard];
+        if (document.getElementById('overview-date-mode')?.value !== 'daily' && Number.isFinite(current) && Number.isFinite(previous)) {
             const change = current - previous;
             const delta = document.createElement('span');
+            const percent = previous ? ` (${(Math.abs(change / previous) * 100).toFixed(1)}%)` : '';
             delta.className = `production-period-delta ${change > 0 ? 'is-positive' : change < 0 ? 'is-negative' : 'is-neutral'}`;
-            delta.textContent = `${change > 0 ? '↑ +' : change < 0 ? '↓ ' : '→ '}${options.qty(change)} MT vs ${comparison.label}`;
-            delta.title = `Compared with ${comparison.label}: ${options.qty(previous)} MT previously`;
+            delta.textContent = Math.abs(change) < 0.005
+                ? `— Unchanged vs ${comparison.label}`
+                : `${change > 0 ? '▲' : '▼'} USD ${options.flowRate(Math.abs(change))}${percent} vs ${comparison.label}`;
+            delta.title = `Cost per MT: USD ${options.flowRate(current)}; previous period: USD ${options.flowRate(previous)} / MT`;
             values.append(delta);
         }
     });

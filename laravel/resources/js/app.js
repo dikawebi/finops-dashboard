@@ -167,10 +167,12 @@ async function overview(period, mode) {
         api(`/api/db-cost-summary?period=${period}&mode=${mode}`),
         state.reportType === 'internal' ? api(`/api/cost-per-mt?period=${period}&mode=${mode}&report=internal`) : Promise.resolve(null),
     ]);
-    const [previousInventory, previousProduction] = previousPeriod ? await Promise.all([
+    const [previousInventory, previousProduction, previousCostMatrix, previousInternalCostPerMt] = previousPeriod ? await Promise.all([
         api(`/api/inventory-valuation?period=${previousPeriod}&mode=${mode}&report=${state.reportType}`).catch(() => null),
         api(`/api/production-summary?period=${previousPeriod}&mode=${mode}`).catch(() => null),
-    ]) : [null, null];
+        api(`/api/cost-matrix?period=${previousPeriod}&mode=${mode}&report=${state.reportType}`).catch(() => null),
+        state.reportType === 'internal' ? api(`/api/cost-per-mt?period=${previousPeriod}&mode=${mode}&report=internal`).catch(() => null) : Promise.resolve(null),
+    ]) : [null, null, null, null];
     if (period >= '2026-10') {
         if (!['Google Sheets sync', 'Google Sheets'].includes(production.dataSource)) throw new Error('October production must come from the Google Sheets sync. Baseline values are disabled for October.');
         if (!(cost.d365Periods || []).includes('2026-10')) throw new Error('October costs must come from imported D365 GL. Baseline values are disabled for October.');
@@ -213,11 +215,6 @@ async function overview(period, mode) {
     const ispSales = ['kunz', 'transitKunz'].flatMap(id => stage(id)?.rows || []).filter(row => row.type === 'outflow' && row.source === 'sale');
     const salesQty = rows => Math.abs(rows.reduce((sum, row) => sum + Number(row.qtyMT || 0), 0));
     const soldQty = salesQty([...portSales, ...ispSales]);
-    const previousStages = previousInventory?.stages || [];
-    const previousStage = id => previousStages.find(item => item.id === id);
-    const previousSum = ids => !previousInventory || !ids.some(id => previousStage(id)) ? null : ids.reduce((sum, id) => sum + Number(previousStage(id)?.endingQtyMT || 0), 0);
-    const previousSales = ['port', 'transitPort', 'kunz', 'transitKunz'].flatMap(id => previousStage(id)?.rows || []).filter(row => row.type === 'outflow' && row.source === 'sale');
-    const previousSoldQty = salesQty(previousSales);
     const soldCost = Math.abs([...portSales, ...ispSales].reduce((sum, row) => sum + Number(row.valueUSD || 0), 0));
     const coalGetting = metricValue('coalGetting');
     const internalMiningRate = internalCostPerMt?.stages?.find(stage => stage.stage === 'Mining')?.costPerMT;
@@ -227,17 +224,30 @@ async function overview(period, mode) {
     const washFeed = metricValue('washFeed');
     const washReject = metricValue('washReject');
     const washCoal = metricValue('washCoal');
-    const periodComparison = previousPeriod ? {
-        label: formatPeriod(previousPeriod),
-        current: { 'Coal Mining': metricValue('coalGetting'), 'Stockpile BUA': buaStock.qty, 'Washing Plant': washCoal, 'BP Port': portStock.qty, ISP: ispStock.qty, 'Mother Vessel': soldQty },
-        previous: {
-            'Coal Mining': previousProduction?.dbMetrics?.coalGetting?.value == null ? null : Number(previousProduction.dbMetrics.coalGetting.value),
-            'Stockpile BUA': previousStage('bua')?.endingQtyMT == null ? null : Number(previousStage('bua').endingQtyMT),
-            'Washing Plant': previousProduction?.dbMetrics?.washCoal?.value == null ? null : Number(previousProduction.dbMetrics.washCoal.value),
-            'BP Port': previousSum(['port', 'transitPort']), ISP: previousSum(['kunz', 'transitKunz']),
-            'Mother Vessel': previousInventory ? previousSoldQty : null,
-        },
-    } : null;
+    const closingRate = (inventoryData, ids) => {
+        const selected = (inventoryData?.stages || []).filter(item => ids.includes(item.id));
+        const qty = selected.reduce((sum, item) => sum + Number(item.endingQtyMT || 0), 0);
+        const value = selected.reduce((sum, item) => sum + Number(item.endingValueUSD || 0), 0);
+        return qty > 0 ? value / qty : null;
+    };
+    const stageRate = (data, name) => {
+        const rate = data?.stages?.find(item => item.stage === name)?.costPerMT;
+        return rate == null || !Number.isFinite(Number(rate)) ? null : Number(rate);
+    };
+    const currentPeriodRates = {
+        'Coal Mining': state.reportType === 'internal' ? stageRate(internalCostPerMt, 'Mining') : coalGetting > 0 ? Number(cost.grandTotal.costMining || 0) / coalGetting : null,
+        'Washing Plant': state.reportType === 'internal' ? stageRate(internalCostPerMt, 'Washing Plant') : null,
+        'BP Port': state.reportType === 'internal' ? stageRate(internalCostPerMt, 'BP PORT & Jetty') : closingRate(inventory, ['port', 'transitPort']),
+        ISP: state.reportType === 'internal' ? stageRate(internalCostPerMt, 'ISP') : closingRate(inventory, ['kunz', 'transitKunz']),
+    };
+    const priorCoal = previousProduction?.dbMetrics?.coalGetting?.value == null ? null : Number(previousProduction.dbMetrics.coalGetting.value);
+    const previousPeriodRates = {
+        'Coal Mining': state.reportType === 'internal' ? stageRate(previousInternalCostPerMt, 'Mining') : priorCoal > 0 ? Number(previousCostMatrix?.grandTotal?.costMining || 0) / priorCoal : null,
+        'Washing Plant': state.reportType === 'internal' ? stageRate(previousInternalCostPerMt, 'Washing Plant') : null,
+        'BP Port': state.reportType === 'internal' ? stageRate(previousInternalCostPerMt, 'BP PORT & Jetty') : closingRate(previousInventory, ['port', 'transitPort']),
+        ISP: state.reportType === 'internal' ? stageRate(previousInternalCostPerMt, 'ISP') : closingRate(previousInventory, ['kunz', 'transitKunz']),
+    };
+    const periodComparison = previousPeriod ? { label: formatPeriod(previousPeriod), currentRates: currentPeriodRates, previousRates: previousPeriodRates } : null;
     const buaWp = metricValue('haulingBuaWp');
     const buaPort = metricValue('haulingBuaPort');
     const wpPort = metricValue('haulingWpPort');
