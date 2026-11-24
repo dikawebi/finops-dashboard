@@ -385,8 +385,9 @@ class DashboardController extends Controller
             $groups = [];
             foreach ($records as $record) {
                 $key = json_encode([$record->entity, $record->activity], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-                if (!isset($groups[$key])) $groups[$key] = ['entity'=>$record->entity,'activity'=>$record->activity,'months'=>[]];
+                if (!isset($groups[$key])) $groups[$key] = ['entity'=>$record->entity,'activity'=>$record->activity,'months'=>[],'sourceMonths'=>[],'glMonths'=>[]];
                 $groups[$key]['months'][$record->period] = (float) ($groups[$key]['months'][$record->period] ?? 0) + (float) $record->amount;
+                $groups[$key]['sourceMonths'][$record->period] = (float) ($groups[$key]['sourceMonths'][$record->period] ?? 0) + (float) $record->amount;
             }
             $volumeGroups = [];
             foreach (\Illuminate\Support\Facades\DB::table('db_entity_volumes')->whereIn('period', $periods)->get() as $volume) {
@@ -402,6 +403,7 @@ class DashboardController extends Controller
                         if ($group['entity'] !== 'BP' || $group['activity'] !== $activity) continue;
                         $existing = (float) ($group['months'][$glPeriod] ?? 0);
                         $group['months'][$glPeriod] = $add ? $existing + $amount : $amount;
+                        $group['glMonths'][$glPeriod] = (float) ($group['glMonths'][$glPeriod] ?? 0) + $amount;
                         break;
                     }
                     unset($group);
@@ -417,7 +419,9 @@ class DashboardController extends Controller
                 $id = json_encode(['entity', $group['entity'], $group['activity']], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 $remark = $remarks->get($id)?->remark;
                 if ($remark !== null) $remarkValues[$id] = $remark;
-                $rows[] = ['id'=>$id,'entity'=>$group['entity'],'activity'=>$group['activity'],'component'=>1,'amount'=>$amount,'months'=>$group['months']];
+                $sourceAmount = $mode === 'ytd' ? array_sum(array_map('floatval', $group['sourceMonths'])) : (float) ($group['sourceMonths'][$period] ?? 0);
+                $glAmount = $mode === 'ytd' ? array_sum(array_map('floatval', $group['glMonths'])) : (float) ($group['glMonths'][$period] ?? 0);
+                $rows[] = ['id'=>$id,'entity'=>$group['entity'],'activity'=>$group['activity'],'component'=>1,'amount'=>$amount,'months'=>$group['months'],'sourceAmount'=>$sourceAmount,'sourceMonths'=>$group['sourceMonths'],'glAmount'=>$glAmount,'glMonths'=>$group['glMonths']];
             }
             $rowPeriodsWithGl = array_values($glPeriods);
             return response()->json(['success'=>true,'data'=>[
