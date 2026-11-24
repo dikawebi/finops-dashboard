@@ -93,6 +93,7 @@ class InventoryValuationService
         // are still company inventory. Keep them as their own visible locations
         // so totals and the composition chart include them exactly once.
         foreach ([
+            'transitBuaWp' => 'In Transit BUA to WP',
             'transitBuaPort' => 'In Transit BUA to Port',
             'transitWpPort' => 'In Transit WP to Port',
         ] as $id => $name) {
@@ -114,7 +115,7 @@ class InventoryValuationService
             $amount[$id] = (float) ($prior['endingValueUSD'] ?? 0);
         }
         $transitOpenings = $openingData['liveTransitBalances'] ?? [];
-        foreach (['transitBuaPort','transitWpPort'] as $id) {
+        foreach (['transitBuaWp','transitBuaPort','transitWpPort'] as $id) {
             $qty[$id] = (float) ($transitOpenings[$id]['qtyMT'] ?? 0);
             $amount[$id] = (float) ($transitOpenings[$id]['valueUSD'] ?? 0);
         }
@@ -163,7 +164,9 @@ class InventoryValuationService
         $mined = max(0, $sheetCoalGetting !== null ? (float) $sheetCoalGetting : $sum(fn ($r) => $r->location === 'bua' && $r->movement_type === 'coalMined'));
         // The same route quantity is recorded once at each location: out at BUA,
         // in at Non Wash. It is a single transfer in the stock flow.
-        $buaToWp = $routeQty('bua', 'BUA to Washing Plant', 'transfer_out');
+        $buaToWp = $routeQty('bua', 'BUA to Washing Plant', 'transfer_out'); // hauled/arrived quantity
+        $loadingBuaWpMetric = DB::table('monthly_metrics')->where('metric_key', 'loadingBuaWp')->where('period', $period)->value('value');
+        $buaLoadedWp = max(0, $loadingBuaWpMetric !== null ? (float) $loadingBuaWpMetric : 0.0);
         $buaLoadedPort = $routeQty('bua', 'BUA to Port', 'transfer_out');
         $buaArrivedPort = $routeQty('transitBuaPort', 'BUA to Port', 'transfer_out');
         $wpLoadedPort = $routeQty('washed', 'Washing Plant to Port', 'transfer_out');
@@ -180,24 +183,33 @@ class InventoryValuationService
         // compatibility; new sheet syncs record the movement under Wash.
         $reject = max(0, $sum(fn ($r) => $r->movement_type === 'washReject' && in_array($r->location, ['washed','highAsh'], true)));
         $barging = max(0, -$sum(fn ($r) => $r->location === 'port' && $r->movement_type === 'barging'));
-        $directBuaWpIn = $routeQty('nonWash', 'BUA to Washing Plant', 'transfer_in');
+        $buaArrivedWp = $routeQty('nonWash', 'BUA to Washing Plant', 'transfer_in');
         $qty['bua'] += $mined;
         $amount['bua'] += $costs['bua'];
         $activity['bua']['in'] = $mined; $activity['bua']['receipt'] = $costs['bua'];
         $availableSnapshots['bua'] = ['qty'=>$qty['bua'],'value'=>$amount['bua']];
         $buaRate = $qty['bua'] > 0 ? $amount['bua'] / $qty['bua'] : 0;
-        $buaOut = $buaToWp + $buaLoadedPort;
+        $buaOut = $buaLoadedWp + $buaLoadedPort;
         $activity['bua']['out'] = $buaOut; $activity['bua']['outValue'] = $buaOut * $buaRate;
         $amount['bua'] -= $activity['bua']['outValue'];
         $qty['bua'] -= $buaOut;
         $applyManualAdjustment('bua');
 
-        // BUA→Non Wash is a direct stockpile transfer, not a separate transit stage.
-        $qty['transitBuaWp'] = 0.0;
-        $amount['transitBuaWp'] = 0.0;
-        $qty['nonWash'] += $directBuaWpIn;
-        $amount['nonWash'] += $directBuaWpIn * $buaRate + $costs['nonWash'];
-        $activity['nonWash']['in'] = $directBuaWpIn; $activity['nonWash']['receipt'] = $directBuaWpIn * $buaRate; $activity['nonWash']['cost'] = $costs['nonWash'];
+        // Loading and hauling BUA→WP are distinct movements. Keep coal in transit
+        // until the synced hauling quantity arrives at Non Wash.
+        $qty['transitBuaWp'] += $buaLoadedWp;
+        $amount['transitBuaWp'] += $buaLoadedWp * $buaRate;
+        $activity['transitBuaWp']['in'] = $buaLoadedWp; $activity['transitBuaWp']['receipt'] = $buaLoadedWp * $buaRate;
+        $applyManualAdjustment('transitBuaWp');
+        $availableSnapshots['transitBuaWp'] = ['qty'=>$qty['transitBuaWp'],'value'=>$amount['transitBuaWp']];
+        $transitBuaWpRate = $qty['transitBuaWp'] > 0 ? $amount['transitBuaWp'] / $qty['transitBuaWp'] : 0;
+        $buaWpArrivalValue = $buaArrivedWp * $transitBuaWpRate;
+        $qty['transitBuaWp'] -= $buaArrivedWp;
+        $amount['transitBuaWp'] -= $buaWpArrivalValue;
+        $activity['transitBuaWp']['out'] = $buaArrivedWp; $activity['transitBuaWp']['outValue'] = $buaWpArrivalValue;
+        $qty['nonWash'] += $buaArrivedWp;
+        $amount['nonWash'] += $buaWpArrivalValue + $costs['nonWash'];
+        $activity['nonWash']['in'] = $buaArrivedWp; $activity['nonWash']['receipt'] = $buaWpArrivalValue; $activity['nonWash']['cost'] = $costs['nonWash'];
         $nonWashAvailable = $qty['nonWash'];
         $nonWashRate = $qty['nonWash'] > 0 ? $amount['nonWash'] / $qty['nonWash'] : 0;
         $availableSnapshots['nonWash'] = ['qty'=>$qty['nonWash'],'value'=>$amount['nonWash']];
@@ -243,6 +255,13 @@ class InventoryValuationService
         $transitWpPortValue = $wpArrivedPort * $transitWpRate;
         $qty['transitWpPort'] -= $wpArrivedPort; $amount['transitWpPort'] -= $transitWpPortValue;
         $activity['transitWpPort']['out'] = $wpArrivedPort; $activity['transitWpPort']['outValue'] = $transitWpPortValue;
+
+        // KUNZ and ISP transit adjustments belong before their available balance
+        // and rate, as specified in the inventory valuation handover.
+        foreach (['kunz','transitKunz'] as $id) {
+            $applyManualAdjustment($id);
+            $availableSnapshots[$id] = ['qty'=>$qty[$id] ?? 0.0,'value'=>$amount[$id] ?? 0.0];
+        }
         $portAvailableQty = $qty['port'] + $buaArrivedPort + $wpArrivedPort;
         $portAvailableValue = $amount['port'] + $transitBuaPortValue + $transitWpPortValue + $costs['port'];
         $qty['port'] = $portAvailableQty;
@@ -258,7 +277,7 @@ class InventoryValuationService
         $activity['port']['out'] = $barging; $activity['port']['outValue'] = $bargingValue;
         $applyManualAdjustment('port');
 
-        foreach (['highAsh','kunz','transitPort','transitKunz','transitBuaWp'] as $id) $applyManualAdjustment($id);
+        foreach (['highAsh','transitPort'] as $id) $applyManualAdjustment($id);
 
         foreach ($stages as $id => $stage) {
             $begin = $opening->get($id);
@@ -287,14 +306,15 @@ class InventoryValuationService
             $closingRow = ['label'=>'Closing balance','qtyMT'=>$stage['endingQtyMT'],'valueUSD'=>$stage['endingValueUSD'],'rateUSD'=>$stage['endingRateUSD'],'type'=>'closing'];
             $movement = static fn (string $label, float $movementQty, float $value, string $type, ?string $source = null): array => array_filter(['label'=>$label,'qtyMT'=>$movementQty,'valueUSD'=>$value,'rateUSD'=>abs($movementQty) > 0.000001 ? abs($value / $movementQty) : null,'type'=>$type,'source'=>$source], static fn ($v) => $v !== null);
             $stage['rows'] = match ($id) {
-                'bua' => [$openingRow,$movement('Coal mined — COGP Mining', $mined, $costs['bua'], 'receipt', 'Google Sheets + D365 GL'),$availableRow,$movement('Loaded to Wash Plant',-$buaToWp,-$buaToWp*$buaRate,'outflow','Google Sheets'),$movement('Loaded to BP PORT',-$buaLoadedPort,-$buaLoadedPort*$buaRate,'outflow','Google Sheets'),...($manualRows['bua'] ?? []),$closingRow],
-                'nonWash' => [$openingRow,$movement('Received from BUA to Washing Plant',$directBuaWpIn,$directBuaWpIn*$buaRate,'receipt','Google Sheets'),$movement('Add cost — Coal Hauling BUA to WP',0,$costs['nonWash'],'cost','D365 GL'),$availableRow,$movement('Washing Plant Feed',-$washFeedApplied,-$feedValue,'outflow','Google Sheets'),...($manualRows['nonWash'] ?? []),$closingRow],
+                'bua' => [$openingRow,$movement('Coal mined — COGP Mining', $mined, $costs['bua'], 'receipt', 'Google Sheets + D365 GL'),$availableRow,$movement('Loaded to Wash Plant',-$buaLoadedWp,-$buaLoadedWp*$buaRate,'outflow','Google Sheets'),$movement('Loaded to BP PORT',-$buaLoadedPort,-$buaLoadedPort*$buaRate,'outflow','Google Sheets'),...($manualRows['bua'] ?? []),$closingRow],
+                'nonWash' => [$openingRow,$movement('Received from BUA to Washing Plant',$buaArrivedWp,$buaWpArrivalValue,'receipt','Google Sheets'),$movement('Add cost — Coal Hauling BUA to WP',0,$costs['nonWash'],'cost','D365 GL'),$availableRow,$movement('Washing Plant Feed',-$washFeedApplied,-$feedValue,'outflow','Google Sheets'),...($manualRows['nonWash'] ?? []),$closingRow],
                 'washed' => [$openingRow,$movement('Feed received from Non Wash',$feed,$feedValue,'receipt','Google Sheets'),$movement('Add cost — COGP Washing Plant',0,$costs['washed'],'cost','D365 GL'),$movement('Reject removed from Wash',-$reject,0.0,'outflow','Google Sheets'),$availableRow,$movement('Loaded to BP PORT',-$washedOut,-$washedValue,'outflow','Google Sheets'),...($manualRows['washed'] ?? []),$closingRow],
                 'highAsh' => [$openingRow,$availableRow,...($manualRows['highAsh'] ?? []),$closingRow],
                 'port' => [$openingRow,$movement('Received from BUA to Port',$buaArrivedPort,$transitBuaPortValue,'receipt','Google Sheets'),$movement('Received from Washing Plant to Port',$wpArrivedPort,$transitWpPortValue,'receipt','Google Sheets'),$movement('Add cost — hauling routes + COGP BP PORT',0,$costs['port'],'cost','D365 GL'),$availableRow,$movement('Barging',-$barging,-$bargingValue,'outflow','Google Sheets'),...($manualRows['port'] ?? []),$closingRow],
-                'transitBuaWp' => [$openingRow,...($manualRows['transitBuaWp'] ?? []),$closingRow],
+                'transitBuaWp' => [$openingRow,$movement('Loaded at BUA',$buaLoadedWp,$buaLoadedWp*$buaRate,'receipt','Google Sheets'),...($manualRows['transitBuaWp'] ?? []),$availableRow,$movement('Arrived at Washing Plant',-$buaArrivedWp,-$buaWpArrivalValue,'outflow','Google Sheets'),$closingRow],
                 'transitBuaPort' => [$openingRow,$movement('Loaded at BUA',$buaLoadedPort,$buaLoadedPort*$buaRate,'receipt','Google Sheets'),...($manualRows['transitBuaPort'] ?? []),$movement('Arrived at BP PORT',-$buaArrivedPort,-$transitBuaPortValue,'outflow','Google Sheets'),$closingRow],
                 'transitWpPort' => [$openingRow,$movement('Loaded at Washing Plant',$wpLoadedPort,$wpLoadedPort*$washedRate,'receipt','Google Sheets'),...($manualRows['transitWpPort'] ?? []),$movement('Arrived at BP PORT',-$wpArrivedPort,-$transitWpPortValue,'outflow','Google Sheets'),$closingRow],
+                'kunz','transitKunz' => [$openingRow,...($manualRows[$id] ?? []),$availableRow,$closingRow],
                 default => [$openingRow,...($manualRows[$id] ?? []),$closingRow],
             };
             $stages->put($id, $stage);
@@ -314,14 +334,20 @@ class InventoryValuationService
         $template['costMapping'] = ['hasData'=>true,'source'=>'d365-gl','buaUSD'=>$costs['bua'],'washingUSD'=>$costs['washed'],'portUSD'=>(float) ($cost['costPort'] ?? 0),'haulingTotalUSD'=>$costs['nonWash'] + (float) ($cost['costHaulingBUAToPort'] ?? 0) + (float) ($cost['costHaulingWPToPort'] ?? 0),'haulingBUAToWPUSD'=>$costs['nonWash'],'haulingBUAToPortUSD'=>(float) ($cost['costHaulingBUAToPort'] ?? 0),'haulingWPToPortUSD'=>(float) ($cost['costHaulingWPToPort'] ?? 0),'quantityReconciliationMT'=>round($feed-$clean-$reject, 6),'source'=>'D365 GL allocation: COGP Mining, Coal Hauling routes, Washing Plant, BP PORT'];
         $template['dynamicSourceStatus'] = 'active';
         $template['sourceRowCounts'] = ['productionDays'=>$productionRows,'inventoryMovements'=>$movementRows->count(),'d365GlRows'=>$glRows];
-        $template['liveMovements'] = compact('mined','buaToWp','buaLoadedPort','buaArrivedPort','wpLoadedPort','wpArrivedPort','feed','clean','reject','barging');
+        $template['liveMovements'] = compact('mined','buaToWp','buaLoadedWp','buaArrivedWp','buaLoadedPort','buaArrivedPort','wpLoadedPort','wpArrivedPort','feed','clean','reject','barging');
         $template['liveTransitBalances'] = [
+            'transitBuaWp'=>['qtyMT'=>(float) ($qty['transitBuaWp'] ?? 0),'valueUSD'=>(float) ($amount['transitBuaWp'] ?? 0)],
             'transitBuaPort'=>['qtyMT'=>(float) ($qty['transitBuaPort'] ?? 0),'valueUSD'=>(float) ($amount['transitBuaPort'] ?? 0)],
             'transitWpPort'=>['qtyMT'=>(float) ($qty['transitWpPort'] ?? 0),'valueUSD'=>(float) ($amount['transitWpPort'] ?? 0)],
         ];
         $template['validationWarnings'] = [];
+        if ($loadingBuaWpMetric === null) $template['validationWarnings'][] = 'Loading BUA to WP is missing; transit is not estimated and inventory is provisional.';
+        if ($loadingBuaWpMetric !== null && $buaArrivedWp > $buaLoadedWp + 0.001) $template['validationWarnings'][] = 'Hauling BUA to WP exceeds loading; transit balance is negative and requires reconciliation.';
+        if ($buaArrivedPort > $buaLoadedPort + 0.001) $template['validationWarnings'][] = 'Hauling BUA to Port exceeds loading; transit balance is negative and requires reconciliation.';
+        if ($wpArrivedPort > $wpLoadedPort + 0.001) $template['validationWarnings'][] = 'Hauling WP to Port exceeds loading; transit balance is negative and requires reconciliation.';
         if (abs($feed - $clean - $reject) > 0.001) $template['validationWarnings'][] = 'Coal Wash quantity does not reconcile: Feed differs from Clean Cooking plus Reject by '.number_format($feed - $clean - $reject, 3, '.', '').' MT.';
         if ($washedOut > (float) ($opening->get('washed')['endingQtyMT'] ?? 0) + $feed - $reject) $template['validationWarnings'][] = 'Washing Plant to Port loading exceeds Wash stock available for the period; negative stock is retained for reconciliation.';
+        if ($template['validationWarnings']) $template['isProvisional'] = true;
         $template['history'] = array_values(array_filter($template['history'] ?? [], fn ($r) => ($r['period'] ?? '') !== $period));
         $template['history'][] = ['period'=>$period,'totalEndingQtyMT'=>$template['totalEndingQtyMT'],'totalEndingValueUSD'=>$template['totalEndingValueUSD'],'cogsShippedQtyMT'=>0,'cogsShippedValUSD'=>0,'hasCostData'=>true,'costSource'=>'d365-gl','quantitySource'=>'google-sheets','issues'=>[]];
         $template['buaHistory'] = array_values(array_filter($template['buaHistory'] ?? [], fn ($r) => ($r['period'] ?? '') !== $period));
