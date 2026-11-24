@@ -135,19 +135,25 @@ function attachMapPopover(panel, map, options) {
             const metricKeys = { 'OB Removal include blasting':'blasting','OB removal freedig':'freedig','Topsoil':'topsoil','Mud':'mud','Coal Getting + Hauling 1km':'coalGetting','Coal Hauling Overdistance':'coalGetting' };
             const sourceRows = dailyData.miningBreakdown || [];
             const periods = mode === 'ytd' ? Array.from({length:Number(period.slice(5))}, (_, index) => `${period.slice(0,4)}-${String(index+1).padStart(2,'0')}`) : [period];
-            const sumSource = (label, section) => {
-                const matching = sourceRows.filter(row => row.label.toLowerCase() === label.toLowerCase() && row.section === section && row.entity === 'HRS');
-                const values = periods.map(month => matching.find(row => row.period === month)?.amount_usd);
-                return matching.length && values.every(value => value != null && Number.isFinite(Number(value))) ? values.reduce((sum, value) => sum + Number(value), 0) : null;
-            };
-            const metrics = dbMetrics || {};
+            const internalDetail = options.reportType === 'internal';
+            const detailPeriods = internalDetail ? [period] : periods;
+            let metrics = dbMetrics || {};
+            if (internalDetail && mode === 'ytd') {
+                const monthlyProduction = await api(`/api/production-summary?period=${period}&mode=mtd`);
+                metrics = monthlyProduction.dbMetrics || {};
+            }
             const metric = key => metrics[key]?.value == null ? null : Number(metrics[key].value);
             const tableRows = labels.map(label => {
                 const qtyValue = label === 'OB Overdistance'
                     ? [metric('blasting'), metric('freedig')].every(value => value != null) ? metric('blasting') + metric('freedig') : null
                     : metricKeys[label] ? metric(metricKeys[label]) : null;
-                const operation = sumSource(label, 'operation');
-                const fuel = sumSource(label, 'fuel');
+                const sourceAmount = (section) => {
+                    const matching = sourceRows.filter(row => row.label.toLowerCase() === label.toLowerCase() && row.section === section && row.entity === 'HRS');
+                    const values = detailPeriods.map(month => matching.find(row => row.period === month)?.amount_usd);
+                    return matching.length && values.every(value => value != null && Number.isFinite(Number(value))) ? values.reduce((sum, value) => sum + Number(value), 0) : null;
+                };
+                const operation = sourceAmount('operation');
+                const fuel = sourceAmount('fuel');
                 const total = operation == null || fuel == null ? null : operation + fuel;
                 return [label, qtyValue == null ? '—' : `${detailQty(qtyValue)} ${['OB Removal include blasting','OB removal freedig','OB Overdistance','Topsoil','Mud'].includes(label) ? 'Bcm' : 'MT'}`, operation == null ? '—' : `USD ${number(operation)}`, fuel == null ? '—' : `USD ${number(fuel)}`, total == null ? '—' : `USD ${number(total)}`, total == null || !metric('coalGetting') ? '—' : `USD ${flowRate(total / metric('coalGetting'))} / MT`];
             });
@@ -155,17 +161,21 @@ function attachMapPopover(panel, map, options) {
                 costsPromise ||= api(`/api/db-cost-summary?period=${period}&mode=${mode}`).catch(error => { costsPromise = null; throw error; });
                 const summary = await costsPromise;
                 const overheadRow = (summary.rows || []).find(row => row.entity === 'BP' && row.activity === 'Overhead BUA');
-                const directOverhead = overheadRow
-                    ? Number(overheadRow.sourceAmount ?? (mode === 'ytd' ? periods.reduce((sum, month) => sum + Number(overheadRow.sourceMonths?.[month] || 0), 0) : overheadRow.sourceMonths?.[period] ?? 0))
-                    : null;
+                const directOverheadValue = overheadRow?.sourceMonths?.[period];
+                const directOverhead = directOverheadValue !== null && directOverheadValue !== undefined && Number.isFinite(Number(directOverheadValue))
+                    ? Number(directOverheadValue) : null;
                 const allocationRows = new Map((summary.overheadAllocations || []).map(row => [row.period, row]));
-                const allocationValues = periods.map(month => allocationRows.get(month)?.allocatedBuaUSD);
-                const allocation = allocationValues.length && allocationValues.every(value => value !== null && value !== undefined && Number.isFinite(Number(value)))
-                    ? allocationValues.reduce((sum, value) => sum + Number(value), 0) : null;
-                tableRows.push(['Direct Overhead BUA', '—', '—', directOverhead === null ? '—' : `USD ${number(directOverhead)}`, directOverhead === null ? '—' : `USD ${number(directOverhead)}`, 'Google Sheets · DB']);
+                const allocationValue = allocationRows.get(period)?.allocatedBuaUSD;
+                const allocation = allocationValue !== null && allocationValue !== undefined && Number.isFinite(Number(allocationValue))
+                    ? Number(allocationValue) : null;
+                const coalGetting = metric('coalGetting');
+                const costRate = amount => amount !== null && amount !== undefined && Number.isFinite(Number(amount)) && coalGetting > 0
+                    ? `USD ${flowRate(Number(amount) / coalGetting)} / MT coal`
+                    : '—';
+                tableRows.push(['Direct Overhead BUA', '—', '—', directOverhead === null ? '—' : `USD ${number(directOverhead)}`, directOverhead === null ? '—' : `USD ${number(directOverhead)}`, costRate(directOverhead)]);
                 tableRows.push([
                     'Allocated JKT & PC / ISP Rent', '—', '—', '—', allocation === null ? '—' : `USD ${number(allocation)}`,
-                    allocation === null ? 'No synced allocation for selected period' : 'Google Sheets · WA COGP-COGS',
+                    costRate(allocation),
                 ]);
             }
             const basisNote = options.reportType === 'internal'
