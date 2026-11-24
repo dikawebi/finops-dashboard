@@ -272,28 +272,36 @@ class CostMatrixService
             unset($row);
             foreach (['costWP','totalCOGP','totalCosting','allCost'] as $field) $data['grandTotal'][$field] = bcsub((string) ($data['grandTotal'][$field] ?? 0), (string) $excluded, 6);
         }
-        // Match localhost:3000 internal reporting: replace D365's WP production
-        // allocation with the synchronized Google Sheets DB summary and spread
-        // it over the same October account proportions. The source remains the
-        // existing Sheets DB tab; no workbook snapshot is used for October.
         $periods = $data['periods'] ?? [$data['period'] ?? null];
-        $livePeriods = array_values(array_filter($periods, static fn ($period): bool => (string) $period >= '2026-10'));
-        $summaryRows = DB::table('db_cost_summary')->whereIn('period', $livePeriods)
-            ->where('entity', 'BP')->where('activity', 'Washplant')->get(['period','amount'])->keyBy('period');
-        $basis = [
-            '5000051'=>16235.30,'5000052'=>2178.28,'5000053'=>3827.62,'5000054'=>1629.57,
-            '5000056'=>222.74,'5000402'=>23898.20,'5001502'=>4900.00,'5001701'=>16171.24,
-            '5000101'=>12403.35,'5000102'=>3426.41,'5000303'=>-15.58,'5000304'=>9726.16,
-            '5000601'=>62370.00,'5000604'=>576.51,'5000802'=>808.74,'5000803'=>584.30,
-            '5001712'=>7779.52,
+        $categoryRows = DB::table('google_sheets_wash_cost_categories')->whereIn('period', $periods)
+            ->orderBy('period')->orderBy('category')->get(['period','category','amount_usd'])->groupBy('period');
+        $categoryBasis = [
+            'Employee Salary & Welfare'=>[['5000051',16235.30],['5000052',2178.28],['5000053',3827.62],['5000054',1629.57],['5000056',222.74],['5000402',23898.20],['5001502',4900.00],['5001701',16171.24]],
+            'Equipment Rent.'=>[['5000101',12403.35],['5000102',3426.41]],
+            'Freight & Handling Charges'=>[['5000303',-15.58],['5000304',9726.16]],
+            'Fuel.'=>[['5000601',62370.00]],
+            'Consumable Goods'=>[['5000604',576.51]],
+            'Repair & Maintenance'=>[['5000802',808.74],['5000803',584.30]],
+            'Safety & Environmental'=>[['5001712',7779.52]],
         ];
-        $basisTotal = array_sum($basis);
-        $adjust = function (string $code, float $amount) use (&$data): void {
+        $categoryParents = [
+            'Fuel.'=>'5000600','Safety & Environmental'=>'5001700','Equipment Rent.'=>'5000100',
+            'Repair & Maintenance'=>'5000800','Freight & Handling Charges'=>'5000300','Consumable Goods'=>'5000600',
+            'Coal Sampling Analysis'=>'5001100','Employee Salary & Welfare'=>'5000000','Network'=>'5001300',
+            'Traveling'=>'5001500','Utilities'=>'5001400',
+        ];
+        $directMappings = ['Coal Sampling Analysis'=>[['5001101',1.0]],'Network'=>[['5001302',1.0]]];
+        $adjust = function (string $code, float $amount, ?string $name = null, ?string $parentCode = null) use (&$data): void {
             if (abs($amount) < 0.000001) return;
             $leafIndex = null;
             foreach ($data['rows'] as $index => $row) if ((string) ($row['code'] ?? '') === $code && !($row['isParent'] ?? false)) { $leafIndex = $index; break; }
-            if ($leafIndex === null) return;
-            $parentCode = (string) ($data['rows'][$leafIndex]['parent'] ?? '');
+            if ($leafIndex === null) {
+                $leaf = ['code'=>$code,'name'=>$name ?? $code,'parent'=>$parentCode,'isParent'=>false];
+                foreach (self::FIELDS as $field) $leaf[$field] = '0';
+                $data['rows'][] = $leaf;
+                $leafIndex = array_key_last($data['rows']);
+            }
+            $parentCode = $parentCode ?? (string) ($data['rows'][$leafIndex]['parent'] ?? '');
             foreach (['costWP','totalCOGP','totalCosting','allCost'] as $field) {
                 $data['rows'][$leafIndex][$field] = (float) ($data['rows'][$leafIndex][$field] ?? 0) + $amount;
                 if ($parentCode !== '') foreach ($data['rows'] as &$parent) {
@@ -307,24 +315,41 @@ class CostMatrixService
             }
         };
         $internalWpPeriods = [];
+        $pending = [];
         foreach ($periods as $month) {
-            if (!$month || $month < '2026-10' || !$summaryRows->has($month)) continue;
-            $monthly = $month === ($data['period'] ?? null) && ($data['mode'] ?? 'mtd') === 'mtd'
-                ? null
-                : $this->compute($month, 'mtd', true);
-            $nativeRows = $monthly['rows'] ?? $data['rows'];
+            if (!$month || !$categoryRows->has($month)) continue;
+            $monthly = $this->compute($month, 'mtd', true);
+            $nativeRows = $monthly['rows'];
             foreach ($nativeRows as $row) {
                 if (($row['isParent'] ?? false) || (string) ($row['code'] ?? '') === '5000105') continue;
                 $amount = (float) ($row['costWP'] ?? 0);
                 if (abs($amount) > 0.000001) $adjust((string) $row['code'], -$amount);
             }
-            $total = (float) $summaryRows->get($month)->amount;
-            if ($basisTotal != 0.0) foreach ($basis as $code => $weight) $adjust($code, $total * $weight / $basisTotal);
+            foreach ($categoryRows->get($month) as $categoryRow) {
+                $label = trim((string) $categoryRow->category);
+                $amount = (float) $categoryRow->amount_usd;
+                if (abs($amount) < 0.0000001) continue;
+                $known = $categoryBasis[$label] ?? $directMappings[$label] ?? null;
+                $weightTotal = is_array($known) ? array_sum(array_column($known, 1)) : 0.0;
+                if ($known && abs($weightTotal) > 0.000001) {
+                    $allocated = 0.0;
+                    foreach (array_values($known) as $index => [$code, $weight]) {
+                        $value = $index === count($known) - 1 ? $amount - $allocated : $amount * $weight / $weightTotal;
+                        $adjust((string) $code, $value);
+                        $allocated += $value;
+                    }
+                    continue;
+                }
+                $categoryCode = 'DB-WP-'.$label;
+                $adjust($categoryCode, $amount, 'WP '.$label.' — account detail pending', $categoryParents[$label] ?? null);
+                $pending[$month] = true;
+            }
             $internalWpPeriods[] = $month;
         }
         $data['excludedWashPlantRentUSD'] = $excluded;
         $data['internalWPCategoryPeriods'] = $internalWpPeriods;
-        $data['internalWPAllocationBasis'] = 'Google Sheets DB · BP / Washplant, allocated using October 2026 account proportions';
+        $data['internalWPAccountDetailPending'] = array_keys($pending ?? []);
+        $data['internalWPAllocationBasis'] = 'Google Sheets DB · BP Wash Plant Cost categories, allocated using October 2026 account proportions';
     }
 
     private function historicalEntries(array $periods, array $monthsWithGl): array
@@ -515,6 +540,7 @@ class CostMatrixService
             'accrual_history'=>$stamp('accrual_history', $periods),
             'sheet_accruals'=>$stamp('db_accrual_items', $periods),
             'sheet_wp_summary'=>$stamp('db_cost_summary', $periods),
+            'sheet_wp_categories'=>$stamp('google_sheets_wash_cost_categories', $periods),
             'sheets_sync'=>SystemConfig::get('sheetsSync', []),
             'closing_overrides'=>SystemConfig::get('report_cost_closing_overrides', []),
             'locked_periods'=>SystemConfig::get('locked_periods', []),
