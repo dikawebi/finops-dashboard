@@ -11,8 +11,8 @@ class GoogleSheetsProductionSync
     public function sync(): array
     {
         $parsed = $this->readAndParse();
-        $rows = $parsed['rows']; $details = $parsed['details']; $monthlyMetrics = $parsed['monthlyMetrics']; $productionPeriods = $parsed['productionPeriods']; $inventoryMovements = $parsed['inventoryMovements']; $dbCostSummary = $parsed['dbCostSummary']; $dbAccrualItems = $parsed['dbAccrualItems']; $dbDailyCogpParameters = $parsed['dbDailyCogpParameters']; $dbMiningBreakdown = $parsed['dbMiningBreakdown']; $dbEntityVolumes = $parsed['dbEntityVolumes'];
-        DB::transaction(function () use ($rows, $details, $monthlyMetrics, $productionPeriods, $inventoryMovements, $dbCostSummary, $dbAccrualItems, $dbDailyCogpParameters, $dbMiningBreakdown, $dbEntityVolumes): void {
+        $rows = $parsed['rows']; $details = $parsed['details']; $monthlyMetrics = $parsed['monthlyMetrics']; $productionPeriods = $parsed['productionPeriods']; $inventoryMovements = $parsed['inventoryMovements']; $dbCostSummary = $parsed['dbCostSummary']; $dbAccrualItems = $parsed['dbAccrualItems']; $dbDailyCogpParameters = $parsed['dbDailyCogpParameters']; $dbMiningBreakdown = $parsed['dbMiningBreakdown']; $dbEntityVolumes = $parsed['dbEntityVolumes']; $overheadAllocations = $parsed['overheadAllocations'];
+        DB::transaction(function () use ($rows, $details, $monthlyMetrics, $productionPeriods, $inventoryMovements, $dbCostSummary, $dbAccrualItems, $dbDailyCogpParameters, $dbMiningBreakdown, $dbEntityVolumes, $overheadAllocations): void {
             $dates = array_column($rows, 'production_date');
             DB::table('production_activity_details')->where('source', 'google_sheets')->whereIn('production_date', $dates)->delete();
             DB::table('inventory_movements')->where('source', 'google_sheets')->whereIn('period', array_keys($productionPeriods))->delete();
@@ -40,15 +40,45 @@ class GoogleSheetsProductionSync
             foreach (array_chunk($dbMiningBreakdown, 500) as $chunk) DB::table('db_mining_breakdown')->insert($chunk);
             DB::table('db_entity_volumes')->whereIn('period', $summaryPeriods)->delete();
             foreach (array_chunk($dbEntityVolumes, 500) as $chunk) DB::table('db_entity_volumes')->insert($chunk);
+            foreach ($overheadAllocations as &$allocation) {
+                $allocation['source_synced_at'] = now();
+                $allocation['updated_at'] = now();
+                $allocation['created_at'] = now();
+            }
+            unset($allocation);
+            DB::table('google_sheets_inventory_cost_allocations')->upsert(
+                $overheadAllocations,
+                ['period'],
+                ['overhead_pool_usd','isp_rent_usd','allocated_bua_usd','allocated_wash_usd','allocated_port_usd','allocated_isp_usd','source_sheet','source_synced_at','updated_at']
+            );
             DB::table('system_configs')->updateOrInsert(['key'=>'sheetsSync'], ['value'=>json_encode(['last_synced_at'=>now()->toIso8601String(),'rows'=>count($rows),'details'=>count($details),'db_cost_periods'=>$summaryPeriods,'db_accrual_periods'=>$accrualPeriods,'db_accrual_rows'=>count($dbAccrualItems),'db_mining_breakdown_rows'=>count($dbMiningBreakdown),'db_entity_volume_rows'=>count($dbEntityVolumes)]),'updated_at'=>now(),'created_at'=>now()]);
         });
-        return ['rows'=>count($rows),'details'=>count($details),'inventory_movements'=>count($inventoryMovements),'metrics'=>count($monthlyMetrics, COUNT_RECURSIVE) - count($monthlyMetrics),'db_cost_rows'=>array_sum(array_map('count', $dbCostSummary)),'db_accrual_rows'=>count($dbAccrualItems),'daily_cogp_parameters'=>count($dbDailyCogpParameters),'db_mining_breakdown_rows'=>count($dbMiningBreakdown),'db_entity_volume_rows'=>count($dbEntityVolumes),'periods'=>array_keys($productionPeriods),'synced_at'=>now()->toIso8601String()];
+        return ['rows'=>count($rows),'details'=>count($details),'inventory_movements'=>count($inventoryMovements),'metrics'=>count($monthlyMetrics, COUNT_RECURSIVE) - count($monthlyMetrics),'db_cost_rows'=>array_sum(array_map('count', $dbCostSummary)),'db_accrual_rows'=>count($dbAccrualItems),'daily_cogp_parameters'=>count($dbDailyCogpParameters),'db_mining_breakdown_rows'=>count($dbMiningBreakdown),'db_entity_volume_rows'=>count($dbEntityVolumes),'overhead_allocation_periods'=>count($overheadAllocations),'periods'=>array_keys($productionPeriods),'synced_at'=>now()->toIso8601String()];
+    }
+
+    /** Refresh only the Google Sheets allocation snapshot without rewriting production or DB summary data. */
+    public function syncInventoryOverheadAllocations(): array
+    {
+        $allocations = $this->readAndParse()['overheadAllocations'];
+        $syncedAt = now();
+        foreach ($allocations as &$allocation) {
+            $allocation['source_synced_at'] = $syncedAt;
+            $allocation['updated_at'] = $syncedAt;
+            $allocation['created_at'] = $syncedAt;
+        }
+        unset($allocation);
+        DB::transaction(fn () => DB::table('google_sheets_inventory_cost_allocations')->upsert(
+            $allocations,
+            ['period'],
+            ['overhead_pool_usd','isp_rent_usd','allocated_bua_usd','allocated_wash_usd','allocated_port_usd','allocated_isp_usd','source_sheet','source_synced_at','updated_at']
+        ));
+        return ['periods'=>array_column($allocations, 'period'),'rows'=>count($allocations),'source'=>'Google Sheets · WA COGP-COGS','synced_at'=>$syncedAt->toIso8601String()];
     }
 
     public function preview(): array
     {
         $data = $this->readAndParse();
-        return ['rows'=>count($data['rows']),'details'=>count($data['details']),'metric_periods'=>array_keys($data['monthlyMetrics']),'periods'=>array_keys($data['productionPeriods']),'monthly_metrics'=>$data['monthlyMetrics'],'db_cost_rows'=>array_sum(array_map('count', $data['dbCostSummary'])),'db_accrual_rows'=>count($data['dbAccrualItems']),'daily_cogp_parameters'=>count($data['dbDailyCogpParameters']),'db_mining_breakdown_rows'=>count($data['dbMiningBreakdown']),'db_entity_volume_rows'=>count($data['dbEntityVolumes']),'sample_mining_breakdown'=>array_values(array_filter($data['dbMiningBreakdown'], static fn (array $row): bool => $row['period'] === '2026-10')),'sample_entity_volumes'=>array_values(array_filter($data['dbEntityVolumes'], static fn (array $row): bool => $row['period'] === '2026-10')),'sample_accruals'=>array_slice($data['dbAccrualItems'],0,8),'samples'=>array_slice($data['rows'],0,5),'sample_details'=>array_slice($data['details'],0,12)];
+        return ['rows'=>count($data['rows']),'details'=>count($data['details']),'metric_periods'=>array_keys($data['monthlyMetrics']),'periods'=>array_keys($data['productionPeriods']),'monthly_metrics'=>$data['monthlyMetrics'],'db_cost_rows'=>array_sum(array_map('count', $data['dbCostSummary'])),'overhead_allocation_periods'=>count($data['overheadAllocations']),'sample_overhead_allocation'=>array_values(array_filter($data['overheadAllocations'], static fn (array $row): bool => $row['period'] === '2026-10')),'db_accrual_rows'=>count($data['dbAccrualItems']),'daily_cogp_parameters'=>count($data['dbDailyCogpParameters']),'db_mining_breakdown_rows'=>count($data['dbMiningBreakdown']),'db_entity_volume_rows'=>count($data['dbEntityVolumes']),'sample_mining_breakdown'=>array_values(array_filter($data['dbMiningBreakdown'], static fn (array $row): bool => $row['period'] === '2026-10')),'sample_entity_volumes'=>array_values(array_filter($data['dbEntityVolumes'], static fn (array $row): bool => $row['period'] === '2026-10')),'sample_accruals'=>array_slice($data['dbAccrualItems'],0,8),'samples'=>array_slice($data['rows'],0,5),'sample_details'=>array_slice($data['details'],0,12)];
     }
 
     private function readAndParse(): array
@@ -121,7 +151,13 @@ class GoogleSheetsProductionSync
         $dbResponse = Http::withToken($token)->timeout(60)->get($dbUrl, ['valueRenderOption'=>'UNFORMATTED_VALUE']);
         if ($dbResponse->failed()) throw new RuntimeException('Google Sheets DB tab gagal dibaca: HTTP '.$dbResponse->status().' '.$dbResponse->json('error.message', ''));
         $dbRows = $dbResponse->json('values', []);
+        $waRange = "'WA COGP-COGS'!A:N";
+        $waUrl = 'https://sheets.googleapis.com/v4/spreadsheets/'.rawurlencode($spreadsheet).'/values/'.rawurlencode($waRange);
+        $waResponse = Http::withToken($token)->timeout(60)->get($waUrl, ['valueRenderOption'=>'UNFORMATTED_VALUE']);
+        if ($waResponse->failed()) throw new RuntimeException('Google Sheets WA COGP-COGS tab gagal dibaca: HTTP '.$waResponse->status().' '.$waResponse->json('error.message', ''));
+        $waRows = $waResponse->json('values', []);
         $monthlyMetrics = $this->parseDbMetrics($dbRows, $productionPeriods);
+        $overheadAllocations = $this->parseWaOverheadAllocations($waRows, array_keys($monthlyMetrics));
         $dbCostSummary = $this->parseDbCostSummary($dbRows, array_keys($monthlyMetrics));
         $dbAccrualItems = $this->parseDbAccrualItems($dbRows, array_keys($monthlyMetrics), $monthlyMetrics);
         $dbDailyCogpParameters = $this->parseDbDailyCogpParameters($dbRows, array_keys($monthlyMetrics));
@@ -167,7 +203,7 @@ class GoogleSheetsProductionSync
             $barging = $sheet['bargingMT'] ?? null;
             if ($barging !== null && $barging > 0) $appendMovement($period, 'port', 'barging', -$barging, ['source'=>'Google Sheets Coal Wash / Barging']);
         }
-        return compact('rows','details','monthlyMetrics','dbCostSummary','dbAccrualItems','dbDailyCogpParameters','dbMiningBreakdown','dbEntityVolumes','productionPeriods','inventoryMovements');
+        return compact('rows','details','monthlyMetrics','dbCostSummary','dbAccrualItems','dbDailyCogpParameters','dbMiningBreakdown','dbEntityVolumes','productionPeriods','inventoryMovements','overheadAllocations');
     }
 
     private function parseDbMiningBreakdown(array $rows, array $periods): array
@@ -347,6 +383,41 @@ class GoogleSheetsProductionSync
         }
 
         return array_values($parameters);
+    }
+
+    private function parseWaOverheadAllocations(array $rows, array $periods): array
+    {
+        $definitions = [
+            'OVH JKT & PC + ISP Rent pool' => 'overhead_pool_usd',
+            'ISP Rent total — allocation pool' => 'isp_rent_usd',
+            'OVH & ISP Rent allocated — BUA' => 'allocated_bua_usd',
+            'OVH & ISP Rent allocated — WP' => 'allocated_wash_usd',
+            'OVH & ISP Rent allocated — Port' => 'allocated_port_usd',
+            'OVH & ISP Rent allocated — ISP' => 'allocated_isp_usd',
+        ];
+        $normalize = static fn (mixed $value): string => mb_strtolower(preg_replace('/\s+/u', ' ', trim((string) $value)) ?? '');
+        $lookup = [];
+        foreach ($definitions as $label => $field) {
+            $matches = array_values(array_filter($rows, static function (array $row) use ($normalize, $label): bool {
+                return $normalize($row[1] ?? '') === $normalize($label);
+            }));
+            if (count($matches) !== 1) throw new RuntimeException("WA COGP-COGS expected one '{$label}' row, found ".count($matches).'.');
+            $lookup[$field] = $matches[0];
+        }
+
+        $allocations = [];
+        foreach ($periods as $period) {
+            $month = (int) substr($period, 5, 2);
+            $column = $month + 1; // Column C is January.
+            $values = [];
+            foreach ($lookup as $field => $row) $values[$field] = $this->number($row[$column] ?? null) ?? 0.0;
+            $allocated = $values['allocated_bua_usd'] + $values['allocated_wash_usd'] + $values['allocated_port_usd'] + $values['allocated_isp_usd'];
+            if (abs($allocated - $values['overhead_pool_usd']) > 0.02) {
+                throw new RuntimeException("{$period}: WA COGP-COGS overhead allocation does not reconcile to its pool.");
+            }
+            $allocations[] = ['period'=>$period,'source_sheet'=>'WA COGP-COGS'] + $values;
+        }
+        return $allocations;
     }
 
     private function parseDbCostSummary(array $rows, array $periods): array

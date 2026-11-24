@@ -78,9 +78,19 @@ function attachMapPopover(panel, map, options) {
             const activity = name => (costSummary.rows || []).find(row => row.entity === 'BP' && row.activity === name);
             const sourceAmount = row => row ? Number(row.sourceAmount ?? (mode === 'ytd' ? months.reduce((sum, month) => sum + Number(row.sourceMonths?.[month] || 0), 0) : row.sourceMonths?.[period] ?? 0)) : null;
             const glAmount = row => row ? Number(row.glAmount ?? (mode === 'ytd' ? months.reduce((sum, month) => sum + Number(row.glMonths?.[month] || 0), 0) : row.glMonths?.[period] ?? 0)) : null;
+            const allocationsByPeriod = new Map((costSummary.overheadAllocations || []).map(row => [row.period, row]));
+            const allocationAmount = field => {
+                const values = months.map(month => allocationsByPeriod.get(month)?.[field]);
+                return values.length && values.every(value => value !== null && value !== undefined && Number.isFinite(Number(value)))
+                    ? values.reduce((sum, value) => sum + Number(value), 0) : null;
+            };
             const costRows = [];
             const addCost = (label, amount, source) => { if (amount !== null && Number.isFinite(amount)) costRows.push([cardName, label, '—', `USD ${number(amount)}`, '—', source]); };
-            const addUnavailableAllocation = location => costRows.push([cardName, `Allocated JKT & PC / ISP Rent · ${location} share`, '—', '—', '—', 'No per-location allocation in synced source']);
+            const addAllocation = (location, field) => {
+                const amount = allocationAmount(field);
+                if (amount === null) costRows.push([cardName, `Allocated JKT & PC / ISP Rent · ${location}`, '—', '—', '—', 'No synced allocation for selected period']);
+                else addCost(`Allocated JKT & PC / ISP Rent · ${location}`, amount, 'Google Sheets · WA COGP-COGS');
+            };
             const grand = matrix.grandTotal || {};
             const overhead = activity('Overhead BUA'), pool = activity('OVH JKT & PC'), rent = activity('ISP Rent');
             if (cardName === 'Coal Mining') {
@@ -89,36 +99,29 @@ function attachMapPopover(panel, map, options) {
                 addCost('Overhead BUA · D365 GL mapped value', glAmount(overhead), 'D365 GL · Valuation to Mining');
                 addCost('JKT & PC overhead pool · not allocated by location', sourceAmount(pool), 'Google Sheets · DB Cost Summary');
                 addCost('ISP Rent pool · not allocated by location', sourceAmount(rent), 'Google Sheets · DB Cost Summary');
-                addUnavailableAllocation('BUA');
+                addAllocation('BUA', 'allocatedBuaUSD');
             } else if (cardName === 'Stockpile BUA') {
                 addCost('Mining COGP added to BUA stock', Number(grand.costMining || 0), 'D365 GL · Costing to Mining');
                 addCost('Direct Overhead BUA · synchronized sheet source', sourceAmount(overhead), 'Google Sheets · DB Cost Summary · shown separately from stock valuation');
-                addCost('JKT & PC overhead pool · location share unavailable', sourceAmount(pool), 'Google Sheets · DB Cost Summary');
-                addCost('ISP Rent pool · location share unavailable', sourceAmount(rent), 'Google Sheets · DB Cost Summary');
-                addUnavailableAllocation('BUA');
+                addAllocation('BUA', 'allocatedBuaUSD');
             } else if (cardName === 'Washing Plant') {
                 addCost('Coal Hauling BUA to WP', Number(grand.costHaulingBUAToWP || 0), 'D365 GL · route allocation');
                 addCost('Washing Plant COGP', Number(grand.costWP || 0), 'D365 GL · Costing to Washing Plant');
                 addCost('Washplant · synchronized sheet source', sourceAmount(activity('Washplant')), 'Google Sheets · DB Cost Summary');
                 addCost('Washplant · D365 GL valuation addition', glAmount(activity('Washplant')), 'D365 GL · Valuation to Washing Plant');
-                addCost('JKT & PC overhead pool · location share unavailable', sourceAmount(pool), 'Google Sheets · DB Cost Summary');
-                addCost('ISP Rent pool · location share unavailable', sourceAmount(rent), 'Google Sheets · DB Cost Summary');
-                addUnavailableAllocation('Washing Plant');
+                addAllocation('Washing Plant', 'allocatedWashUSD');
             } else if (cardName === 'BP Port') {
                 addCost('Coal Hauling BUA to Port', Number(grand.costHaulingBUAToPort || 0), 'D365 GL · route allocation');
                 addCost('Coal Hauling WP to Port', Number(grand.costHaulingWPToPort || 0), 'D365 GL · route allocation');
                 addCost('BP PORT COGP', Number(grand.costPort || 0), 'D365 GL · Costing to BP PORT');
                 addCost('Loading BLC · synchronized sheet source', sourceAmount(activity('Loading BLC')), 'Google Sheets · DB Cost Summary');
                 addCost('Loading BLC · D365 GL valuation addition', glAmount(activity('Loading BLC')), 'D365 GL · Valuation to BP PORT');
-                addCost('JKT & PC overhead pool · location share unavailable', sourceAmount(pool), 'Google Sheets · DB Cost Summary');
-                addCost('ISP Rent pool · location share unavailable', sourceAmount(rent), 'Google Sheets · DB Cost Summary');
-                addUnavailableAllocation('BP Port');
+                addAllocation('BP Port', 'allocatedPortUSD');
             } else if (cardName === 'ISP') {
                 addCost('ISP Rent · synchronized sheet source', sourceAmount(rent), 'Google Sheets · DB Cost Summary');
                 addCost('Transhipment BP Port to ISP', sourceAmount(activity('Transhipmet BP Port To ISP')), 'Google Sheets · DB Cost Summary');
                 addCost('Transhipment ISP to Taboneo', sourceAmount(activity('Transhipmet ISP to Taboneo')), 'Google Sheets · DB Cost Summary');
-                addCost('JKT & PC overhead pool · location share unavailable', sourceAmount(pool), 'Google Sheets · DB Cost Summary');
-                addUnavailableAllocation('ISP');
+                addAllocation('ISP', 'allocatedIspUSD');
             }
             return {
                 title, columns:['Stage','Movement / cost detail','Quantity','Amount','Rate','Source'],
@@ -166,20 +169,27 @@ function attachMapPopover(panel, map, options) {
             const summaryActivity = name => (summary.rows || []).find(row => row.entity === 'BP' && row.activity === name);
             const sourceCost = row => row ? Number(row.sourceAmount ?? (mode === 'ytd' ? periods.reduce((sum, month) => sum + Number(row.sourceMonths?.[month] || 0), 0) : row.sourceMonths?.[period] ?? 0)) : null;
             const mappedGlCost = row => row ? Number(row.glAmount ?? (mode === 'ytd' ? periods.reduce((sum, month) => sum + Number(row.glMonths?.[month] || 0), 0) : row.glMonths?.[period] ?? 0)) : null;
+            const allocationRows = new Map((summary.overheadAllocations || []).map(row => [row.period, row]));
+            const buaAllocValues = periods.map(month => allocationRows.get(month)?.allocatedBuaUSD);
+            const buaAllocation = buaAllocValues.length && buaAllocValues.every(value => value !== null && value !== undefined && Number.isFinite(Number(value)))
+                ? buaAllocValues.reduce((sum, value) => sum + Number(value), 0) : null;
             const addCostRow = (label, amount, source) => {
                 if (amount === null || !Number.isFinite(amount)) return;
                 tableRows.push([label, '—', '—', '—', `USD ${number(amount)}`, source]);
             };
-            const addUnavailable = location => tableRows.push([`Allocated JKT & PC / ISP Rent · ${location} share`, '—', '—', '—', '—', 'No per-location allocation in synced source']);
+            const addAllocationRow = () => tableRows.push([
+                'Allocated JKT & PC / ISP Rent · BUA', '—', '—', '—', buaAllocation === null ? '—' : `USD ${number(buaAllocation)}`,
+                buaAllocation === null ? 'No synced allocation for selected period' : 'Google Sheets · WA COGP-COGS',
+            ]);
             const overheadRow = summaryActivity('Overhead BUA');
             addCostRow('Direct Overhead BUA · Google Sheets source', sourceCost(overheadRow), 'Google Sheets DB Cost Summary');
             addCostRow('Overhead BUA · D365 GL mapped value', mappedGlCost(overheadRow), 'D365 GL · Valuation to Mining');
             addCostRow('JKT & PC overhead pool · not allocated by location', sourceCost(summaryActivity('OVH JKT & PC')), 'Google Sheets DB Cost Summary');
             addCostRow('ISP Rent pool · not allocated by location', sourceCost(summaryActivity('ISP Rent')), 'Google Sheets DB Cost Summary');
-            addUnavailable('BUA');
+            addAllocationRow();
             const d365Mining = Number(matrix.grandTotal?.costMining);
             if (Number.isFinite(d365Mining)) addCostRow('D365 GL Mining cost used in inventory', d365Mining, 'D365 GL · Costing to Mining');
-            return { title:'Coal Mining — Activity details', columns:['Activity','Quantity','Operation cost','Fuel cost','Total cost','Cost / MT · Source'], tableRows, note:`Combined Takalot · North G. Activity quantities and operation/fuel detail: synced Google Sheets DB · ${mode.toUpperCase()} ${period}. D365 mining COGP, direct overhead, the D365-mapped overhead value, and the JKT & PC / ISP Rent pools are displayed separately to make source differences visible. 8000 has no synced per-location split for the pools, so they are not treated as allocated values. USD/MT = cost ÷ Coal Getting. Account codes are omitted.` };
+            return { title:'Coal Mining — Activity details', columns:['Activity','Quantity','Operation cost','Fuel cost','Total cost','Cost / MT · Source'], tableRows, note:`Combined Takalot · North G. Activity quantities and operation/fuel detail: synced Google Sheets DB · ${mode.toUpperCase()} ${period}. Direct Overhead BUA is read from the DB sheet; the D365 valuation amount is shown separately. The JKT & PC / ISP Rent allocation is read from the synced WA COGP-COGS sheet. USD/MT = cost ÷ Coal Getting. Account codes are omitted.` };
         }
         if (item.dataset.overviewCard === 'Stockpile BUA') return locationLedger('Stockpile BUA — Movement & cost detail', ['bua','transitBuaWp','transitBuaPort'], 'Stockpile BUA', `Opening, receipts, costs, available balance, route loading, adjustments and closing are from the 8000 inventory roll-forward for ${period}. Route transit is shown as its own stage.`);
         if (item.dataset.overviewCard === 'Washing Plant') {

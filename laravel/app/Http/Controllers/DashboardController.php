@@ -423,17 +423,30 @@ class DashboardController extends Controller
                 $glAmount = $mode === 'ytd' ? array_sum(array_map('floatval', $group['glMonths'])) : (float) ($group['glMonths'][$period] ?? 0);
                 $rows[] = ['id'=>$id,'entity'=>$group['entity'],'activity'=>$group['activity'],'component'=>1,'amount'=>$amount,'months'=>$group['months'],'sourceAmount'=>$sourceAmount,'sourceMonths'=>$group['sourceMonths'],'glAmount'=>$glAmount,'glMonths'=>$group['glMonths']];
             }
+            $overheadAllocations = \Illuminate\Support\Facades\DB::table('google_sheets_inventory_cost_allocations')
+                ->whereIn('period', $periods)->orderBy('period')->get()
+                ->map(static fn ($allocation): array => [
+                    'period'=>$allocation->period,
+                    'poolUSD'=>(float) $allocation->overhead_pool_usd,
+                    'ispRentUSD'=>(float) $allocation->isp_rent_usd,
+                    'allocatedBuaUSD'=>(float) $allocation->allocated_bua_usd,
+                    'allocatedWashUSD'=>(float) $allocation->allocated_wash_usd,
+                    'allocatedPortUSD'=>(float) $allocation->allocated_port_usd,
+                    'allocatedIspUSD'=>(float) $allocation->allocated_isp_usd,
+                    'source'=>$allocation->source_sheet,
+                    'sourceSyncedAt'=>$allocation->source_synced_at,
+                ])->all();
             $rowPeriodsWithGl = array_values($glPeriods);
             return response()->json(['success'=>true,'data'=>[
                 'period'=>$period,'mode'=>$mode,'dataSource'=>'Google Sheets DB sync','rows'=>$rows,'entityVolumes'=>array_values($volumeGroups),
-                'remarks'=>$remarkValues,'glOverheadPeriods'=>$rowPeriodsWithGl,'syncedPeriods'=>$syncedPeriods,
+                'overheadAllocations'=>$overheadAllocations,'remarks'=>$remarkValues,'glOverheadPeriods'=>$rowPeriodsWithGl,'syncedPeriods'=>$syncedPeriods,
             ]]);
         }
 
         if ($period >= '2026-10') {
             return response()->json(['success'=>true,'data'=>[
                 'period'=>$period,'mode'=>$mode,'dataSource'=>'live-data-not-synced','rows'=>[],
-                'remarks'=>[],'glOverheadPeriods'=>[],'syncedPeriods'=>$syncedPeriods,
+                'overheadAllocations'=>[],'remarks'=>[],'glOverheadPeriods'=>[],'syncedPeriods'=>$syncedPeriods,
             ]]);
         }
 
