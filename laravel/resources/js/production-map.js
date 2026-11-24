@@ -187,11 +187,41 @@ function attachMapPopover(panel, map, options) {
             return { title:'Coal Mining — Activity details', columns:['Activity','Quantity','Operation cost','Fuel cost','Total cost','Cost / MT · Source'], tableRows, note:`${basisNote} Quantities and activity costs use synchronized Google Sheets DB data for ${mode.toUpperCase()} ${period}. Overhead allocation is shown only in Internal mode; it is not added to inventory valuation.` };
         }
         if (item.dataset.overviewCard === 'Stockpile BUA') return locationLedger('Stockpile BUA — Movement & cost detail', ['bua','transitBuaWp','transitBuaPort'], 'Stockpile BUA', `Opening, receipts, costs, available balance, route loading, adjustments and closing are from the 8000 inventory roll-forward for ${period}. Route transit is shown as its own stage.`);
-        if (item.dataset.overviewCard === 'Washing Plant') {
-            return locationLedger('Washing Plant — Movement & cost detail', ['nonWash','washed','highAsh','transitWpPort'], 'Washing Plant', `${mode.toUpperCase()} ${period}. Non Wash, Wash, High Ash, and transit remain separate balances. Reject is a quantity-only outflow from Wash; it is not added to High Ash.`);
+        if (['Washing Plant', 'BP Port', 'ISP'].includes(item.dataset.overviewCard)) {
+            if (options.reportType !== 'internal') return null;
+            const location = item.dataset.overviewCard;
+            const breakdown = options.internalBreakdown?.(location);
+            if (!breakdown) return {
+                title: `${location} — WA Cost Breakdown`,
+                sections: [{ title: '', rows: [['WA COGP-COGS breakdown is unavailable', options.periodLabel || period]] }],
+            };
+            const rows = breakdown.items.map(entry => [
+                entry.label,
+                `${entry.qty === null ? '—' : qty(entry.qty)} · USD ${number(entry.amount)} · ${breakdown.qty ? `USD ${flowRate(entry.amount / breakdown.qty)} / MT available` : '—'}`,
+            ]);
+            if (Math.abs(breakdown.difference) > 0.01) rows.push(['Unreconciled difference', `USD ${number(breakdown.difference)}`]);
+            rows.push(['Total available / WA COGP', `${qty(breakdown.qty)} · USD ${number(breakdown.total)} · ${breakdown.rate === null ? '—' : `USD ${flowRate(breakdown.rate)} / MT`}`]);
+            const sections = [{ title: '', rows }];
+            if (location === 'Washing Plant') {
+                const data = options.inventory?.internalWPOperational || {};
+                const months = Object.entries(data).filter(([month]) => month >= (options.inventory?.rangeStart || period) && month <= (options.inventory?.periodKey || period));
+                const value = key => months.length && months.every(([, entry]) => Number.isFinite(entry[key]))
+                    ? qty(months.reduce((sum, [, entry]) => sum + entry[key], 0)) : '—';
+                sections.push({ title: 'Washing Plant — Operational Movements', rows: [
+                    ['Raw coal received from BUA', value('fromBuaMT')],
+                    ['Feed to washing', value('feedMT')],
+                    ['Clean coal produced', value('cleanCoalMT')],
+                    ['Reject / High Ash', value('rejectMT')],
+                    ['Transfer to Port', value('toPortMT')],
+                    ['Combined WP closing', `${qty(breakdown.qty)} · USD ${flowRate(breakdown.rate)} / MT`],
+                ], note:'WA COGP-COGS supplies combined WP stock and transfers. Feed and reject are operating volumes; separate WP stock balances are unavailable.' });
+            }
+            return {
+                title: `${location} — WA Cost Breakdown`,
+                sections,
+                note: `WA COGP-COGS, ${options.periodLabel || period}. Component USD/MT uses the available stock quantity; components reconcile to the weighted-average COGP. YTD view shows the selected month’s inventory position.`,
+            };
         }
-        if (item.dataset.overviewCard === 'BP Port') return locationLedger('BP Port — Movement & cost detail', ['port','transitBuaPort','transitWpPort'], 'BP Port', `BP Port closing shows received stock. Loads not yet received are listed separately in transit. Amounts and adjustments come from the 8000 inventory roll-forward for ${period}.`);
-        if (item.dataset.overviewCard === 'ISP') return locationLedger('ISP — Movement & cost detail', ['kunz','transitKunz'], 'ISP', `Opening, receipts, transport costs, sales, adjustments and closing are from the 8000 inventory roll-forward for ${period}.`);
         const route = { buaWp: ['5000407','Coal Hauling ROM BUA to WP'], wpPort: ['5000408','Coal Hauling WP to Port'], buaPort: ['5000409','Coal Hauling ROM BUA to Port'] }[item.dataset.overviewRoute];
         if (!route) return null;
         const title = `${item.querySelector('summary span').textContent} — Cost by Entity`;
@@ -238,13 +268,35 @@ function attachMapPopover(panel, map, options) {
         const content = document.createElement('div');
         const source = item.querySelector(':scope > div, :scope > p');
         if (source) content.append(...Array.from(source.childNodes, node => node.cloneNode(true)));
+        const loading = document.createElement('div');
+        loading.className = 'production-detail-loading';
+        loading.setAttribute('role', 'status');
+        loading.innerHTML = '<span>Loading details…</span><span class="production-detail-progress" role="progressbar" aria-label="Loading details"><i></i></span>';
+        content.append(loading);
         popup.append(heading, dismiss, content);
         const currentRevision = ++revision;
         matchingDetails(item).then(result => {
-            if (!result || active !== item || revision !== currentRevision) return;
+            if (active !== item || revision !== currentRevision) return;
+            if (!result) { loading.remove(); position(); return; }
             heading.textContent = result.title;
             content.replaceChildren();
-            if (result.columns && result.tableRows) {
+            if (result.sections) {
+                result.sections.forEach(section => {
+                    if (section.title) {
+                        const label = document.createElement('strong');
+                        label.className = 'production-detail-section-title';
+                        label.textContent = section.title;
+                        content.append(label);
+                    }
+                    section.rows.forEach(([name, value]) => {
+                        const line = document.createElement('div'); line.className = 'overview-detail-line';
+                        const label = document.createElement('span'); label.textContent = name;
+                        const amount = document.createElement('strong'); amount.textContent = value;
+                        line.append(label, amount); content.append(line);
+                    });
+                    if (section.note) { const note = document.createElement('small'); note.textContent = section.note; content.append(note); }
+                });
+            } else if (result.columns && result.tableRows) {
                 const wrapper = document.createElement('div'); wrapper.className = 'production-detail-table-wrap';
                 const table = document.createElement('table'); table.className = 'production-detail-table';
                 const thead = document.createElement('thead'), headerRow = document.createElement('tr');
