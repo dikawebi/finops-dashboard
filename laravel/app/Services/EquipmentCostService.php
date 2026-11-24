@@ -171,11 +171,7 @@ class EquipmentCostService
                     $activity = $savedTarget;
                     $mappingMethod = 'activity_crosswalk';
                     $d365MappedByCrosswalk++;
-                } elseif (count($candidates) > 1 && $dimensionActivity && in_array($dimensionActivity, $candidates, true)) {
-                    $activity = $dimensionActivity;
-                    $mappingMethod = 'd365_activity_dimension';
-                    $d365MappedByDimension++;
-                } elseif (count($candidates) === 0 && $dimensionActivity) {
+                } elseif ($dimensionActivity) {
                     $activity = $dimensionActivity;
                     $mappingMethod = 'd365_activity_dimension';
                     $d365MappedByDimension++;
