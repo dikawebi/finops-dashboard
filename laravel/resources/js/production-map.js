@@ -56,10 +56,23 @@ function attachMapPopover(panel, map, options) {
     let costsPromise;
     const matchingDetails = async item => {
         const { stages, qty, number, flowRate, period, mode, dailyData, dbMetrics, api } = options;
+        const detailQty = options.detailQty || qty;
         const stock = id => stages.find(stage => stage.id === id);
-        const rowQty = (stage, test) => stage ? (stage.rows || []).filter(test).reduce((sum, row) => sum + Number(row.qtyMT || 0), 0) : null;
-        const mt = value => value == null ? '—' : `${qty(value)} MT`;
-        const closing = stage => stage ? `${mt(stage.endingQtyMT)} · ${stage.endingQtyMT ? `USD ${flowRate(stage.endingValueUSD / stage.endingQtyMT)} / MT` : '—'}` : '—';
+        const mt = value => value == null ? '—' : `${detailQty(value)} MT`;
+        const ledgerRows = stageIds => stageIds.flatMap(id => {
+            const stage = stock(id);
+            return (stage?.rows || []).map(row => [
+                stage.name || id, row.label,
+                row.qtyMT == null ? '—' : mt(Number(row.qtyMT)),
+                row.valueUSD == null ? '—' : `USD ${number(Number(row.valueUSD))}`,
+                row.rateUSD == null ? '—' : `USD ${flowRate(Number(row.rateUSD))} / MT`,
+                row.source === 'manual_input' ? 'Manual input' : row.source || (row.type === 'opening' ? 'Opening balance' : '—'),
+            ]);
+        });
+        const locationLedger = (title, stageIds, note) => ({
+            title, columns:['Stage','Movement','Quantity','Amount','Rate','Source'],
+            tableRows:ledgerRows(stageIds), note:`${note} Costs and overhead appear separately only when present in the 8000 source; 3000-only WA allocations are not added.`,
+        });
         if (item.dataset.overviewCard === 'Coal Mining') {
             if (document.getElementById('overview-date-mode')?.value === 'daily') return { title:'Coal Mining — Activity details', rows:[], note:'Daily activity cost breakdown is unavailable; select MTD or YTD to view synchronized DB costs.' };
             const labels = ['OB Removal include blasting','OB removal freedig','OB Overdistance','Topsoil','Mud','Coal Getting + Hauling 1km','Coal Hauling Overdistance'];
@@ -73,6 +86,8 @@ function attachMapPopover(panel, map, options) {
             };
             const metrics = dbMetrics || {};
             const metric = key => metrics[key]?.value == null ? null : Number(metrics[key].value);
+            const operationValues = labels.map(label => sumSource(label, 'operation'));
+            const fuelValues = labels.map(label => sumSource(label, 'fuel'));
             const tableRows = labels.map(label => {
                 const qtyValue = label === 'OB Overdistance'
                     ? [metric('blasting'), metric('freedig')].every(value => value != null) ? metric('blasting') + metric('freedig') : null
@@ -80,22 +95,26 @@ function attachMapPopover(panel, map, options) {
                 const operation = sumSource(label, 'operation');
                 const fuel = sumSource(label, 'fuel');
                 const total = operation == null || fuel == null ? null : operation + fuel;
-                return [label, qtyValue == null ? '—' : `${qty(qtyValue)} ${['OB Removal include blasting','OB removal freedig','OB Overdistance','Topsoil','Mud'].includes(label) ? 'Bcm' : 'MT'}`, operation == null ? '—' : `USD ${number(operation)}`, fuel == null ? '—' : `USD ${number(fuel)}`, total == null ? '—' : `USD ${number(total)}`, total == null || !metric('coalGetting') ? '—' : `USD ${flowRate(total / metric('coalGetting'))} / MT`];
+                return [label, qtyValue == null ? '—' : `${detailQty(qtyValue)} ${['OB Removal include blasting','OB removal freedig','OB Overdistance','Topsoil','Mud'].includes(label) ? 'Bcm' : 'MT'}`, operation == null ? '—' : `USD ${number(operation)}`, fuel == null ? '—' : `USD ${number(fuel)}`, total == null ? '—' : `USD ${number(total)}`, total == null || !metric('coalGetting') ? '—' : `USD ${flowRate(total / metric('coalGetting'))} / MT`];
             });
-            return { title:'Coal Mining — Activity details', columns:['Activity','Quantity','Operation cost','Fuel cost','Total cost','Cost / MT coal'], tableRows, note:`Mining is presented as one combined location group: Takalot · North G. Source: synchronized Google Sheets DB tab · ${mode.toUpperCase()} ${period}. Quantities follow the localhost:3000 activity definitions. Cost / MT coal = operation and fuel cost ÷ Coal Getting. Account codes are omitted.` };
+            const operationTotal = operationValues.every(Number.isFinite) ? operationValues.reduce((sum, value) => sum + value, 0) : null;
+            const fuelTotal = fuelValues.every(Number.isFinite) ? fuelValues.reduce((sum, value) => sum + value, 0) : null;
+            const activityTotal = operationTotal === null || fuelTotal === null ? null : operationTotal + fuelTotal;
+            const glTotal = options.miningCostTotalUSD == null ? null : Number(options.miningCostTotalUSD);
+            tableRows.push(['Total Sheets activity detail','—',operationTotal === null ? '—' : `USD ${number(operationTotal)}`,fuelTotal === null ? '—' : `USD ${number(fuelTotal)}`,activityTotal === null ? '—' : `USD ${number(activityTotal)}`,activityTotal === null || !metric('coalGetting') ? '—' : `USD ${flowRate(activityTotal / metric('coalGetting'))} / MT`]);
+            if (glTotal !== null && Number.isFinite(glTotal)) {
+                const difference = activityTotal === null ? null : glTotal - activityTotal;
+                tableRows.push(['D365 GL Mining total','—','—','—',`USD ${number(glTotal)}`,metric('coalGetting') ? `USD ${flowRate(glTotal / metric('coalGetting'))} / MT` : '—']);
+                tableRows.push(['D365 GL less Sheets detail','—','—','—',difference === null ? '—' : `USD ${number(difference)}`,'—']);
+            }
+            return { title:'Coal Mining — Activity details', columns:['Activity','Quantity','Operation cost','Fuel cost','Total cost','Cost / MT coal'], tableRows, note:`Combined Takalot · North G. Activity quantities and operation/fuel detail: synced Google Sheets DB · ${mode.toUpperCase()} ${period}. The D365 GL total and its difference from activity detail are shown separately; no source values are substituted. USD/MT = cost ÷ Coal Getting. Account codes are omitted.` };
         }
+        if (item.dataset.overviewCard === 'Stockpile BUA') return locationLedger('Stockpile BUA — Movement & cost detail', ['bua','transitBuaWp','transitBuaPort'], `Opening, receipts, costs, available balance, route loading, adjustments and closing are from the 8000 inventory roll-forward for ${period}. Route transit is shown as its own stage.`);
         if (item.dataset.overviewCard === 'Washing Plant') {
-            const raw = stock('nonWash'), clean = stock('washed'), ash = stock('highAsh');
-            const feed = rowQty(raw, row => row.type === 'outflow' && (row.source === 'washed' || row.label === 'Washing Plant Feed'));
-            const reject = rowQty(clean, row => /reject/i.test(String(row.label || '')) && (String(row.label).endsWith('Stock Reject (qty only)') || ['Reject (quantity only)','Reject transferred to High Ash','Reject removed from Wash'].includes(row.label)));
-            return { title: 'Washing Plant — Details', rows: [
-                ['Raw coal available', mt(raw?.availableQtyMT)], ['Feed to washing', mt(feed == null ? null : -feed)],
-                ['Clean coal produced · feed less reject', mt(feed == null || reject == null ? null : -feed + reject)],
-                ['Reject removed from Wash', mt(reject == null ? null : -reject)],
-                ['Clean coal hauled to Port', mt(clean ? -rowQty(clean, row => row.type === 'outflow' && (['port','transitWpPort'].includes(row.source) || row.label === 'Loaded to BP PORT')) : null)],
-                ['Ending raw coal', closing(raw)], ['Ending clean coal', closing(clean)], ['Ending high ash', closing(ash)]
-            ], note: `${mode.toUpperCase()} movements; reject reduces Wash stock only and is not added to High Ash. Available raw coal and ending balances are for ${period}.` };
+            return locationLedger('Washing Plant — Movement & cost detail', ['nonWash','washed','highAsh','transitWpPort'], `${mode.toUpperCase()} ${period}. Non Wash, Wash, High Ash, and transit remain separate balances. Reject is a quantity-only outflow from Wash; it is not added to High Ash.`);
         }
+        if (item.dataset.overviewCard === 'BP Port') return locationLedger('BP Port — Movement & cost detail', ['port','transitBuaPort','transitWpPort'], `BP Port closing shows received stock. Loads not yet received are listed separately in transit. Amounts and adjustments come from the 8000 inventory roll-forward for ${period}.`);
+        if (item.dataset.overviewCard === 'ISP') return locationLedger('ISP — Movement & cost detail', ['kunz','transitKunz'], `Opening, receipts, transport costs, sales, adjustments and closing are from the 8000 inventory roll-forward for ${period}.`);
         const route = { buaWp: ['5000407','Coal Hauling ROM BUA to WP'], wpPort: ['5000408','Coal Hauling WP to Port'], buaPort: ['5000409','Coal Hauling ROM BUA to Port'] }[item.dataset.overviewRoute];
         if (!route) return null;
         const title = `${item.querySelector('summary span').textContent} — Cost by Entity`;
