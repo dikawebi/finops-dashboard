@@ -24,6 +24,26 @@ class InternalWaInventoryService
         if ($missing) return ['available'=>false,'periodKey'=>$period,'missingPeriods'=>$missing,'stages'=>[],'validationWarnings'=>[]];
 
         $payloads = $records->mapWithKeys(static fn ($row): array => [$row->period=>json_decode((string) $row->payload, true, 512, JSON_THROW_ON_ERROR)])->all();
+        $operationalMetrics = DB::table('monthly_metrics')
+            ->whereIn('period', $requiredPeriods)
+            ->whereIn('metric_key', ['washFeed', 'washReject'])
+            ->get(['period', 'metric_key', 'value'])
+            ->keyBy(static fn ($row): string => $row->period.'|'.$row->metric_key);
+        $internalWPOperational = [];
+        foreach ($requiredPeriods as $month) {
+            $wa = $payloads[$month];
+            $metric = static function (string $key) use ($operationalMetrics, $month): ?float {
+                $value = $operationalMetrics->get($month.'|'.$key)?->value;
+                return $value === null ? null : (float) $value;
+            };
+            $internalWPOperational[$month] = [
+                'feedMT' => $metric('washFeed'),
+                'rejectMT' => $metric('washReject'),
+                'cleanCoalMT' => isset($wa['washedCoalProduction']) ? (float) $wa['washedCoalProduction'] : null,
+                'fromBuaMT' => isset($wa['buaToWP']) ? (float) $wa['buaToWP'] : null,
+                'toPortMT' => isset($wa['wpToPort']) ? (float) $wa['wpToPort'] : null,
+            ];
+        }
         $opening = $payloads[$requiredPeriods[0]]['openingBalances'] ?? [];
         foreach (['bua','washed','port','kunz'] as $id) $opening[$id] = [
             'qtyMT'=>(float) ($opening[$id]['qtyMT'] ?? 0), 'valueUSD'=>(float) ($opening[$id]['valueUSD'] ?? 0),
@@ -83,6 +103,7 @@ class InternalWaInventoryService
             'dataSource'=>'google-sheets-wa-cogp-cogs','dynamicSourceStatus'=>'active','quantitySource'=>'WA COGP-COGS',
             'costSource'=>'WA COGP-COGS','sourceSyncedAt'=>$sourceSyncedAt,
             'internalWASync'=>['source'=>'Google Sheets · WA COGP-COGS','syncedAt'=>$sourceSyncedAt],
+            'internalWPOperational'=>$internalWPOperational,
             'internalWAMovementPeriods'=>$monthsWithData,'internalWAMissingPeriods'=>[],'internalAllocationWarnings'=>[],
             'modelOpeningBalances'=>$modelOpeningBalances,'openingSource'=>'google-sheets-wa-cogp-cogs',
             'stages'=>$displayStages,'history'=>$history,
