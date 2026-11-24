@@ -21,7 +21,7 @@ export function mountProductionMap(panel, options) {
         const previous = comparison?.previous?.[item.dataset.overviewCard];
         if (Number.isFinite(current) && Number.isFinite(previous)) {
             const change = current - previous;
-            const delta = document.createElement('small');
+            const delta = document.createElement('span');
             delta.className = `production-period-delta ${change > 0 ? 'is-positive' : change < 0 ? 'is-negative' : 'is-neutral'}`;
             delta.textContent = `${change > 0 ? '↑ +' : change < 0 ? '↓ ' : '→ '}${options.qty(change)} MT vs ${comparison.label}`;
             delta.title = `Compared with ${comparison.label}: ${options.qty(previous)} MT previously`;
