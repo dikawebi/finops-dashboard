@@ -14,7 +14,19 @@ export function mountProductionMap(panel, options) {
         const label = document.createElement('span');
         label.className = 'production-metric-label';
         label.textContent = metricLabels[item.dataset.overviewCard];
-        item.querySelector('.overview-card-values').prepend(label);
+        const values = item.querySelector('.overview-card-values');
+        values.prepend(label);
+        const comparison = options.periodComparison;
+        const current = comparison?.current?.[item.dataset.overviewCard];
+        const previous = comparison?.previous?.[item.dataset.overviewCard];
+        if (Number.isFinite(current) && Number.isFinite(previous)) {
+            const change = current - previous;
+            const delta = document.createElement('small');
+            delta.className = `production-period-delta ${change > 0 ? 'is-positive' : change < 0 ? 'is-negative' : 'is-neutral'}`;
+            delta.textContent = `${change > 0 ? '↑ +' : change < 0 ? '↓ ' : '→ '}${options.qty(change)} MT vs ${comparison.label}`;
+            delta.title = `Compared with ${comparison.label}: ${options.qty(previous)} MT previously`;
+            values.append(delta);
+        }
     });
     panel.querySelector('.overview-flow-detail').setAttribute('aria-live', 'polite');
     map.insertAdjacentHTML('afterbegin', '<img class="production-landscape" src="/images/production-flow-map-v8.png" alt="North G pit connects by gravel road to BUA and Washing Plant. A continuous gravel haul road follows the inland route to BP Port. BP Port and ISP connect by barge along the central river; a separate ship route continues to the offshore Mother Vessel. BP Port uses a belt loading conveyor." width="1672" height="941"><div class="production-map-heading">Production flow <small>Illustrative geography · select a location for details</small></div>');

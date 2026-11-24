@@ -31,6 +31,10 @@
 .production-geography .overview-card-values{display:flex;flex-direction:column;gap:2px}
 .production-geography .overview-card-values .overview-stage-qty{font-size:13px;line-height:1.3;color:#fff;font-variant-numeric:tabular-nums}
 .production-geography .overview-card-values .overview-stage-rate{font-size:11px;line-height:1.25;color:#f4cb80}
+.production-geography .production-period-delta{font-size:10px;line-height:1.25;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.production-geography .production-period-delta.is-positive{color:#76e0a0}
+.production-geography .production-period-delta.is-negative{color:#ff8585}
+.production-geography .production-period-delta.is-neutral{color:#c5d2dc}
 .production-geography .overview-detail-card summary small{display:none}
 .production-geography .overview-scene{display:none}
 .production-geography [data-overview-card="Pit Takalot"]{left:9%;top:13%}

@@ -158,6 +158,7 @@ function updateNavigation(period, mode) {
 }
 
 async function overview(period, mode) {
+    const previousPeriod = period.endsWith('-01') ? null : (() => { const [year, month] = period.split('-').map(Number); return month === 1 ? `${year - 1}-12` : `${year}-${String(month - 1).padStart(2, '0')}`; })();
     const [cost, inventory, production, dailyData, dbCostSummary] = await Promise.all([
         api(`/api/cost-matrix?period=${period}&mode=${mode}&report=${state.reportType}`),
         api(`/api/inventory-valuation?period=${period}&mode=${mode}&report=${state.reportType}`),
@@ -165,6 +166,10 @@ async function overview(period, mode) {
         api(`/api/overview-daily?period=${period}&mode=${mode}&report=${state.reportType}`),
         api(`/api/db-cost-summary?period=${period}&mode=${mode}`),
     ]);
+    const [previousInventory, previousProduction] = previousPeriod ? await Promise.all([
+        api(`/api/inventory-valuation?period=${previousPeriod}&mode=${mode}&report=${state.reportType}`).catch(() => null),
+        api(`/api/production-summary?period=${previousPeriod}&mode=${mode}`).catch(() => null),
+    ]) : [null, null];
     if (period >= '2026-10') {
         if (!['Google Sheets sync', 'Google Sheets'].includes(production.dataSource)) throw new Error('October production must come from the Google Sheets sync. Baseline values are disabled for October.');
         if (!(cost.d365Periods || []).includes('2026-10')) throw new Error('October costs must come from imported D365 GL. Baseline values are disabled for October.');
@@ -200,12 +205,28 @@ async function overview(period, mode) {
     const ispSales = ['kunz', 'transitKunz'].flatMap(id => stage(id)?.rows || []).filter(row => row.type === 'outflow' && row.source === 'sale');
     const salesQty = rows => Math.abs(rows.reduce((sum, row) => sum + Number(row.qtyMT || 0), 0));
     const soldQty = salesQty([...portSales, ...ispSales]);
+    const previousStages = previousInventory?.stages || [];
+    const previousStage = id => previousStages.find(item => item.id === id);
+    const previousSum = ids => !previousInventory || !ids.some(id => previousStage(id)) ? null : ids.reduce((sum, id) => sum + Number(previousStage(id)?.endingQtyMT || 0), 0);
+    const previousSales = ['port', 'transitPort', 'kunz', 'transitKunz'].flatMap(id => previousStage(id)?.rows || []).filter(row => row.type === 'outflow' && row.source === 'sale');
+    const previousSoldQty = salesQty(previousSales);
     const soldCost = Math.abs([...portSales, ...ispSales].reduce((sum, row) => sum + Number(row.valueUSD || 0), 0));
     const coalGetting = metricValue('coalGetting');
     const miningRate = coalGetting > 0 ? Number(cost.grandTotal.costMining || 0) / coalGetting : null;
     const washFeed = metricValue('washFeed');
     const washReject = metricValue('washReject');
     const washCoal = metricValue('washCoal');
+    const periodComparison = previousPeriod ? {
+        label: formatPeriod(previousPeriod),
+        current: { 'Coal Mining': metricValue('coalGetting'), 'Stockpile BUA': buaStock.qty, 'Washing Plant': washCoal, 'BP Port': portStock.qty, ISP: ispStock.qty, 'Mother Vessel': soldQty },
+        previous: {
+            'Coal Mining': previousProduction?.dbMetrics?.coalGetting?.value == null ? null : Number(previousProduction.dbMetrics.coalGetting.value),
+            'Stockpile BUA': previousStage('bua')?.endingQtyMT == null ? null : Number(previousStage('bua').endingQtyMT),
+            'Washing Plant': previousProduction?.dbMetrics?.washCoal?.value == null ? null : Number(previousProduction.dbMetrics.washCoal.value),
+            'BP Port': previousSum(['port', 'transitPort']), ISP: previousSum(['kunz', 'transitKunz']),
+            'Mother Vessel': previousInventory ? previousSoldQty : null,
+        },
+    } : null;
     const buaWp = metricValue('haulingBuaWp');
     const buaPort = metricValue('haulingBuaPort');
     const wpPort = metricValue('haulingWpPort');
@@ -257,7 +278,7 @@ async function overview(period, mode) {
     $('#pageContent').innerHTML = `${sectionHeader('Operations & Financial Overview', 'October onward: synced D365 GL and Google Sheets. January–September: historical baseline.', overviewActions)}${flowMarkup}<div class="grid-2 overview-lower"><section class="card"><div class="card-title"><span>Cost Allocation: COGP &amp; Direct Expense</span>${badge(mode === 'ytd' ? 'D365 GL Oct + Jan–Sep baseline' : 'D365 GL sync')}<small>USD</small></div><div class="allocation-grid"><button type="button" id="overview-filter-cogp" class="allocation-cost overview-allocation-tile" aria-pressed="true"><b>COGP</b><strong>${money(cost.grandTotal.totalCOGP)}</strong><span>From Costing to: Mining, 3 Coal Hauling routes, Washing Plant, BP PORT</span></button><button type="button" id="overview-filter-expense" class="allocation-val overview-allocation-tile" aria-pressed="false"><b>DIRECT EXPENSE, GA, SELLING, FINANCE &amp; ROYALTY</b><strong>${money(cost.grandTotal.totalExpense)}</strong><span>Direct Expense by Valuation to; Not Valuated is included in GA. Finance Cost and Royalty are shown separately.</span></button></div><div class="overview-driver-tools"><b>Top Cost Drivers</b><button type="button" id="overview-filter-all" class="btn btn-outline overview-filter-all" aria-pressed="false">All Cost</button><label>Group by<select id="overview-allocation-group"><option value="account">Account</option><option value="location">Location</option><option value="activity">Activity</option><option value="department">Department</option></select></label></div><p id="overview-allocation-note" class="integration-note"></p><div id="overview-top-drivers"></div></section><section class="card"><div class="card-title"><span>Daily Production Volume (MT)</span>${badge('Google Sheets Data')}</div><p class="chart-caption">Daily recorded coal volume (MT):</p><label class="overview-production-control">Production view<select id="overview-production-view"><option value="production">Coal Production</option><option value="hauling">Coal Hauling</option><option value="selling">Selling</option></select></label><div id="chart-daily-production"></div><div class="card-title overview-daily-cost-title">Daily Cost — COGP &amp; GA</div><p id="overview-direct-note" class="integration-note"></p><div id="overview-direct-chart"></div><details class="overview-daily-details"><summary><strong>View daily cost details</strong></summary>${table(['Date','Mining estimate (USD)','Hauling contractor (USD)','Other hauling GL (USD)','COGP shown (USD)','Mining fuel portion (USD)','GA GL movement (USD)'],'<tr><td colspan="7">Loading daily details…</td></tr>')}</details><div class="chart-footer"><span>COGP: Google Sheets production + DB rates + D365 GL hauling</span><span>GA: D365 GL</span></div></section></div>`;
     $('.overview-daily-details thead')?.setAttribute('data-locale-ignore', '');
     const flowPanel = $('.overview-flow-panel');
-    mountProductionMap(flowPanel, { card, buaStock, stockLine, siteBreakdown, flowSitesAvailable, stages, period, mode, dailyData, dbMetrics: production.dbMetrics || {}, api, qty: flowQty, number, flowRate });
+    mountProductionMap(flowPanel, { card, buaStock, stockLine, siteBreakdown, flowSitesAvailable, stages, period, mode, dailyData, dbMetrics: production.dbMetrics || {}, periodComparison, api, qty: flowQty, number, flowRate });
     const vesselCard = $('[data-overview-card="Mother Vessel"]');
     if (vesselCard && !soldQty) vesselCard.querySelector('.overview-card-sub').textContent = 'No sales quantity in live October inventory source · Select for details';
     let allocationRenderVersion = 0;
