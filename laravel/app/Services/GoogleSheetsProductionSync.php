@@ -11,8 +11,8 @@ class GoogleSheetsProductionSync
     public function sync(): array
     {
         $parsed = $this->readAndParse();
-        $rows = $parsed['rows']; $details = $parsed['details']; $monthlyMetrics = $parsed['monthlyMetrics']; $productionPeriods = $parsed['productionPeriods']; $inventoryMovements = $parsed['inventoryMovements']; $dbCostSummary = $parsed['dbCostSummary']; $dbAccrualItems = $parsed['dbAccrualItems']; $dbDailyCogpParameters = $parsed['dbDailyCogpParameters']; $dbMiningBreakdown = $parsed['dbMiningBreakdown']; $dbEntityVolumes = $parsed['dbEntityVolumes']; $overheadAllocations = $parsed['overheadAllocations']; $washCostCategories = $parsed['washCostCategories'];
-        DB::transaction(function () use ($rows, $details, $monthlyMetrics, $productionPeriods, $inventoryMovements, $dbCostSummary, $dbAccrualItems, $dbDailyCogpParameters, $dbMiningBreakdown, $dbEntityVolumes, $overheadAllocations, $washCostCategories): void {
+        $rows = $parsed['rows']; $details = $parsed['details']; $monthlyMetrics = $parsed['monthlyMetrics']; $productionPeriods = $parsed['productionPeriods']; $inventoryMovements = $parsed['inventoryMovements']; $dbCostSummary = $parsed['dbCostSummary']; $dbAccrualItems = $parsed['dbAccrualItems']; $dbDailyCogpParameters = $parsed['dbDailyCogpParameters']; $dbMiningBreakdown = $parsed['dbMiningBreakdown']; $dbEntityVolumes = $parsed['dbEntityVolumes']; $overheadAllocations = $parsed['overheadAllocations']; $washCostCategories = $parsed['washCostCategories']; $internalWaPeriods = $parsed['internalWaPeriods'];
+        DB::transaction(function () use ($rows, $details, $monthlyMetrics, $productionPeriods, $inventoryMovements, $dbCostSummary, $dbAccrualItems, $dbDailyCogpParameters, $dbMiningBreakdown, $dbEntityVolumes, $overheadAllocations, $washCostCategories, $internalWaPeriods): void {
             $dates = array_column($rows, 'production_date');
             DB::table('production_activity_details')->where('source', 'google_sheets')->whereIn('production_date', $dates)->delete();
             DB::table('inventory_movements')->where('source', 'google_sheets')->whereIn('period', array_keys($productionPeriods))->delete();
@@ -51,6 +51,7 @@ class GoogleSheetsProductionSync
                 ['period'],
                 ['overhead_pool_usd','isp_rent_usd','allocated_bua_usd','allocated_wash_usd','allocated_port_usd','allocated_isp_usd','source_sheet','source_synced_at','updated_at']
             );
+            $this->persistInternalWaPeriods($internalWaPeriods);
             $washPeriods = array_values(array_unique(array_column($washCostCategories, 'period')));
             if ($washPeriods) {
                 foreach ($washCostCategories as &$category) $category['source_synced_at'] = now();
@@ -60,7 +61,32 @@ class GoogleSheetsProductionSync
             }
             DB::table('system_configs')->updateOrInsert(['key'=>'sheetsSync'], ['value'=>json_encode(['last_synced_at'=>now()->toIso8601String(),'rows'=>count($rows),'details'=>count($details),'db_cost_periods'=>$summaryPeriods,'db_accrual_periods'=>$accrualPeriods,'db_accrual_rows'=>count($dbAccrualItems),'db_mining_breakdown_rows'=>count($dbMiningBreakdown),'db_entity_volume_rows'=>count($dbEntityVolumes),'db_wash_cost_category_rows'=>count($washCostCategories)]),'updated_at'=>now(),'created_at'=>now()]);
         });
-        return ['rows'=>count($rows),'details'=>count($details),'inventory_movements'=>count($inventoryMovements),'metrics'=>count($monthlyMetrics, COUNT_RECURSIVE) - count($monthlyMetrics),'db_cost_rows'=>array_sum(array_map('count', $dbCostSummary)),'db_accrual_rows'=>count($dbAccrualItems),'daily_cogp_parameters'=>count($dbDailyCogpParameters),'db_mining_breakdown_rows'=>count($dbMiningBreakdown),'db_entity_volume_rows'=>count($dbEntityVolumes),'overhead_allocation_periods'=>count($overheadAllocations),'wash_cost_category_rows'=>count($washCostCategories),'wash_cost_periods'=>array_values(array_unique(array_column($washCostCategories,'period'))),'periods'=>array_keys($productionPeriods),'synced_at'=>now()->toIso8601String()];
+        return ['rows'=>count($rows),'details'=>count($details),'inventory_movements'=>count($inventoryMovements),'metrics'=>count($monthlyMetrics, COUNT_RECURSIVE) - count($monthlyMetrics),'db_cost_rows'=>array_sum(array_map('count', $dbCostSummary)),'db_accrual_rows'=>count($dbAccrualItems),'daily_cogp_parameters'=>count($dbDailyCogpParameters),'db_mining_breakdown_rows'=>count($dbMiningBreakdown),'db_entity_volume_rows'=>count($dbEntityVolumes),'overhead_allocation_periods'=>count($overheadAllocations),'internal_wa_periods'=>count($internalWaPeriods),'internal_wa_source'=>'Google Sheets · WA COGP-COGS','wash_cost_category_rows'=>count($washCostCategories),'wash_cost_periods'=>array_values(array_unique(array_column($washCostCategories,'period'))),'periods'=>array_keys($productionPeriods),'synced_at'=>now()->toIso8601String()];
+    }
+
+    /** Synchronize only the WA COGP-COGS inputs used by Internal Cost/MT. */
+    public function syncInternalWaCostPerMt(): array
+    {
+        $periods = $this->readAndParse()['internalWaPeriods'];
+        $syncedAt = now();
+        $this->persistInternalWaPeriods($periods, $syncedAt);
+        return ['periods'=>array_column($periods, 'period'),'rows'=>count($periods),'source'=>'Google Sheets · WA COGP-COGS','synced_at'=>$syncedAt->toIso8601String()];
+    }
+
+    private function persistInternalWaPeriods(array $periods, $syncedAt = null): void
+    {
+        $syncedAt ??= now();
+        $rows = array_map(static fn (array $item): array => [
+            'period'=>$item['period'],'payload'=>json_encode($item['payload'], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'source_sheet'=>'WA COGP-COGS','source_synced_at'=>$syncedAt,'created_at'=>$syncedAt,'updated_at'=>$syncedAt,
+        ], $periods);
+        $years = array_values(array_unique(array_map(static fn (array $row): string => substr($row['period'], 0, 4), $rows)));
+        $yearPeriods = [];
+        foreach ($years as $year) for ($month=1; $month<=12; $month++) $yearPeriods[] = sprintf('%04d-%02d', (int) $year, $month);
+        DB::transaction(function () use ($rows, $yearPeriods): void {
+            DB::table('google_sheets_internal_wa_periods')->whereIn('period', $yearPeriods)->delete();
+            DB::table('google_sheets_internal_wa_periods')->insert($rows);
+        });
     }
 
     /** Refresh only the Google Sheets allocation snapshot without rewriting production or DB summary data. */
@@ -105,7 +131,7 @@ class GoogleSheetsProductionSync
     public function preview(): array
     {
         $data = $this->readAndParse();
-        return ['rows'=>count($data['rows']),'details'=>count($data['details']),'metric_periods'=>array_keys($data['monthlyMetrics']),'periods'=>array_keys($data['productionPeriods']),'monthly_metrics'=>$data['monthlyMetrics'],'db_cost_rows'=>array_sum(array_map('count', $data['dbCostSummary'])),'overhead_allocation_periods'=>count($data['overheadAllocations']),'sample_overhead_allocation'=>array_values(array_filter($data['overheadAllocations'], static fn (array $row): bool => $row['period'] === '2026-10')),'wash_cost_category_rows'=>count($data['washCostCategories']),'sample_wash_cost_categories'=>array_values(array_filter($data['washCostCategories'], static fn (array $row): bool => in_array($row['period'], ['2026-09','2026-10'], true))),'db_accrual_rows'=>count($data['dbAccrualItems']),'daily_cogp_parameters'=>count($data['dbDailyCogpParameters']),'db_mining_breakdown_rows'=>count($data['dbMiningBreakdown']),'db_entity_volume_rows'=>count($data['dbEntityVolumes']),'sample_mining_breakdown'=>array_values(array_filter($data['dbMiningBreakdown'], static fn (array $row): bool => $row['period'] === '2026-10')),'sample_entity_volumes'=>array_values(array_filter($data['dbEntityVolumes'], static fn (array $row): bool => $row['period'] === '2026-10')),'sample_accruals'=>array_slice($data['dbAccrualItems'],0,8),'samples'=>array_slice($data['rows'],0,5),'sample_details'=>array_slice($data['details'],0,12)];
+        return ['rows'=>count($data['rows']),'details'=>count($data['details']),'metric_periods'=>array_keys($data['monthlyMetrics']),'periods'=>array_keys($data['productionPeriods']),'monthly_metrics'=>$data['monthlyMetrics'],'db_cost_rows'=>array_sum(array_map('count', $data['dbCostSummary'])),'overhead_allocation_periods'=>count($data['overheadAllocations']),'sample_overhead_allocation'=>array_values(array_filter($data['overheadAllocations'], static fn (array $row): bool => $row['period'] === '2026-10')),'internal_wa_periods'=>count($data['internalWaPeriods']),'sample_internal_wa'=>array_values(array_filter($data['internalWaPeriods'], static fn (array $row): bool => $row['period'] === '2026-10')),'wash_cost_category_rows'=>count($data['washCostCategories']),'sample_wash_cost_categories'=>array_values(array_filter($data['washCostCategories'], static fn (array $row): bool => in_array($row['period'], ['2026-09','2026-10'], true))),'db_accrual_rows'=>count($data['dbAccrualItems']),'daily_cogp_parameters'=>count($data['dbDailyCogpParameters']),'db_mining_breakdown_rows'=>count($data['dbMiningBreakdown']),'db_entity_volume_rows'=>count($data['dbEntityVolumes']),'sample_mining_breakdown'=>array_values(array_filter($data['dbMiningBreakdown'], static fn (array $row): bool => $row['period'] === '2026-10')),'sample_entity_volumes'=>array_values(array_filter($data['dbEntityVolumes'], static fn (array $row): bool => $row['period'] === '2026-10')),'sample_accruals'=>array_slice($data['dbAccrualItems'],0,8),'samples'=>array_slice($data['rows'],0,5),'sample_details'=>array_slice($data['details'],0,12)];
     }
 
     private function readAndParse(): array
@@ -186,6 +212,7 @@ class GoogleSheetsProductionSync
         $monthlyMetrics = $this->parseDbMetrics($dbRows, $productionPeriods);
         $dbCostSummary = $this->parseDbCostSummary($dbRows, array_keys($monthlyMetrics));
         $overheadAllocations = $this->parseWaOverheadAllocations($waRows, array_keys($monthlyMetrics));
+        $internalWaPeriods = $this->parseInternalWaPeriods($waRows, array_keys($monthlyMetrics));
         $washCostCategories = $this->parseDbWashCostCategories($dbRows, array_keys($monthlyMetrics), $dbCostSummary);
         $dbAccrualItems = $this->parseDbAccrualItems($dbRows, array_keys($monthlyMetrics), $monthlyMetrics);
         $dbDailyCogpParameters = $this->parseDbDailyCogpParameters($dbRows, array_keys($monthlyMetrics));
@@ -231,7 +258,7 @@ class GoogleSheetsProductionSync
             $barging = $sheet['bargingMT'] ?? null;
             if ($barging !== null && $barging > 0) $appendMovement($period, 'port', 'barging', -$barging, ['source'=>'Google Sheets Coal Wash / Barging']);
         }
-        return compact('rows','details','monthlyMetrics','dbCostSummary','dbAccrualItems','dbDailyCogpParameters','dbMiningBreakdown','dbEntityVolumes','productionPeriods','inventoryMovements','overheadAllocations','washCostCategories');
+        return compact('rows','details','monthlyMetrics','dbCostSummary','dbAccrualItems','dbDailyCogpParameters','dbMiningBreakdown','dbEntityVolumes','productionPeriods','inventoryMovements','overheadAllocations','internalWaPeriods','washCostCategories');
     }
 
     private function parseDbMiningBreakdown(array $rows, array $periods): array
@@ -446,6 +473,83 @@ class GoogleSheetsProductionSync
             $allocations[] = ['period'=>$period,'source_sheet'=>'WA COGP-COGS'] + $values;
         }
         return $allocations;
+    }
+
+    /** Parse the live WA COGP-COGS roll-forward used by localhost:3000 Internal Cost/MT. */
+    private function parseInternalWaPeriods(array $rows, array $periods): array
+    {
+        $sections = ['allocation'=>[], 'bua'=>[], 'wash'=>[], 'port'=>[], 'isp'=>[]];
+        $section = 'allocation';
+        $sectionHeadings = [
+            'BUA MINING INVENTORY & COGP'=>'bua',
+            'WASH PLANT INVENTORY & COGP'=>'wash',
+            'PORT INVENTORY, COGP & COGS'=>'port',
+            'ISP INVENTORY, COGP & COGS'=>'isp',
+            'TOTAL COGS & INVENTORY CONTROL'=>'end',
+        ];
+        foreach ($rows as $row) {
+            $label = trim((string) ($row[1] ?? ''));
+            foreach ($sectionHeadings as $heading=>$target) if (mb_strtolower($label) === mb_strtolower($heading)) { $section = $target; break; }
+            if (array_key_exists($section, $sections)) $sections[$section][] = $row;
+        }
+        $normalize = static fn (mixed $value): string => mb_strtolower(preg_replace('/\s+/u', ' ', trim((string) $value)) ?? '');
+        $row = static function (string $area, string $label) use (&$sections, $normalize): array {
+            $matches = array_values(array_filter($sections[$area] ?? [], static fn (array $item): bool => $normalize($item[1] ?? '') === $normalize($label)));
+            if (count($matches) !== 1) throw new RuntimeException("WA COGP-COGS expected one '{$label}' row in {$area}, found ".count($matches).'.');
+            return $matches[0];
+        };
+        $definitions = [
+            'coalGetting'=>['bua','Production qty'], 'buaToWP'=>['bua','Raw transfer to WP qty'], 'buaToPort'=>['bua','Direct transfer to Port qty'],
+            'wpReceipt'=>['wash','Raw BUA transfer qty'], 'washedCoalProduction'=>['wash','Wash coal production qty'], 'wpToPort'=>['wash','Transfer to Port qty'],
+            'portReceiptBua'=>['port','Direct receipt from BUA qty'], 'portReceiptWp'=>['port','Receipt from WP qty'], 'portToIsp'=>['port','Transfer to ISP qty'],
+            'portSales'=>['port','FOB Port sales qty'], 'ispReceipt'=>['isp','Receipt from Port qty'], 'ispSales'=>['isp','FOB ISP sales / move-out qty'],
+            'ispHistoricalStockAdjustment'=>['isp','Adjusment Stock'],
+            'overheadPoolUSD'=>['allocation','OVH JKT & PC + ISP Rent pool'], 'overheadBuaUSD'=>['allocation','OVH & ISP Rent allocated — BUA'],
+            'overheadWashUSD'=>['allocation','OVH & ISP Rent allocated — WP'], 'overheadPortUSD'=>['allocation','OVH & ISP Rent allocated — Port'],
+            'overheadIspUSD'=>['allocation','OVH & ISP Rent allocated — ISP'], 'miningCostUSD'=>['bua','Mining cost excl. corporate OVH'],
+            'washActivityCostUSD'=>['wash','WP incremental activity cost'], 'portDirectRouteCostUSD'=>['port','Direct route incremental cost'],
+            'portWpRouteCostUSD'=>['port','WP route incremental cost'], 'portLoadingCostUSD'=>['port','Loading BLC / port handling'],
+            'ispTransportCostUSD'=>['isp','Port to ISP transhipment cost'], 'portSellingCostUSD'=>['port','Selling cost Port to Taboneo'],
+            'ispSellingCostUSD'=>['isp','Selling cost ISP to Taboneo'], 'ispRentUSD'=>['isp','ISP Rent total — allocation pool'],
+        ];
+        $sourceRows = [];
+        foreach ($definitions as $key=>[$area,$label]) $sourceRows[$key] = $row($area, $label);
+        $openingBalances = [];
+        foreach ([['bua','bua'],['wash','washed'],['port','port'],['isp','kunz']] as [$area,$id]) {
+            $qty = $this->number($row($area,'Opening qty')[2] ?? null);
+            $value = $this->number($row($area,'Opening amount')[2] ?? null);
+            if ($qty === null || $value === null) throw new RuntimeException("WA COGP-COGS opening balance is missing for {$area}.");
+            $openingBalances[$id] = ['qtyMT'=>$qty,'valueUSD'=>$value];
+        }
+        $expectedRows = [];
+        foreach ([['bua','bua'],['wash','washed'],['port','port'],['isp','kunz']] as [$area,$id]) {
+            $expectedRows[$id] = ['qty'=>$row($area,'Ending qty'),'value'=>$row($area,'Ending amount')];
+        }
+
+        $records = [];
+        foreach ($periods as $period) {
+            $month = (int) substr($period, 5, 2);
+            $column = $month + 1; // January is column C in WA COGP-COGS.
+            $payload = ['openingBalances'=>$openingBalances];
+            foreach ($sourceRows as $key=>$sourceRow) $payload[$key] = $this->number($sourceRow[$column] ?? null) ?? 0.0;
+            $signal = ['coalGetting','buaToWP','buaToPort','wpToPort','portToIsp','portSales','ispSales','miningCostUSD','washActivityCostUSD','portLoadingCostUSD','overheadPoolUSD'];
+            if (!array_filter($signal, static fn (string $key): bool => abs((float) $payload[$key]) > 1e-9)) continue;
+            foreach ([['buaToWP','wpReceipt'],['buaToPort','portReceiptBua'],['wpToPort','portReceiptWp'],['portToIsp','ispReceipt']] as [$out,$in]) {
+                if (abs($payload[$out] - $payload[$in]) > 0.01) throw new RuntimeException("{$period}: WA COGP-COGS transfer {$out} does not reconcile with its receiving location.");
+            }
+            $payload['expectedClosing'] = [];
+            foreach ($expectedRows as $id=>$closing) {
+                $qty = $this->number($closing['qty'][$column] ?? null);
+                $value = $this->number($closing['value'][$column] ?? null);
+                if ($qty === null || $value === null) throw new RuntimeException("{$period}: WA COGP-COGS closing balance is missing for {$id}.");
+                $payload['expectedClosing'][$id] = ['qtyMT'=>$qty,'valueUSD'=>$value];
+            }
+            $allocated = $payload['overheadBuaUSD'] + $payload['overheadWashUSD'] + $payload['overheadPortUSD'] + $payload['overheadIspUSD'];
+            if (abs($allocated - $payload['overheadPoolUSD']) > 0.02) throw new RuntimeException("{$period}: WA COGP-COGS overhead allocations do not reconcile to their pool.");
+            $records[] = ['period'=>$period,'payload'=>$payload];
+        }
+        if (!$records) throw new RuntimeException('WA COGP-COGS has no monthly activity to synchronize.');
+        return $records;
     }
 
     private function parseDbCostSummary(array $rows, array $periods): array

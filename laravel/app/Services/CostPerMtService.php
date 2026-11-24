@@ -7,7 +7,7 @@ use App\Models\MonthlyMetric;
 /** Laravel port of the reference project's computeCostPerMT formula. */
 class CostPerMtService
 {
-    public function __construct(private readonly CostMatrixService $costs, private readonly InventoryValuationService $inventory) {}
+    public function __construct(private readonly CostMatrixService $costs, private readonly InternalWaCostPerMtService $internalWa) {}
 
     public function build(string $period, string $mode = 'mtd', string $reportType = 'external'): array
     {
@@ -93,45 +93,26 @@ class CostPerMtService
             'stages'=>$stages,'costByAccountGroup'=>$incompleteCost ? [] : $accountGroups];
     }
 
-    /** Internal Cost/MT follows localhost:3000: available WA stock value / available stock quantity. */
+    /** Internal Cost/MT follows localhost:3000 using the same live WA COGP-COGS sheet inputs. */
     private function calculateInternal(string $period, string $mode): array
     {
-        // The 8000 integration does not import the 3000 WA COGP-COGS snapshot.
-        // Use the same WA formula over the already-synced 8000 movements and D365 GL costs.
-        $inventory = $this->inventory->build($period, 'mtd', 'internal');
-        $stagesById = collect($inventory['stages'] ?? [])->keyBy('id');
-        $definitions = [
-            ['Mining', 'bua'],
-            ['Washing Plant', 'washed'],
-            ['BP PORT & Jetty', 'port'],
-            ['ISP', 'kunz'],
-        ];
-        $stages = [];
-        foreach ($definitions as [$label, $id]) {
-            $stock = $stagesById->get($id);
-            $total = $stock === null ? null : (float) ($stock['availableValueUSD'] ?? 0);
-            $quantity = $stock === null ? null : (float) ($stock['availableQtyMT'] ?? 0);
-            $addedCost = $stock === null ? 0.0 : (float) ($stock['addedCostUSD'] ?? 0);
-            $stages[] = [
-                'stage'=>$label,
-                'valuationCost'=>$total === null ? null : $total - $addedCost,
-                'operatingCost'=>$total === null ? null : $addedCost,
-                'totalCost'=>$total,
-                'metricTons'=>$quantity,
-                'costPerMT'=>$quantity > 0 ? (float) ($stock['movingAverageRateUSD'] ?? ($total / $quantity)) : null,
-                'costPerTotalMT'=>null,
-            ];
-        }
+        $inventory = $this->internalWa->calculate($period);
+        $stages = $inventory['stages'] ?? array_map(static fn (string $stage): array => [
+            'stage'=>$stage,'valuationCost'=>null,'operatingCost'=>null,'totalCost'=>null,'metricTons'=>null,'costPerMT'=>null,'costPerTotalMT'=>null,
+        ], ['Mining','Washing Plant','BP PORT & Jetty','ISP']);
         $coal = MonthlyMetric::query()->where('period', $period)->where('metric_key', 'coalGetting')->value('value');
+        $internalWarnings = $inventory['validationWarnings'] ?? [];
+        if (!empty($inventory['missingPeriods'])) $internalWarnings[] = 'Google Sheets WA COGP-COGS belum tersinkron untuk periode: '.implode(', ', $inventory['missingPeriods']).'.';
         return [
             'currency'=>'USD','amountScale'=>1,'mode'=>$mode,'period'=>$period,'reportType'=>'internal',
-            'basisLabel'=>'WA weighted-average available stock','dataSource'=>$inventory['dataSource'] ?? 'none',
+            'basisLabel'=>'WA weighted-average available stock','dataSource'=>$inventory['available'] ? 'google-sheets-wa-cogp-cogs' : 'missing-google-sheets-wa-cogp-cogs',
             'volumeSource'=>'Google Sheets DB','totalVolumeProducedMT'=>$coal === null ? null : (float) $coal,
             'grandTotalCost'=>null,'overallCostPerMT'=>null,'incompleteVolume'=>false,
             'missingVolumePeriods'=>[],'stageMissingVolumePeriods'=>[],
             'stages'=>$stages,'costByAccountGroup'=>[],
-            'internalDataBasis'=>'Formula and inventory stages match localhost:3000 (available WA value ÷ available quantity, for BUA, washed, port, and ISP). Values come from 8000 synced Google Sheets movements + D365 GL; no 3000 WA COGP-COGS snapshot is imported.',
-            'internalWarnings'=>$inventory['validationWarnings'] ?? [],
+            'sourceSyncedAt'=>$inventory['sourceSyncedAt'] ?? null,
+            'internalDataBasis'=>'Matches localhost:3000: available weighted-average inventory value ÷ available stock quantity. Opening balances, monthly movements, and added costs come from the server-synced Google Sheets WA COGP-COGS tab; no baseline JSON or D365 GL cost is used for Internal Cost/MT.',
+            'internalWarnings'=>array_values(array_unique($internalWarnings)),
         ];
     }
 
