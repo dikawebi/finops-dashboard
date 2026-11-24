@@ -190,6 +190,10 @@ class EquipmentCostService
                 $this->addInventory($inventoryByUnit, $activity.'|'.$displayUnit, $itemGroup, $cost, $quantity);
                 $inventoryByUnit[$activity.'|'.$displayUnit]['activity'] = $activity;
                 $inventoryByUnit[$activity.'|'.$displayUnit]['unit'] = $displayUnit;
+                if (str_contains($groupNorm, 'FUEL') && in_array($inventoryUnit, ['L','LTR','LITRE','LITER','LITRES','LITERS'], true)) {
+                    $fuelKey = $activity.'|'.$displayUnit.'|'.$month;
+                    $fuelLitres[$fuelKey] = ($fuelLitres[$fuelKey] ?? 0.0) + $quantity;
+                }
 
                 $activityKey = $activityCode ?: '(No activity code)';
                 $d365ActivityStats[$activityKey] ??= ['activityCode' => $activityCode, 'description' => $activityDescription, 'transactionCount' => 0, 'costAmount' => 0.0, 'mappedByProduction' => 0, 'mappedByDimension' => 0, 'mappedByCrosswalk' => 0, 'unmapped' => 0, 'targetActivity' => $savedTarget];
@@ -235,6 +239,11 @@ class EquipmentCostService
         }
 
         $unitRows = [];
+        foreach ($inventoryByUnit as $key => $inventory) {
+            if (!isset($units[$key])) $units[$key] = [
+                'activity'=>$inventory['activity'],'unit'=>$inventory['unit'],'haulingMT'=>0.0,'loaderMT'=>0.0,
+            ];
+        }
         foreach ($units as $key => $unit) {
             $inventory = $inventoryByUnit[$key] ?? ['costUSD' => 0, 'groups' => []];
             $fuel = 0.0; $fuelEstimate = 0.0; $estimateComplete = true; $hasFuel = false;
@@ -249,7 +258,7 @@ class EquipmentCostService
             $unitRows[] = [
                 'activity' => $unit['activity'], 'unit' => $unit['unit'], 'haulingMT' => $unit['haulingMT'], 'loaderMT' => $unit['loaderMT'],
                 'transactionCount' => (int) ($inventory['transactionCount'] ?? 0),
-                'fuelLitres' => $livePeriod ? null : ($hasFuel ? $fuel : null),
+                'fuelLitres' => $hasFuel ? $fuel : null,
                 'fuelPerHaulingMT' => $unit['haulingMT'] > 0 && $hasFuel ? $fuel / $unit['haulingMT'] : null,
                 'fuelPerLoaderMT' => $unit['loaderMT'] > 0 && $hasFuel ? $fuel / $unit['loaderMT'] : null,
                 'fuelCostEstimateUSD' => !$livePeriod && $hasFuel && $estimateComplete ? $fuelEstimate : null,
@@ -257,9 +266,6 @@ class EquipmentCostService
                 'totalInventoryCostAmount' => $inventoryValuesAvailable ? $inventory['costUSD'] : null,
                 'itemGroups' => $this->chartGroups($inventory['groups'] ?? [], !$livePeriod),
             ];
-        }
-        foreach ($inventoryByUnit as $key => $inventory) {
-            if (!isset($units[$key])) $unitRows[] = ['activity'=>$inventory['activity'],'unit'=>$inventory['unit'],'haulingMT'=>null,'loaderMT'=>null,'transactionCount'=>(int) ($inventory['transactionCount'] ?? 0),'fuelLitres'=>null,'fuelPerHaulingMT'=>null,'fuelPerLoaderMT'=>null,'fuelCostEstimateUSD'=>null,'otherInventoryCostAmount'=>$inventory['costUSD'],'totalInventoryCostAmount'=>$inventory['costUSD'],'itemGroups'=>$this->chartGroups($inventory['groups'] ?? [], !$livePeriod)];
         }
         usort($unitRows, fn ($a, $b) => [$a['activity'], $a['unit']] <=> [$b['activity'], $b['unit']]);
 

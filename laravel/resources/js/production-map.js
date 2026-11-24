@@ -75,14 +75,14 @@ function attachMapPopover(panel, map, options) {
         if (item.dataset.overviewCard === 'Washing Plant') {
             const raw = stock('nonWash'), clean = stock('washed'), ash = stock('highAsh');
             const feed = rowQty(raw, row => row.type === 'outflow' && (row.source === 'washed' || row.label === 'Washing Plant Feed'));
-            const reject = rowQty(clean, row => /reject/i.test(String(row.label || '')) && (String(row.label).endsWith('Stock Reject (qty only)') || ['Reject (quantity only)','Reject transferred to High Ash'].includes(row.label)));
+            const reject = rowQty(clean, row => /reject/i.test(String(row.label || '')) && (String(row.label).endsWith('Stock Reject (qty only)') || ['Reject (quantity only)','Reject transferred to High Ash','Reject removed from Wash'].includes(row.label)));
             return { title: 'Washing Plant — Details', rows: [
                 ['Raw coal available', mt(raw?.availableQtyMT)], ['Feed to washing', mt(feed == null ? null : -feed)],
                 ['Clean coal produced · feed less reject', mt(feed == null || reject == null ? null : -feed + reject)],
-                ['High ash received', mt(rowQty(ash, row => row.type === 'receipt' && (['washed reject','washed'].includes(String(row.source || '').toLowerCase()) || row.label === 'Reject received from Wash')))],
+                ['Reject removed from Wash', mt(reject == null ? null : -reject)],
                 ['Clean coal hauled to Port', mt(clean ? -rowQty(clean, row => row.type === 'outflow' && (['port','transitWpPort'].includes(row.source) || row.label === 'Loaded to BP PORT')) : null)],
                 ['Ending raw coal', closing(raw)], ['Ending clean coal', closing(clean)], ['Ending high ash', closing(ash)]
-            ], note: `${mode.toUpperCase()} movements; available raw coal and ending balances are for ${period}. Closing balances include opening stock, adjustments and other transfers. High ash follows recorded inventory transfers.` };
+            ], note: `${mode.toUpperCase()} movements; reject reduces Wash stock only and is not added to High Ash. Available raw coal and ending balances are for ${period}.` };
         }
         const route = { buaWp: ['5000407','Coal Hauling ROM BUA to WP'], wpPort: ['5000408','Coal Hauling WP to Port'], buaPort: ['5000409','Coal Hauling ROM BUA to Port'] }[item.dataset.overviewRoute];
         if (!route) return null;

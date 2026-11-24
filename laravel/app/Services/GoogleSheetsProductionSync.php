@@ -163,7 +163,7 @@ class GoogleSheetsProductionSync
             $clean = $sheet['cleanCookingMT'] ?? null;
             if ($feed > 0) $appendMovement($period, 'nonWash', 'washFeed', -$feed, ['output_clean_mt'=>$clean,'output_reject_mt'=>$reject,'reconciliation_delta_mt'=>$clean === null ? null : round($feed-$clean-$reject,6)]);
             if ($clean !== null && $clean > 0) $appendMovement($period, 'washed', 'washOutput', $clean, ['source'=>'Clean Cooking']);
-            if ($reject > 0) $appendMovement($period, 'highAsh', 'washReject', $reject, ['source'=>'Reject']);
+            if ($reject > 0) $appendMovement($period, 'washed', 'washReject', $reject, ['source'=>'Reject','effect'=>'reduce_wash_only']);
             $barging = $sheet['bargingMT'] ?? null;
             if ($barging !== null && $barging > 0) $appendMovement($period, 'port', 'barging', -$barging, ['source'=>'Google Sheets Coal Wash / Barging']);
         }

@@ -272,8 +272,59 @@ class CostMatrixService
             unset($row);
             foreach (['costWP','totalCOGP','totalCosting','allCost'] as $field) $data['grandTotal'][$field] = bcsub((string) ($data['grandTotal'][$field] ?? 0), (string) $excluded, 6);
         }
+        // Match localhost:3000 internal reporting: replace D365's WP production
+        // allocation with the synchronized Google Sheets DB summary and spread
+        // it over the same October account proportions. The source remains the
+        // existing Sheets DB tab; no workbook snapshot is used for October.
+        $periods = $data['periods'] ?? [$data['period'] ?? null];
+        $livePeriods = array_values(array_filter($periods, static fn ($period): bool => (string) $period >= '2026-10'));
+        $summaryRows = DB::table('db_cost_summary')->whereIn('period', $livePeriods)
+            ->where('entity', 'BP')->where('activity', 'Washplant')->get(['period','amount'])->keyBy('period');
+        $basis = [
+            '5000051'=>16235.30,'5000052'=>2178.28,'5000053'=>3827.62,'5000054'=>1629.57,
+            '5000056'=>222.74,'5000402'=>23898.20,'5001502'=>4900.00,'5001701'=>16171.24,
+            '5000101'=>12403.35,'5000102'=>3426.41,'5000303'=>-15.58,'5000304'=>9726.16,
+            '5000601'=>62370.00,'5000604'=>576.51,'5000802'=>808.74,'5000803'=>584.30,
+            '5001712'=>7779.52,
+        ];
+        $basisTotal = array_sum($basis);
+        $adjust = function (string $code, float $amount) use (&$data): void {
+            if (abs($amount) < 0.000001) return;
+            $leafIndex = null;
+            foreach ($data['rows'] as $index => $row) if ((string) ($row['code'] ?? '') === $code && !($row['isParent'] ?? false)) { $leafIndex = $index; break; }
+            if ($leafIndex === null) return;
+            $parentCode = (string) ($data['rows'][$leafIndex]['parent'] ?? '');
+            foreach (['costWP','totalCOGP','totalCosting','allCost'] as $field) {
+                $data['rows'][$leafIndex][$field] = (float) ($data['rows'][$leafIndex][$field] ?? 0) + $amount;
+                if ($parentCode !== '') foreach ($data['rows'] as &$parent) {
+                    if (($parent['isParent'] ?? false) && (string) ($parent['code'] ?? '') === $parentCode) {
+                        $parent[$field] = (float) ($parent[$field] ?? 0) + $amount;
+                        break;
+                    }
+                }
+                unset($parent);
+                $data['grandTotal'][$field] = (float) ($data['grandTotal'][$field] ?? 0) + $amount;
+            }
+        };
+        $internalWpPeriods = [];
+        foreach ($periods as $month) {
+            if (!$month || $month < '2026-10' || !$summaryRows->has($month)) continue;
+            $monthly = $month === ($data['period'] ?? null) && ($data['mode'] ?? 'mtd') === 'mtd'
+                ? null
+                : $this->compute($month, 'mtd', true);
+            $nativeRows = $monthly['rows'] ?? $data['rows'];
+            foreach ($nativeRows as $row) {
+                if (($row['isParent'] ?? false) || (string) ($row['code'] ?? '') === '5000105') continue;
+                $amount = (float) ($row['costWP'] ?? 0);
+                if (abs($amount) > 0.000001) $adjust((string) $row['code'], -$amount);
+            }
+            $total = (float) $summaryRows->get($month)->amount;
+            if ($basisTotal != 0.0) foreach ($basis as $code => $weight) $adjust($code, $total * $weight / $basisTotal);
+            $internalWpPeriods[] = $month;
+        }
         $data['excludedWashPlantRentUSD'] = $excluded;
-        $data['internalWPAllocationBasis'] = 'D365 GL Costing to; WA category detail is not included in the current 8000 sync';
+        $data['internalWPCategoryPeriods'] = $internalWpPeriods;
+        $data['internalWPAllocationBasis'] = 'Google Sheets DB · BP / Washplant, allocated using October 2026 account proportions';
     }
 
     private function historicalEntries(array $periods, array $monthsWithGl): array
@@ -463,6 +514,7 @@ class CostMatrixService
             'manual_accruals'=>$stamp('accruals', $periods),
             'accrual_history'=>$stamp('accrual_history', $periods),
             'sheet_accruals'=>$stamp('db_accrual_items', $periods),
+            'sheet_wp_summary'=>$stamp('db_cost_summary', $periods),
             'sheets_sync'=>SystemConfig::get('sheetsSync', []),
             'closing_overrides'=>SystemConfig::get('report_cost_closing_overrides', []),
             'locked_periods'=>SystemConfig::get('locked_periods', []),
