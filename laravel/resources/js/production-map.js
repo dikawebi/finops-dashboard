@@ -142,8 +142,6 @@ function attachMapPopover(panel, map, options) {
             };
             const metrics = dbMetrics || {};
             const metric = key => metrics[key]?.value == null ? null : Number(metrics[key].value);
-            const operationValues = labels.map(label => sumSource(label, 'operation'));
-            const fuelValues = labels.map(label => sumSource(label, 'fuel'));
             const tableRows = labels.map(label => {
                 const qtyValue = label === 'OB Overdistance'
                     ? [metric('blasting'), metric('freedig')].every(value => value != null) ? metric('blasting') + metric('freedig') : null
@@ -153,43 +151,27 @@ function attachMapPopover(panel, map, options) {
                 const total = operation == null || fuel == null ? null : operation + fuel;
                 return [label, qtyValue == null ? '—' : `${detailQty(qtyValue)} ${['OB Removal include blasting','OB removal freedig','OB Overdistance','Topsoil','Mud'].includes(label) ? 'Bcm' : 'MT'}`, operation == null ? '—' : `USD ${number(operation)}`, fuel == null ? '—' : `USD ${number(fuel)}`, total == null ? '—' : `USD ${number(total)}`, total == null || !metric('coalGetting') ? '—' : `USD ${flowRate(total / metric('coalGetting'))} / MT`];
             });
-            const operationTotal = operationValues.every(Number.isFinite) ? operationValues.reduce((sum, value) => sum + value, 0) : null;
-            const fuelTotal = fuelValues.every(Number.isFinite) ? fuelValues.reduce((sum, value) => sum + value, 0) : null;
-            const activityTotal = operationTotal === null || fuelTotal === null ? null : operationTotal + fuelTotal;
-            const glTotal = options.miningCostTotalUSD == null ? null : Number(options.miningCostTotalUSD);
-            tableRows.push(['Total Sheets activity detail','—',operationTotal === null ? '—' : `USD ${number(operationTotal)}`,fuelTotal === null ? '—' : `USD ${number(fuelTotal)}`,activityTotal === null ? '—' : `USD ${number(activityTotal)}`,activityTotal === null || !metric('coalGetting') ? '—' : `USD ${flowRate(activityTotal / metric('coalGetting'))} / MT`]);
-            if (glTotal !== null && Number.isFinite(glTotal)) {
-                const difference = activityTotal === null ? null : glTotal - activityTotal;
-                tableRows.push(['D365 GL Mining total','—','—','—',`USD ${number(glTotal)}`,metric('coalGetting') ? `USD ${flowRate(glTotal / metric('coalGetting'))} / MT` : '—']);
-                tableRows.push(['D365 GL less Sheets detail','—','—','—',difference === null ? '—' : `USD ${number(difference)}`,'—']);
+            if (options.reportType === 'internal') {
+                costsPromise ||= api(`/api/db-cost-summary?period=${period}&mode=${mode}`).catch(error => { costsPromise = null; throw error; });
+                const summary = await costsPromise;
+                const overheadRow = (summary.rows || []).find(row => row.entity === 'BP' && row.activity === 'Overhead BUA');
+                const directOverhead = overheadRow
+                    ? Number(overheadRow.sourceAmount ?? (mode === 'ytd' ? periods.reduce((sum, month) => sum + Number(overheadRow.sourceMonths?.[month] || 0), 0) : overheadRow.sourceMonths?.[period] ?? 0))
+                    : null;
+                const allocationRows = new Map((summary.overheadAllocations || []).map(row => [row.period, row]));
+                const allocationValues = periods.map(month => allocationRows.get(month)?.allocatedBuaUSD);
+                const allocation = allocationValues.length && allocationValues.every(value => value !== null && value !== undefined && Number.isFinite(Number(value)))
+                    ? allocationValues.reduce((sum, value) => sum + Number(value), 0) : null;
+                tableRows.push(['Direct Overhead BUA', '—', '—', directOverhead === null ? '—' : `USD ${number(directOverhead)}`, directOverhead === null ? '—' : `USD ${number(directOverhead)}`, 'Google Sheets · DB']);
+                tableRows.push([
+                    'Allocated JKT & PC / ISP Rent', '—', '—', '—', allocation === null ? '—' : `USD ${number(allocation)}`,
+                    allocation === null ? 'No synced allocation for selected period' : 'Google Sheets · WA COGP-COGS',
+                ]);
             }
-            costsPromise ||= api(`/api/db-cost-summary?period=${period}&mode=${mode}`).catch(error => { costsPromise = null; throw error; });
-            matrixPromise ||= api(`/api/cost-matrix?period=${period}&mode=${mode}&report=internal`).catch(error => { matrixPromise = null; throw error; });
-            const [summary, matrix] = await Promise.all([costsPromise, matrixPromise]);
-            const summaryActivity = name => (summary.rows || []).find(row => row.entity === 'BP' && row.activity === name);
-            const sourceCost = row => row ? Number(row.sourceAmount ?? (mode === 'ytd' ? periods.reduce((sum, month) => sum + Number(row.sourceMonths?.[month] || 0), 0) : row.sourceMonths?.[period] ?? 0)) : null;
-            const mappedGlCost = row => row ? Number(row.glAmount ?? (mode === 'ytd' ? periods.reduce((sum, month) => sum + Number(row.glMonths?.[month] || 0), 0) : row.glMonths?.[period] ?? 0)) : null;
-            const allocationRows = new Map((summary.overheadAllocations || []).map(row => [row.period, row]));
-            const buaAllocValues = periods.map(month => allocationRows.get(month)?.allocatedBuaUSD);
-            const buaAllocation = buaAllocValues.length && buaAllocValues.every(value => value !== null && value !== undefined && Number.isFinite(Number(value)))
-                ? buaAllocValues.reduce((sum, value) => sum + Number(value), 0) : null;
-            const addCostRow = (label, amount, source) => {
-                if (amount === null || !Number.isFinite(amount)) return;
-                tableRows.push([label, '—', '—', '—', `USD ${number(amount)}`, source]);
-            };
-            const addAllocationRow = () => tableRows.push([
-                'Allocated JKT & PC / ISP Rent · BUA', '—', '—', '—', buaAllocation === null ? '—' : `USD ${number(buaAllocation)}`,
-                buaAllocation === null ? 'No synced allocation for selected period' : 'Google Sheets · WA COGP-COGS',
-            ]);
-            const overheadRow = summaryActivity('Overhead BUA');
-            addCostRow('Direct Overhead BUA · Google Sheets source', sourceCost(overheadRow), 'Google Sheets DB Cost Summary');
-            addCostRow('Overhead BUA · D365 GL mapped value', mappedGlCost(overheadRow), 'D365 GL · Valuation to Mining');
-            addCostRow('JKT & PC overhead pool · not allocated by location', sourceCost(summaryActivity('OVH JKT & PC')), 'Google Sheets DB Cost Summary');
-            addCostRow('ISP Rent pool · not allocated by location', sourceCost(summaryActivity('ISP Rent')), 'Google Sheets DB Cost Summary');
-            addAllocationRow();
-            const d365Mining = Number(matrix.grandTotal?.costMining);
-            if (Number.isFinite(d365Mining)) addCostRow('D365 GL Mining cost used in inventory', d365Mining, 'D365 GL · Costing to Mining');
-            return { title:'Coal Mining — Activity details', columns:['Activity','Quantity','Operation cost','Fuel cost','Total cost','Cost / MT · Source'], tableRows, note:`Combined Takalot · North G. Activity quantities and operation/fuel detail: synced Google Sheets DB · ${mode.toUpperCase()} ${period}. Direct Overhead BUA is read from the DB sheet; the D365 valuation amount is shown separately. The JKT & PC / ISP Rent allocation is read from the synced WA COGP-COGS sheet. USD/MT = cost ÷ Coal Getting. Account codes are omitted.` };
+            const basisNote = options.reportType === 'internal'
+                ? 'Seven DB activity rows, Direct Overhead BUA, and allocated JKT & PC / ISP Rent follow localhost:3000 Internal detail.'
+                : 'Seven DB activity rows follow localhost:3000 External detail.';
+            return { title:'Coal Mining — Activity details', columns:['Activity','Quantity','Operation cost','Fuel cost','Total cost','Cost / MT · Source'], tableRows, note:`${basisNote} Quantities and activity costs use synchronized Google Sheets DB data for ${mode.toUpperCase()} ${period}. Overhead allocation is shown only in Internal mode; it is not added to inventory valuation.` };
         }
         if (item.dataset.overviewCard === 'Stockpile BUA') return locationLedger('Stockpile BUA — Movement & cost detail', ['bua','transitBuaWp','transitBuaPort'], 'Stockpile BUA', `Opening, receipts, costs, available balance, route loading, adjustments and closing are from the 8000 inventory roll-forward for ${period}. Route transit is shown as its own stage.`);
         if (item.dataset.overviewCard === 'Washing Plant') {
