@@ -737,10 +737,89 @@ class GoogleSheetsProductionSync
         return array_values($items);
     }
 
-    private function token(array $credentials): string
+    public function syncReportCostToOvh(string $period): array
+    {
+        if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $period)) throw new RuntimeException('Periode OVH tidak valid.');
+        $config = config('services.google_sheets');
+        $path = $config['credentials_path'] ?? null;
+        if (!($config['enabled'] ?? false) || !$path || !is_file($path)) throw new RuntimeException('Google Sheets belum dikonfigurasi untuk penulisan OVH.');
+        if (!DB::table('gl_entries')->where('source_type', 'd365')->where('period', $period)->exists()) throw new RuntimeException("Tidak ada GL D365 untuk {$period}; nilai OVH tidak ditimpa.");
+
+        $fields = ['OVH Mining'=>'valMining','OVH WP'=>'valWP','OVH JKT PC'=>'directGA','OVH BP Port'=>'valPort'];
+        $matrix = app(CostMatrixService::class)->build($period, 'mtd', true, 'external');
+        $amounts = [];
+        foreach ($fields as $sheet => $field) foreach ($matrix['rows'] as $row) {
+            if (!($row['isParent'] ?? false)) $amounts[$sheet][trim((string) $row['code'])] = (float) ($row[$field] ?? 0);
+        }
+
+        $credentials = json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
+        $token = $this->token($credentials, true);
+        $monthNames = ['jan'=>1,'january'=>1,'feb'=>2,'february'=>2,'mar'=>3,'march'=>3,'apr'=>4,'april'=>4,'may'=>5,'mei'=>5,'jun'=>6,'june'=>6,'jul'=>7,'july'=>7,'aug'=>8,'august'=>8,'sep'=>9,'sept'=>9,'september'=>9,'oct'=>10,'october'=>10,'nov'=>11,'november'=>11,'dec'=>12,'december'=>12];
+        $month = (int) substr($period, 5, 2);
+        $updates = [];
+        $sheetCounts = [];
+
+        foreach ($fields as $sheet => $_field) {
+            $escapedSheet = str_replace("'", "''", $sheet);
+            $range = "'{$escapedSheet}'!B1:R1000";
+            $url = 'https://sheets.googleapis.com/v4/spreadsheets/'.rawurlencode((string) $config['spreadsheet_id']).'/values/'.rawurlencode($range);
+            $response = Http::withToken($token)->timeout(60)->get($url, ['valueRenderOption'=>'UNFORMATTED_VALUE']);
+            if ($response->failed()) throw new RuntimeException("Tidak dapat membaca tab {$sheet} untuk writeback: HTTP {$response->status()}.");
+            $rows = $response->json('values', []);
+            $headerRow = $accountColumn = $monthColumn = null;
+            foreach ($rows as $rowIndex => $row) {
+                $accountColumn = $monthColumn = null;
+                foreach ($row as $columnIndex => $value) {
+                    $header = strtolower(preg_replace('/[^a-z0-9]/', '', trim((string) $value)));
+                    if ($header === 'accountcode') $accountColumn = $columnIndex;
+                    $headerMonth = $monthNames[$header] ?? $monthNames[substr($header, 0, 3)] ?? null;
+                    if ($headerMonth === $month) $monthColumn = $columnIndex;
+                }
+                if ($accountColumn !== null && $monthColumn !== null) { $headerRow = $rowIndex; break; }
+            }
+            if ($headerRow === null) throw new RuntimeException("Header AccountCode atau bulan {$month} tidak ditemukan di tab {$sheet}.");
+
+            $found = [];
+            foreach (array_slice($rows, $headerRow + 1, null, true) as $rowIndex => $row) {
+                $code = $this->normalizeAccountCode($row[$accountColumn] ?? null);
+                if ($code === '') continue;
+                if (isset($found[$code])) throw new RuntimeException("AccountCode {$code} duplikat di tab {$sheet}; tidak ada data yang ditulis.");
+                $found[$code] = true;
+                $column = $this->sheetColumn($monthColumn + 2);
+                $cell = "'{$escapedSheet}'!{$column}".($rowIndex + 1);
+                $updates[] = ['range'=>$cell,'values'=>[[$amounts[$sheet][$code] ?? 0.0]]];
+                $sheetCounts[$sheet] = ($sheetCounts[$sheet] ?? 0) + 1;
+            }
+
+            $missing = array_keys(array_filter($amounts[$sheet], static fn (float $amount, string $code): bool => abs($amount) > 0.000001 && !isset($found[$code]), ARRAY_FILTER_USE_BOTH));
+            if ($missing) throw new RuntimeException("AccountCode dengan nilai Direct Expense belum ada di {$sheet}: ".implode(', ', array_slice($missing, 0, 12)).'. Tidak ada data yang ditulis.');
+        }
+
+        if (!$updates) throw new RuntimeException('Tidak ada cell AccountCode yang cocok untuk diperbarui.');
+        $writeUrl = 'https://sheets.googleapis.com/v4/spreadsheets/'.rawurlencode((string) $config['spreadsheet_id']).'/values:batchUpdate';
+        $write = Http::withToken($token)->timeout(90)->post($writeUrl, ['valueInputOption'=>'RAW','data'=>$updates]);
+        if ($write->failed()) throw new RuntimeException('Penulisan nilai Direct Expense ke Google Sheets gagal: HTTP '.$write->status().' '.$write->json('error.message', ''));
+        return ['period'=>$period,'updatedCells'=>(int) $write->json('totalUpdatedCells', count($updates)),'sheets'=>$sheetCounts];
+    }
+
+    private function normalizeAccountCode(mixed $value): string
+    {
+        $code = trim((string) ($value ?? ''));
+        return preg_match('/^\d+\.0+$/', $code) ? strstr($code, '.', true) : $code;
+    }
+
+    private function sheetColumn(int $column): string
+    {
+        $label = '';
+        while ($column > 0) { $column--; $label = chr(65 + $column % 26).$label; $column = intdiv($column, 26); }
+        return $label;
+    }
+
+    private function token(array $credentials, bool $write = false): string
     {
         $now = time(); $encode = static fn (array $data): string => rtrim(strtr(base64_encode(json_encode($data, JSON_UNESCAPED_SLASHES)), '+/', '-_'), '=');
-        $unsigned = $encode(['alg'=>'RS256','typ'=>'JWT']).'.'.$encode(['iss'=>$credentials['client_email'],'scope'=>'https://www.googleapis.com/auth/spreadsheets.readonly','aud'=>$credentials['token_uri'],'iat'=>$now,'exp'=>$now+3600]);
+        $scope = $write ? 'https://www.googleapis.com/auth/spreadsheets' : 'https://www.googleapis.com/auth/spreadsheets.readonly';
+        $unsigned = $encode(['alg'=>'RS256','typ'=>'JWT']).'.'.$encode(['iss'=>$credentials['client_email'],'scope'=>$scope,'aud'=>$credentials['token_uri'],'iat'=>$now,'exp'=>$now+3600]);
         $key = openssl_pkey_get_private($credentials['private_key']);
         if (!$key || !openssl_sign($unsigned,$signature,$key,OPENSSL_ALGO_SHA256)) throw new RuntimeException('Tidak dapat menandatangani token Google Service Account.');
         $response = Http::asForm()->timeout(30)->post($credentials['token_uri'], ['grant_type'=>'urn:ietf:params:oauth:grant-type:jwt-bearer','assertion'=>$unsigned.'.'.rtrim(strtr(base64_encode($signature),'+/','-_'),'=')]);
