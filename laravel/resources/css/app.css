@@ -210,6 +210,12 @@ body{min-height:100vh}.app-shell{display:flex;min-height:100vh;background:var(--
 .overview-allocation-loading small{margin-top:4px;color:#6d7f98;font-size:11px}
 .overview-allocation-error{margin:0;padding:14px;border:1px solid #efc8c8;border-radius:7px;background:#fff7f7;color:#a33b3b;font-size:12px}
 @keyframes overviewAllocationSpin{to{transform:rotate(360deg)}}
+
+.page-transition-progress{position:fixed;inset:0 0 auto;z-index:3000;height:3px;overflow:hidden;background:rgba(37,99,235,.12);pointer-events:none}
+.page-transition-progress[hidden]{display:none!important}
+.page-transition-progress span{display:block;width:38%;height:100%;border-radius:0 3px 3px 0;background:linear-gradient(90deg,#2563eb,#06a6c8);transform:translateX(-110%);animation:pageTransitionSweep 1.15s ease-in-out infinite}
+@keyframes pageTransitionSweep{0%{transform:translateX(-110%)}60%{transform:translateX(190%)}100%{transform:translateX(290%)}}
+@media(prefers-reduced-motion:reduce){.page-transition-progress span{animation-duration:2.5s}}
 @media(prefers-reduced-motion:reduce){.overview-allocation-spinner{animation:none}}
 .driver-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;margin:0;padding:9px 0;border-bottom:1px solid #edf1f6;color:#263b59;font-size:.73rem;font-weight:600}
 .driver-row>b{white-space:nowrap;font-size:.7rem;font-variant-numeric:tabular-nums;color:#233856}

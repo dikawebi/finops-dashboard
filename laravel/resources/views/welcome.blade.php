@@ -40,6 +40,7 @@
     </style>
 </head>
 <body data-company-name="{{ e($companyName) }}" data-is-administrator="{{ auth()->user()->hasAdministratorRole() ? 'true' : 'false' }}" data-page-access="{{ e(json_encode($pageAccess)) }}">
+    <div id="pageTransitionProgress" class="page-transition-progress" role="progressbar" aria-label="Memuat halaman" aria-valuetext="Memuat halaman" hidden><span></span></div>
     <div class="app-shell">
         <div id="sidebarScrim" class="sidebar-scrim" aria-hidden="true"></div>
         <aside id="appSidebar" class="app-sidebar" aria-label="Main navigation">

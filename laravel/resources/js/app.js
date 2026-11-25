@@ -1447,10 +1447,17 @@ async function viewGlData(period, page = 1) {
     $('#glNext')?.addEventListener('click', () => viewGlData(period, page + 1));
 }
 
+let pageRenderSequence = 0;
+
 async function render() {
+    const renderSequence = ++pageRenderSequence;
     const period = $('#period').value;
     const mode = $('#mode').value;
     updateNavigation(period, mode);
+    const progress = $('#pageTransitionProgress');
+    progress.hidden = false;
+    progress.setAttribute('aria-valuetext', `Memuat ${state.view}`);
+    $('#pageContent').setAttribute('aria-busy', 'true');
     $('#pageContent').innerHTML = '<div class="loading">Loading dashboard data…</div>';
     try {
         if (state.view === 'overview') await overview(period, mode);
@@ -1467,8 +1474,13 @@ async function render() {
     } catch (error) {
         console.error(error);
         $('#pageContent').innerHTML = `<section class="table-card error-card"><h2>Data cannot be loaded</h2><p>${esc(error.message)}</p></section>`;
+    } finally {
+        applyReadOnlyPageMode();
+        if (renderSequence === pageRenderSequence) {
+            progress.hidden = true;
+            $('#pageContent').setAttribute('aria-busy', 'false');
+        }
     }
-    applyReadOnlyPageMode();
 }
 
 function applyReadOnlyPageMode() {

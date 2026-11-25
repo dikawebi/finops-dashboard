@@ -2,7 +2,7 @@ import '../css/production-map.css';
 // Geographic presentation only: quantities and costs are supplied by the overview.
 async function internalStageBreakdown(inventory, location, period, mode, api) {
     const config = {
-        'Washing Plant': { stage:'washed', receipt:[['Received from BUA','bua','buaToWP']], groups:[{ label:'WP activity cost', activities:['Coal Loading at ROM to WP','Coal Hauling ROM BUA to WP','Washplant'], total:() => stageRows.find(row => row.type === 'cost' && row.source === 'Report Cost')?.valueUSD }] },
+        'Washing Plant': { stage:'washed', receipt:[['Received from BUA','bua','buaToWp']], groups:[{ label:'WP activity cost', activities:['Coal Loading at ROM to WP','Coal Hauling ROM BUA to WP','Washplant'], total:() => stageRows.find(row => row.type === 'cost' && row.source === 'Report Cost')?.valueUSD }] },
         'BP Port': { stage:'port', receipt:[['Received from BUA','bua','buaToPort'],['Received from Washing Plant','washed','wpToPort']], groups:[
             { label:'BUA to Port activity cost', activities:['Coal Loading at ROM to Port','Coal Hauling ROM BUA to Port'], total:() => inventory.costMapping?.haulingBUAToPortUSD },
             { label:'WP to Port activity cost', activities:['Coal Loading at WP to Port','Coal Hauling WP to Port'], total:() => inventory.costMapping?.haulingWPToPortUSD },
