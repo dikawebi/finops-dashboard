@@ -1,21 +1,54 @@
 import '../css/production-map.css';
 // Geographic presentation only: quantities and costs are supplied by the overview.
-function internalStageBreakdown(inventory, location, period, mode) {
-    const stageId = { 'Washing Plant':'washed', 'BP Port':'port', ISP:'kunz' }[location];
+async function internalStageBreakdown(inventory, location, period, mode, api) {
+    const config = {
+        'Washing Plant': { stage:'washed', receipt:[['Received from BUA','bua','buaToWP']], groups:[{ label:'WP activity cost', activities:['Coal Loading at ROM to WP','Coal Hauling ROM BUA to WP','Washplant'], total:() => stageRows.find(row => row.type === 'cost' && row.source === 'Report Cost')?.valueUSD }] },
+        'BP Port': { stage:'port', receipt:[['Received from BUA','bua','buaToPort'],['Received from Washing Plant','washed','wpToPort']], groups:[
+            { label:'BUA to Port activity cost', activities:['Coal Loading at ROM to Port','Coal Hauling ROM BUA to Port'], total:() => inventory.costMapping?.haulingBUAToPortUSD },
+            { label:'WP to Port activity cost', activities:['Coal Loading at WP to Port','Coal Hauling WP to Port'], total:() => inventory.costMapping?.haulingWPToPortUSD },
+            { label:'Port handling cost', activities:['Loading BLC'], total:() => inventory.costMapping?.portLoadingCostUSD },
+        ] },
+        ISP: { stage:'kunz', receipt:[['Received from BP Port','port','portToIsp']], groups:[{ label:'Port to ISP transhipment', activities:['Transhipmet BP Port To ISP'], total:() => stageRows.find(row => row.type === 'cost' && row.label.endsWith('Port to ISP transhipment'))?.valueUSD }] },
+    }[location];
+    const stageId = config?.stage;
     const stage = inventory?.stages?.find(item => item.id === stageId);
     if (!stage || !Number.isFinite(Number(stage.availableQtyMT)) || !Number.isFinite(Number(stage.availableValueUSD))) return null;
     const inSelectedMonth = row => mode !== 'ytd' || String(row.label || '').startsWith(`${period} — `);
-    const rows = (stage.rows || []).filter(row => ['opening', 'receipt', 'cost'].includes(row.type) && inSelectedMonth(row));
-    const items = rows.map(row => {
-        let label = row.label || 'Inventory movement';
-        if (row.type === 'opening') label = 'Opening inventory';
-        else if (row.type === 'receipt') {
-            if (row.source === 'bua') label = 'Received from BUA';
-            else if (row.source === 'washed') label = 'Received from Washing Plant';
-            else if (row.source === 'port') label = 'Received from BP Port';
+    const stageRows = (stage.rows || []).filter(inSelectedMonth);
+    const opening = stageRows.find(row => row.type === 'opening');
+    if (!opening || !Number.isFinite(Number(opening.valueUSD))) return null;
+    const items = [{ label:'Opening inventory', qty:Number(opening.qtyMT || 0), amount:Number(opening.valueUSD) }];
+    const movements = inventory.liveMovements || {};
+    for (const [label, source, quantityKey] of config.receipt) {
+        const row = stageRows.find(item => item.type === 'receipt' && item.source === source);
+        const qty = movements[quantityKey];
+        if (!Number.isFinite(Number(qty))) return null;
+        if (!row && Number(qty) !== 0) return null;
+        items.push({ label, qty:Number(qty), amount:Number(row?.valueUSD || 0) });
+    }
+    const summary = await api(`/api/db-cost-summary?period=${period}&mode=${mode}`);
+    const components = (activities, total) => {
+        let sum = 0;
+        for (const activity of activities) {
+            const matching = (summary.rows || []).filter(row => row.activity === activity);
+            const values = matching.map(row => row.sourceMonths?.[period]);
+            if (!matching.length || values.some(value => value === null || value === undefined || !Number.isFinite(Number(value)))) return null;
+            const amount = values.reduce((subtotal, value) => subtotal + Number(value), 0);
+            items.push({ label:activity, qty:null, amount });
+            sum += amount;
         }
-        return { label, qty: row.type === 'cost' ? null : Number(row.qtyMT || 0), amount: Number(row.valueUSD || 0) };
-    });
+        return { sum, total:total() };
+    };
+    for (const group of config.groups) {
+        const componentValues = components(group.activities, group.total);
+        const actual = componentValues?.total;
+        if (actual === null || actual === undefined || !Number.isFinite(Number(actual))) return null;
+        const difference = Number(actual) - componentValues.sum;
+        if (Math.abs(difference) > 0.01) items.push({ label:`${group.label} — other`, qty:null, amount:difference });
+    }
+    const overhead = stageRows.find(row => row.type === 'cost' && row.source === 'Internal allocation');
+    if (!overhead || !Number.isFinite(Number(overhead.valueUSD))) return null;
+    items.push({ label:'Allocated JKT & PC / ISP Rent', qty:null, amount:Number(overhead.valueUSD) });
     const qty = Number(stage.availableQtyMT);
     const total = Number(stage.availableValueUSD);
     const difference = total - items.reduce((sum, item) => sum + item.amount, 0);
@@ -212,7 +245,7 @@ function attachMapPopover(panel, map, options) {
         if (['Washing Plant', 'BP Port', 'ISP'].includes(item.dataset.overviewCard)) {
             if (options.reportType !== 'internal') return null;
             const location = item.dataset.overviewCard;
-            const breakdown = internalStageBreakdown(options.inventory, location, period, mode);
+            const breakdown = await internalStageBreakdown(options.inventory, location, period, mode, api);
             if (!breakdown) return {
                 title: `${location} — WA Cost Breakdown`,
                 sections: [{ title: '', rows: [['WA COGP-COGS breakdown is unavailable', options.periodLabel || period]] }],
