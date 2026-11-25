@@ -944,7 +944,7 @@ async function inventory(period, mode) {
         offset += length;
         return segment;
     }).join('');
-    const donutCenter = `<text id="inventoryDonutCenterLabel" x="140" y="113" class="inventory-donut-caption">CLOSING STOCK VALUE</text><text id="inventoryDonutCenterValue" x="140" y="143" class="inventory-donut-amount">USD ${number(totalValue)}</text><text id="inventoryDonutCenterVolume" x="140" y="164" class="inventory-donut-caption">Net ${volume(totalIncludedQty)} MT</text><text id="inventoryDonutCenterShare" x="140" y="184" class="inventory-donut-center-hint">Hover or select a location</text>`;
+    const donutCenter = `<text id="inventoryDonutCenterLabel" x="140" y="113" class="inventory-donut-caption">CLOSING STOCK QTY</text><text id="inventoryDonutCenterValue" x="140" y="143" class="inventory-donut-amount">${volume(totalIncludedQty)} MT</text><text id="inventoryDonutCenterVolume" x="140" y="164" class="inventory-donut-caption">USD ${number(totalValue)}</text><text id="inventoryDonutCenterShare" x="140" y="184" class="inventory-donut-center-hint">Hover or select a location</text>`;
     const negativeNote = negativeStages.length ? `<div class="inventory-chart-alert"><strong>Negative stock is excluded from the slices</strong><span>${negativeStages.map(stage => `${esc(stage.name)}: ${volume(stage.endingQtyMT)} MT`).join(' · ')}</span></div>` : '';
     const donut = `<div class="inventory-donut-layout" data-positive-total="${positiveTotalQty}"><div class="inventory-donut-visual"><svg viewBox="0 0 280 280" class="inventory-donut" role="img" aria-label="Coal stock composition by positive closing tonnage, ${esc(period)}"><circle class="inventory-donut-track" cx="140" cy="140" r="108" fill="none" stroke="#e2e8f0" stroke-width="32"/>${segments}${donutCenter}</svg><div class="inventory-chart-total"><span>Positive closing stock</span><strong>${volume(positiveTotalQty)} MT</strong><small>Net stock: ${volume(totalIncludedQty)} MT</small></div></div><div class="inventory-chart-legend"><div class="inventory-chart-legend-heading"><span>LOCATION</span><span>SHARE</span><span>ENDING DETAILS</span></div>${stages.map((stage, index) => `<button type="button" class="inventory-chart-legend-item${Number(stage.endingQtyMT) < 0 ? ' is-negative' : ''}${stage.includedInQuantityTotal === false ? ' is-excluded' : ''}" data-stock-id="${esc(stage.id)}" aria-pressed="false"><i style="--stock-color:${colors[index % colors.length]}" aria-hidden="true"></i><span class="inventory-chart-location">${esc(stage.name)}</span><strong class="inventory-chart-percent">${share(stage)}</strong><span class="inventory-chart-metrics"><span><small>Closing qty</small><b>${volume(stage.endingQtyMT)} MT</b></span><span><small>Average rate</small><b>USD ${number(stage.endingRateUSD)}/MT</b></span><span><small>Inventory value</small><b>USD ${number(stage.endingValueUSD)}</b></span></span></button>`).join('')}</div></div>${negativeNote}`;
     const ledgerRows = stages.map(stage => `<tr><td><strong>${esc(stage.name)}</strong>${stage.includedInTotal === false ? '<br><small>Quantity excluded from total; USD value included</small>' : ''}</td>${['beginningQtyMT', 'beginningValueUSD', 'inflowQtyMT', 'receiptValueUSD', 'addedCostUSD', 'movingAverageRateUSD', 'outflowQtyMT', 'outflowValueUSD', 'adjustmentQtyMT', 'adjustmentValueUSD', 'endingQtyMT', 'endingValueUSD', 'endingRateUSD'].map(key => `<td class="num">${key.endsWith('MT') ? volume(stage[key]) : number(stage[key])}</td>`).join('')}</tr>`).join('');
@@ -1024,9 +1024,9 @@ async function inventory(period, mode) {
                 volumeText.textContent = `USD ${number(stage.endingValueUSD)}`;
                 hint.textContent = `${share(stage)} of positive stock · USD ${number(stage.endingRateUSD)}/MT`;
             } else {
-                label.textContent = 'CLOSING STOCK VALUE';
-                value.textContent = `USD ${number(totalValue)}`;
-                volumeText.textContent = `Net ${volume(totalIncludedQty)} MT`;
+                label.textContent = 'CLOSING STOCK QTY';
+                value.textContent = `${volume(totalIncludedQty)} MT`;
+                volumeText.textContent = `USD ${number(totalValue)}`;
                 hint.textContent = 'Hover or select a location';
             }
             donutLayout.querySelectorAll('[data-stock-id]').forEach(item => {

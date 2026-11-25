@@ -70,15 +70,27 @@ export function mountProductionMap(panel, options) {
         label.className = 'production-metric-label';
         label.textContent = metricLabels[item.dataset.overviewCard];
         const values = item.querySelector('.overview-card-values');
-        values.prepend(label);
         if (item.dataset.overviewCard === 'Coal Mining') {
+            const quantity = values.querySelector('.overview-stage-qty');
+            const metricRow = document.createElement('div');
+            metricRow.className = 'production-mining-metrics';
+            const coalMetric = document.createElement('div');
+            coalMetric.className = 'production-mining-metric';
+            coalMetric.append(label, quantity);
+            const ratioMetric = document.createElement('div');
+            ratioMetric.className = 'production-mining-metric';
+            const ratioLabel = document.createElement('span');
+            ratioLabel.className = 'production-metric-label';
+            ratioLabel.textContent = 'Stripping Ratio';
             const rawRatio = options.dbMetrics?.strippingRatio?.value;
             const ratio = document.createElement('span');
             ratio.className = 'production-stripping-ratio';
-            ratio.textContent = `Stripping Ratio · ${rawRatio == null || !Number.isFinite(Number(rawRatio)) ? '—' : Number(rawRatio).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+            ratio.textContent = rawRatio == null || !Number.isFinite(Number(rawRatio)) ? '—' : Number(rawRatio).toLocaleString('en-US', { maximumFractionDigits: 2 });
             ratio.title = `Google Sheets DB · ${options.periodLabel || options.period}`;
-            values.append(ratio);
-        }
+            ratioMetric.append(ratioLabel, ratio);
+            metricRow.append(coalMetric, ratioMetric);
+            values.prepend(metricRow);
+        } else values.prepend(label);
         const comparison = options.periodComparison;
         const current = comparison?.currentRates?.[item.dataset.overviewCard];
         const previous = comparison?.previousRates?.[item.dataset.overviewCard];
