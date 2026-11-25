@@ -174,9 +174,10 @@ async function overview(period, mode) {
         state.reportType === 'internal' ? api(`/api/cost-per-mt?period=${previousPeriod}&mode=${mode}&report=internal`).catch(() => null) : Promise.resolve(null),
     ]) : [null, null, null, null];
     if (period >= '2026-10') {
-        if (!['Google Sheets sync', 'Google Sheets'].includes(production.dataSource)) throw new Error('October production must come from the Google Sheets sync. Baseline values are disabled for October.');
-        if (!(cost.d365Periods || []).includes('2026-10')) throw new Error('October costs must come from imported D365 GL. Baseline values are disabled for October.');
-        if (inventory.dynamicSourceStatus !== 'active') throw new Error('October inventory requires live Google Sheets movements and imported D365 GL. Baseline values are disabled for October.');
+        const selectedMonth = formatPeriod(period);
+        if (!['Google Sheets sync', 'Google Sheets'].includes(production.dataSource)) throw new Error(`${selectedMonth} production must come from the Google Sheets sync. Baseline values are disabled from October 2026 onward.`);
+        if (!(cost.d365Periods || []).includes(period)) throw new Error(`${selectedMonth} costs must come from imported D365 GL. Baseline values are disabled from October 2026 onward.`);
+        if (inventory.dynamicSourceStatus !== 'active') throw new Error(`${selectedMonth} inventory requires live Google Sheets movements and imported D365 GL. Baseline values are disabled from October 2026 onward.`);
     }
     const metricValue = key => production.dbMetrics?.[key]?.value == null ? null : Number(production.dbMetrics[key].value);
     const number = value => reportAmount(value);
