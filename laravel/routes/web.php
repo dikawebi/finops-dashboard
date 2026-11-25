@@ -68,6 +68,8 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureDashboardAccess::class])->
     Route::post('/d365/sync', [D365Controller::class, 'sync']);
     Route::post('/d365/sync/stop', [D365Controller::class, 'stopSync']);
     Route::get('/d365/progress', [D365Controller::class, 'progress']);
+    Route::get('/d365/auto-sync', [D365Controller::class, 'autoSyncSettings']);
+    Route::put('/d365/auto-sync', [D365Controller::class, 'saveAutoSyncSettings']);
     Route::get('/d365/staging', [D365Controller::class, 'staging']);
     Route::post('/d365/staging/preview', [D365Controller::class, 'preview']);
     Route::post('/d365/staging/import', [D365Controller::class, 'import']);

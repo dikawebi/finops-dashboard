@@ -43,8 +43,6 @@ return [
         'client_secret' => env('D365_CLIENT_SECRET'),
         'company' => env('D365_COMPANY', 'BP'),
         'entity_name' => env('D365_ENTITY_NAME', 'GeneralJournalAccountEntryBiEntities'),
-        'sync_interval_minutes' => (int) env('D365_SYNC_INTERVAL_MINUTES', 15),
-        'auto_sync' => (bool) env('D365_AUTO_SYNC', false),
     ],
 
     'google_sheets' => [

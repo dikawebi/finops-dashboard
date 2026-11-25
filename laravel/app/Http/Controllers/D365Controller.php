@@ -9,12 +9,55 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use App\Models\SystemConfig;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Reader\Csv;
 
 class D365Controller extends Controller
 {
     public function __construct(private readonly D365SyncService $sync, private readonly D365AllocationService $allocation) {}
+
+    public function autoSyncSettings(): array
+    {
+        $settings = SystemConfig::get('d365AutoSync', []);
+        if (is_string($settings)) $settings = json_decode($settings, true) ?? [];
+        if (! is_array($settings)) $settings = [];
+
+        return ['data' => [
+            'enabled' => (bool) ($settings['enabled'] ?? false),
+            'run_time' => (string) ($settings['run_time'] ?? '01:00'),
+            'date_scope' => in_array($settings['date_scope'] ?? null, ['today', 'yesterday'], true) ? $settings['date_scope'] : 'yesterday',
+            'timezone' => 'Asia/Jakarta',
+            'last_run_at' => $settings['last_run_at'] ?? null,
+        ]];
+    }
+
+    public function saveAutoSyncSettings(Request $request): array
+    {
+        $data = $request->validate([
+            'enabled' => ['required', 'boolean'],
+            'run_time' => ['required', 'date_format:H:i'],
+            'date_scope' => ['required', 'in:today,yesterday'],
+        ]);
+        if ($data['enabled'] && ! $this->sync->client()->enabled()) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'enabled' => 'Configure and enable the D365 connection in the server environment before enabling automatic sync.',
+            ]);
+        }
+        $settings = SystemConfig::get('d365AutoSync', []);
+        if (is_string($settings)) $settings = json_decode($settings, true) ?? [];
+        if (! is_array($settings)) $settings = [];
+        $settings = array_merge($settings, $data);
+        SystemConfig::put('d365AutoSync', $settings);
+
+        return ['success' => true, 'data' => [
+            'enabled' => (bool) $settings['enabled'],
+            'run_time' => $settings['run_time'],
+            'date_scope' => $settings['date_scope'],
+            'timezone' => 'Asia/Jakarta',
+            'last_run_at' => $settings['last_run_at'] ?? null,
+        ]];
+    }
 
     public function entities(): array { return ['entities' => $this->sync->latestStatus()]; }
 
