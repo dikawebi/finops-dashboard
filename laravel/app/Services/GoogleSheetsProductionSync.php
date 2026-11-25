@@ -770,7 +770,7 @@ class GoogleSheetsProductionSync
             foreach ($rows as $rowIndex => $row) {
                 $accountColumn = $monthColumn = null;
                 foreach ($row as $columnIndex => $value) {
-                    $header = strtolower(preg_replace('/[^a-z0-9]/', '', trim((string) $value)));
+                    $header = strtolower(preg_replace('/[^a-z0-9]/i', '', trim((string) $value)));
                     if ($header === 'accountcode') $accountColumn = $columnIndex;
                     $headerMonth = $monthNames[$header] ?? $monthNames[substr($header, 0, 3)] ?? null;
                     if ($headerMonth === $month) $monthColumn = $columnIndex;
