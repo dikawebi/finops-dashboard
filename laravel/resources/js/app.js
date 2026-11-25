@@ -19,7 +19,7 @@ const formatNegativeNumbers = root => {
     while (walker.nextNode()) nodes.push(walker.currentNode);
     const negativePattern = /(?:USD|IDR)\s*\([\d,]+(?:\.\d+)?%?\)|\([\d,]+(?:\.\d+)?%?\)/g;
     nodes.forEach(node => {
-        if (!node.nodeValue || node.parentElement?.closest('input,textarea,select,button,svg,script,style,.negative-number')) return;
+        if (!node.nodeValue || node.parentElement?.closest('input,textarea,select,button,svg,script,style,.negative-number,.change-negative,.change-positive')) return;
         const matches = [...node.nodeValue.matchAll(negativePattern)];
         if (!matches.length) return;
         const fragment = document.createDocumentFragment();
@@ -726,6 +726,7 @@ function renderDbSummary(summary) {
         groups.get(id).items.push(row);
     });
     const rows = [...groups.values()];
+    const amountClass = value => Number.isFinite(value) ? value < 0 ? 'change-negative' : value > 0 ? 'change-positive' : '' : '';
     rows.forEach(row => months.forEach(monthKey => {
         const values = row.items.map(item => item.months?.[monthKey]).filter(value => Number.isFinite(Number(value))).map(Number);
         if (values.length) row.months[monthKey] = values.reduce((total, value) => total + value, 0);
@@ -737,8 +738,7 @@ function renderDbSummary(summary) {
             const value = row.months[monthKey];
             const previous = i ? row.months[shown[i - 1]] : null;
             const percent = Number.isFinite(value) && Number.isFinite(previous) && previous !== 0 ? (value - previous) / Math.abs(previous) * 100 : null;
-            const color = percent < 0 ? '#dc2626' : percent > 0 ? '#15803d' : '';
-            return `<td class="num">${Number.isFinite(value) ? signedNumber(value, 0) : '—'}</td>${i ? `<td class="num"${color ? ` style="color:${color};font-weight:700"` : ''}>${percent === null ? '—' : signedNumber(percent, 3, 3, '%')}</td>` : ''}`;
+            return `<td class="num">${Number.isFinite(value) ? signedNumber(value, 0) : '—'}</td>${i ? `<td class="num ${amountClass(percent)}">${percent === null ? '—' : signedNumber(percent, 3, 3, '%')}</td>` : ''}`;
         }).join('');
         const remark = summary.remarks?.[row.id] || '';
         return `<tr>${breakdown ? `<td>${esc(row.entity)}</td>` : ''}<td>${esc(row.activity)}</td>${cells}<td><input type="text" maxlength="2000" data-db-remark="${index}" value="${esc(remark)}" aria-label="Remark"></td><td><button type="button" class="btn btn-outline" data-db-save="${index}">Save</button></td></tr>`;
@@ -796,7 +796,8 @@ function monthlyPerformance(period, excel, dashboardSummary = null, productionBy
         if (whole) return signedNumber(value, 0);
         return percent ? signedNumber(Number(value) * 100, 3, 3, '%') : detailMoney(value);
     };
-    const changeClass = value => value < 0 ? 'positive' : value > 0 ? 'negative' : '';
+    const changeClass = value => value < 0 ? 'change-negative' : value > 0 ? 'change-positive' : '';
+    const costChangeClass = value => value < 0 ? 'positive' : value > 0 ? 'negative' : '';
     const movementRows = [...new Set([...current.keys(), ...previous.keys()])].map(key => {
         const item = current.get(key) || previous.get(key);
         const values = calc(current.get(key), previous.get(key));
@@ -862,7 +863,7 @@ function monthlyPerformance(period, excel, dashboardSummary = null, productionBy
     const cogpRows = period >= '2026-10' && liveCogpComparison.length ? liveCogpComparison.map(row => {
         const change = row.change;
         const percent = row.changePct == null ? null : row.changePct / 100;
-        return `<tr><td>${esc(row.stage)}</td><td class="num">${formatCell(row.currentCostPerMT)}</td><td class="num">${formatCell(row.previousCostPerMT)}</td><td class="num ${changeClass(change)}">${formatCell(change)}</td><td class="num ${changeClass(percent)}">${formatCell(percent, true)}</td></tr>`;
+        return `<tr><td>${esc(row.stage)}</td><td class="num">${formatCell(row.currentCostPerMT)}</td><td class="num">${formatCell(row.previousCostPerMT)}</td><td class="num ${costChangeClass(change)}">${formatCell(change)}</td><td class="num ${costChangeClass(percent)}">${formatCell(percent, true)}</td></tr>`;
     }) : cogpMonthly.map(row => {
         const currentValue = period >= '2026-10' && Number(row.months?.[monthIndex]) === 0 ? null : row.months?.[monthIndex];
         const previousValue = previousPeriod >= '2026-10' && Number(row.months?.[previousIndex]) === 0 ? null : row.months?.[previousIndex];
@@ -870,7 +871,7 @@ function monthlyPerformance(period, excel, dashboardSummary = null, productionBy
         const hasPrevious = previousValue !== null && previousValue !== undefined && previousValue !== '' && Number.isFinite(Number(previousValue));
         const change = hasCurrent && hasPrevious ? Number(currentValue) - Number(previousValue) : null;
         const percent = change !== null && Number(previousValue) !== 0 ? change / Math.abs(Number(previousValue)) : null;
-        return `<tr><td>${esc(row.label)}</td><td class="num">${formatCell(currentValue)}</td><td class="num">${formatCell(previousValue)}</td><td class="num ${changeClass(change)}">${formatCell(change)}</td><td class="num ${changeClass(percent)}">${formatCell(percent, true)}</td></tr>`;
+        return `<tr><td>${esc(row.label)}</td><td class="num">${formatCell(currentValue)}</td><td class="num">${formatCell(previousValue)}</td><td class="num ${costChangeClass(change)}">${formatCell(change)}</td><td class="num ${costChangeClass(percent)}">${formatCell(percent, true)}</td></tr>`;
     });
     const useDashboardSource = period >= '2026-10' && Boolean(dashboardSummary?.rows?.length);
     const hasBaselineComparison = previousPeriod < '2026-10' && Boolean(previousExcel?.abcMonthly?.length);

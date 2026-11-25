@@ -23,6 +23,11 @@
 .production-geography .overview-detail-card{pointer-events:auto;position:absolute;min-width:0;width:clamp(116px,12%,154px);min-height:0;left:auto;top:auto;padding:0;border:0;background:transparent;transform:translateX(-50%)}
 .production-geography .overview-detail-card::after{display:none!important}
 .production-geography .overview-detail-card summary{display:flex;flex-direction:column;gap:4px;padding:7px 9px;border:1px solid #ffffff60;border-radius:7px;background:#15222ceF;color:#fff;box-shadow:0 3px 9px #0004;cursor:pointer;text-align:center;list-style:none}
+.production-geography [data-overview-card="Coal Mining"]{width:clamp(170px,14%,190px)}
+.production-geography [data-overview-card="Coal Mining"] summary{align-items:center;gap:5px;padding:8px 10px;text-align:center}
+.production-geography [data-overview-card="Coal Mining"] .overview-card-values{width:100%;align-items:center;gap:4px;text-align:center}
+.production-geography .production-stripping-ratio{display:block;max-width:100%;margin-top:1px;padding:2px 5px;border-radius:4px;background:#263b49;color:#d8e9f2;font-size:9px;line-height:1.25;text-align:center;white-space:normal;font-variant-numeric:tabular-nums}
+.production-geography [data-overview-card="Coal Mining"] .production-period-delta{max-width:100%;white-space:normal;text-wrap:pretty}
 .production-geography .overview-detail-card summary::-webkit-details-marker{display:none}
 .production-geography .overview-detail-card summary:hover,.production-geography .overview-detail-card[open] summary{border-color:#ffb651;background:#233b48}
 .production-geography summary:focus-visible{outline:3px solid #ffb651;outline-offset:3px}

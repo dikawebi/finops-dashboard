@@ -71,6 +71,14 @@ export function mountProductionMap(panel, options) {
         label.textContent = metricLabels[item.dataset.overviewCard];
         const values = item.querySelector('.overview-card-values');
         values.prepend(label);
+        if (item.dataset.overviewCard === 'Coal Mining') {
+            const rawRatio = options.dbMetrics?.strippingRatio?.value;
+            const ratio = document.createElement('span');
+            ratio.className = 'production-stripping-ratio';
+            ratio.textContent = `Stripping Ratio · ${rawRatio == null || !Number.isFinite(Number(rawRatio)) ? '—' : Number(rawRatio).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+            ratio.title = `Google Sheets DB · ${options.periodLabel || options.period}`;
+            values.append(ratio);
+        }
         const comparison = options.periodComparison;
         const current = comparison?.currentRates?.[item.dataset.overviewCard];
         const previous = comparison?.previousRates?.[item.dataset.overviewCard];

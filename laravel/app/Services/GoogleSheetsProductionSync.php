@@ -19,7 +19,7 @@ class GoogleSheetsProductionSync
             DB::table('daily_production')->upsert($rows, ['production_date'], ['period','coal_getting_mt','routes','source','updated_at']);
             DB::table('production_activity_details')->insert($details);
             if ($inventoryMovements) DB::table('inventory_movements')->insert($inventoryMovements);
-            $metricLabels = ['coalGetting'=>'Coal Getting','haulingBuaWp'=>'Hauling BUA to Washing Plant','haulingBuaPort'=>'Hauling BUA to Port','haulingWpPort'=>'Hauling Washing Plant to Port','loadingBuaWp'=>'Loading BUA to Washing Plant','loadingBuaPort'=>'Loading BUA to Port','loadingWpPort'=>'Loading Washing Plant to Port','washFeed'=>'Washing Plant Feed','washReject'=>'Washing Plant Reject','washCoal'=>'Washed Coal','portLoading'=>'Barging / Port Loading','portToIsp'=>'Port to ISP','ispToTaboneo'=>'ISP to Taboneo','portToTaboneo'=>'Port to Taboneo','wasteRemoval'=>'Waste Removal','topsoil'=>'Topsoil','mud'=>'Mud','blasting'=>'Blasting','freedig'=>'Freedig','miningOperationCost'=>'Mining Operation Cost'];
+            $metricLabels = ['coalGetting'=>'Coal Getting','haulingBuaWp'=>'Hauling BUA to Washing Plant','haulingBuaPort'=>'Hauling BUA to Port','haulingWpPort'=>'Hauling Washing Plant to Port','loadingBuaWp'=>'Loading BUA to Washing Plant','loadingBuaPort'=>'Loading BUA to Port','loadingWpPort'=>'Loading Washing Plant to Port','washFeed'=>'Washing Plant Feed','washReject'=>'Washing Plant Reject','washCoal'=>'Washed Coal','strippingRatio'=>'Stripping Ratio','portLoading'=>'Barging / Port Loading','portToIsp'=>'Port to ISP','ispToTaboneo'=>'ISP to Taboneo','portToTaboneo'=>'Port to Taboneo','wasteRemoval'=>'Waste Removal','topsoil'=>'Topsoil','mud'=>'Mud','blasting'=>'Blasting','freedig'=>'Freedig','miningOperationCost'=>'Mining Operation Cost'];
             $metricUnits = ['wasteRemoval'=>'Bcm','topsoil'=>'Bcm','mud'=>'Bcm','blasting'=>'Bcm','freedig'=>'Bcm','miningOperationCost'=>'USD'];
             foreach ($monthlyMetrics as $period => $metrics) foreach ($metricLabels as $key => $label) {
                 DB::table('monthly_metrics')->updateOrInsert(['metric_key'=>$key,'period'=>$period], ['label'=>$label,'unit'=>$metricUnits[$key] ?? 'MT','value'=>$metrics[$key] ?? null,'updated_at'=>now(),'created_at'=>now()]);
@@ -343,6 +343,12 @@ class GoogleSheetsProductionSync
 
     private function parseDbMetrics(array $rows, array $productionPeriods): array
     {
+        $monthNumbers = ['jan'=>1,'january'=>1,'feb'=>2,'february'=>2,'mar'=>3,'march'=>3,'apr'=>4,'april'=>4,'may'=>5,'jun'=>6,'june'=>6,'jul'=>7,'july'=>7,'aug'=>8,'august'=>8,'sep'=>9,'sept'=>9,'september'=>9,'oct'=>10,'october'=>10,'nov'=>11,'november'=>11,'dec'=>12,'december'=>12];
+        $monthColumns = [];
+        foreach (($rows[1] ?? []) as $column => $header) {
+            $month = $monthNumbers[strtolower(trim((string) $header))] ?? null;
+            if ($month !== null) $monthColumns[$month] = $column;
+        }
         $definitions = [
             'coalGetting'=>['Coal Getting','MT'],
             'haulingBuaWp'=>['Total Hauling BUA To Wash Plant','MT'],
@@ -354,6 +360,7 @@ class GoogleSheetsProductionSync
             'washFeed'=>['Feed','MT'],
             'washReject'=>['Reject','MT'],
             'washCoal'=>['Wash Coal','MT'],
+            'strippingRatio'=>[['Stripping Ratio','Stripping Rasio'],'MT'],
             'portLoading'=>['Coal Loading Port (BLC)','MT'],
             'portToIsp'=>['Transhipment Port to ISP','MT'],
             'ispToTaboneo'=>['Transhipment ISP to Taboneo','MT'],
@@ -366,11 +373,12 @@ class GoogleSheetsProductionSync
         ];
         $metrics = [];
         foreach ($definitions as $key => [$label, $unit]) {
+            $labels = array_map('strtolower', (array) $label);
             $matches = array_values(array_filter($rows, static fn (array $row): bool =>
-                strtolower(trim((string) ($row[2] ?? ''))) === strtolower($label)
+                in_array(strtolower(trim((string) ($row[2] ?? ''))), $labels, true)
                 && strtolower(trim((string) ($row[3] ?? ''))) === strtolower($unit)
             ));
-            if (count($matches) !== 1) throw new RuntimeException("Google Sheets DB metric row is missing or ambiguous: {$label} ({$unit}).");
+            if (count($matches) !== 1) throw new RuntimeException('Google Sheets DB metric row is missing or ambiguous: '.implode(' / ', (array) $label)." ({$unit}).");
             $metrics[$key] = $matches[0];
         }
 
@@ -383,10 +391,12 @@ class GoogleSheetsProductionSync
         for ($month = 1; $month <= 12; $month++) {
             $period = sprintf('%04d-%02d', $year, $month);
             foreach ($definitions as $key => $_definition) {
-                $value = $this->number($metrics[$key][7 + $month] ?? null);
+                $column = $monthColumns[$month] ?? null;
+                $value = $column === null ? null : $this->number($metrics[$key][$column] ?? null);
                 $result[$period][$key] = $key === 'washReject' && $value !== null ? abs($value) : $value;
             }
-            $result[$period]['miningOperationCost'] = $this->number($miningCostRows[0][7 + $month] ?? null);
+            $column = $monthColumns[$month] ?? null;
+            $result[$period]['miningOperationCost'] = $column === null ? null : $this->number($miningCostRows[0][$column] ?? null);
         }
         return $result;
     }

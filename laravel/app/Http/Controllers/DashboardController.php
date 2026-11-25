@@ -116,7 +116,9 @@ class DashboardController extends Controller
                 $sample = $rows->first();
                 return (object) [
                     'metric_key'=>$key,'label'=>$sample->label ?? $key,'unit'=>$sample->unit,
-                    'value'=>$available->isEmpty() ? null : (string) $available->sum(fn ($row): float => (float) $row->value),
+                    'value'=>$available->isEmpty() ? null : (string) ($key === 'strippingRatio'
+                        ? ($available->firstWhere('period', $period)?->value ?? null)
+                        : $available->sum(fn ($row): float => (float) $row->value)),
                     'missingPeriods'=>$missing,
                 ];
             });
