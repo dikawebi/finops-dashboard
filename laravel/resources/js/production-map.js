@@ -1,5 +1,27 @@
 import '../css/production-map.css';
 // Geographic presentation only: quantities and costs are supplied by the overview.
+function internalStageBreakdown(inventory, location, period, mode) {
+    const stageId = { 'Washing Plant':'washed', 'BP Port':'port', ISP:'kunz' }[location];
+    const stage = inventory?.stages?.find(item => item.id === stageId);
+    if (!stage || !Number.isFinite(Number(stage.availableQtyMT)) || !Number.isFinite(Number(stage.availableValueUSD))) return null;
+    const inSelectedMonth = row => mode !== 'ytd' || String(row.label || '').startsWith(`${period} — `);
+    const rows = (stage.rows || []).filter(row => ['opening', 'receipt', 'cost'].includes(row.type) && inSelectedMonth(row));
+    const items = rows.map(row => {
+        let label = row.label || 'Inventory movement';
+        if (row.type === 'opening') label = 'Opening inventory';
+        else if (row.type === 'receipt') {
+            if (row.source === 'bua') label = 'Received from BUA';
+            else if (row.source === 'washed') label = 'Received from Washing Plant';
+            else if (row.source === 'port') label = 'Received from BP Port';
+        }
+        return { label, qty: row.type === 'cost' ? null : Number(row.qtyMT || 0), amount: Number(row.valueUSD || 0) };
+    });
+    const qty = Number(stage.availableQtyMT);
+    const total = Number(stage.availableValueUSD);
+    const difference = total - items.reduce((sum, item) => sum + item.amount, 0);
+    return { items, qty, total, rate: qty ? total / qty : null, difference };
+}
+
 export function mountProductionMap(panel, options) {
     const { card, buaStock, stockLine } = options;
     const map = panel.querySelector('.overview-flow-map');
@@ -190,7 +212,7 @@ function attachMapPopover(panel, map, options) {
         if (['Washing Plant', 'BP Port', 'ISP'].includes(item.dataset.overviewCard)) {
             if (options.reportType !== 'internal') return null;
             const location = item.dataset.overviewCard;
-            const breakdown = options.internalBreakdown?.(location);
+            const breakdown = internalStageBreakdown(options.inventory, location, period, mode);
             if (!breakdown) return {
                 title: `${location} — WA Cost Breakdown`,
                 sections: [{ title: '', rows: [['WA COGP-COGS breakdown is unavailable', options.periodLabel || period]] }],
@@ -219,7 +241,7 @@ function attachMapPopover(panel, map, options) {
             return {
                 title: `${location} — WA Cost Breakdown`,
                 sections,
-                note: `WA COGP-COGS, ${options.periodLabel || period}. Component USD/MT uses the available stock quantity; components reconcile to the weighted-average COGP. YTD view shows the selected month’s inventory position.`,
+                note: `WA COGP-COGS, ${options.periodLabel || period}. USD/MT uses the available stock quantity. YTD view shows the selected month’s inventory position.`,
             };
         }
         const route = { buaWp: ['5000407','Coal Hauling ROM BUA to WP'], wpPort: ['5000408','Coal Hauling WP to Port'], buaPort: ['5000409','Coal Hauling ROM BUA to Port'] }[item.dataset.overviewRoute];
