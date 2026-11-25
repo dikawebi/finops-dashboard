@@ -20,11 +20,11 @@
                 <span class="nav-group-label">OVERVIEW</span>
                 <a href="{{ route('dashboard', ['view' => 'overview']) }}" title="Executive Overview"><span class="nav-icon">📊</span><span class="nav-label">Executive Overview</span></a>
                 <span class="nav-group-label">COST &amp; REPORTS</span>
-                <a href="{{ route('dashboard', ['view' => 'cost']) }}" title="Report Cost (COGP)"><span class="nav-icon">📑</span><span class="nav-label">Report Cost (COGP)</span></a>
-                <a href="{{ route('dashboard', ['view' => 'variance']) }}" title="Cost Variance Analysis"><span class="nav-icon">📈</span><span class="nav-label">Cost Variance Analysis</span></a>
-                <a href="{{ route('dashboard', ['view' => 'metric']) }}" title="Cost per Metric Ton"><span class="nav-icon">⚖️</span><span class="nav-label">Cost per Metric Ton</span></a>
+                <a href="{{ route('dashboard', ['view' => 'metric']) }}" title="Activity-Based Costing"><span class="nav-icon">⚖️</span><span class="nav-label">Activity-Based Costing</span></a>
                 <a href="{{ route('dashboard', ['view' => 'equipmentCost']) }}" title="Equipment Cost"><span class="nav-icon">🚜</span><span class="nav-label">Equipment Cost</span></a>
                 <a href="{{ route('dashboard', ['view' => 'inventory']) }}" title="Inventory Valuation"><span class="nav-icon">📦</span><span class="nav-label">Inventory Valuation</span></a>
+                <a href="{{ route('dashboard', ['view' => 'cost']) }}" title="Report Cost (COGP)"><span class="nav-icon">📑</span><span class="nav-label">Report Cost (COGP)</span></a>
+                <a href="{{ route('dashboard', ['view' => 'variance']) }}" title="Cost Variance Analysis"><span class="nav-icon">📈</span><span class="nav-label">Cost Variance Analysis</span></a>
                 <a href="{{ route('dashboard', ['view' => 'financial']) }}" title="Financial Statements"><span class="nav-icon">📑</span><span class="nav-label">Financial Statements</span></a>
                 <span class="nav-group-label">TRANSACTIONS</span>
                 <a href="{{ route('dashboard', ['view' => 'glReview']) }}" title="GL Transaction Review"><span class="nav-icon">🧾</span><span class="nav-label">GL Transaction Review</span></a>

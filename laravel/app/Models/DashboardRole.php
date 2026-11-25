@@ -28,11 +28,11 @@ class DashboardRole extends Model
     {
         return [
             'overview' => ['label' => 'Executive Overview', 'group' => 'Reports'],
-            'cost' => ['label' => 'Report Cost (COGP)', 'group' => 'Reports'],
-            'variance' => ['label' => 'Cost Variance Analysis', 'group' => 'Reports'],
-            'metric' => ['label' => 'Cost per Metric Ton', 'group' => 'Reports'],
+            'metric' => ['label' => 'Activity-Based Costing', 'group' => 'Reports'],
             'equipmentCost' => ['label' => 'Equipment Cost', 'group' => 'Reports'],
             'inventory' => ['label' => 'Inventory Valuation', 'group' => 'Reports'],
+            'cost' => ['label' => 'Report Cost (COGP)', 'group' => 'Reports'],
+            'variance' => ['label' => 'Cost Variance Analysis', 'group' => 'Reports'],
             'financial' => ['label' => 'Financial Statements', 'group' => 'Reports'],
             'glReview' => ['label' => 'GL Transaction Review', 'group' => 'Transactions'],
             'integration' => ['label' => 'Integration & Data Sources', 'group' => 'Data & Setup'],

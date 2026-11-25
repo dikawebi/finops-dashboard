@@ -48,11 +48,11 @@
             <nav class="tabs" aria-label="Dashboard navigation">
                 @if(auth()->user()->canAccessPage('overview'))<span class="nav-group-label">OVERVIEW</span><button type="button" class="active" data-view="overview"><span class="nav-icon">📊</span><span class="nav-label">Executive Overview</span></button>@endif
                 @if(collect(['cost','variance','metric','equipmentCost','inventory','financial'])->contains(fn($page) => auth()->user()->canAccessPage($page)))<span class="nav-group-label">COST &amp; REPORTS</span>@endif
-                @if(auth()->user()->canAccessPage('cost'))<button type="button" data-view="cost"><span class="nav-icon">📑</span><span class="nav-label">Report Cost (COGP)</span></button>@endif
-                @if(auth()->user()->canAccessPage('variance'))<button type="button" data-view="variance"><span class="nav-icon">📈</span><span class="nav-label">Cost Variance Analysis</span></button>@endif
-                @if(auth()->user()->canAccessPage('metric'))<button type="button" data-view="metric"><span class="nav-icon">⚖️</span><span class="nav-label">Cost per Metric Ton</span></button>@endif
+                @if(auth()->user()->canAccessPage('metric'))<button type="button" data-view="metric"><span class="nav-icon">⚖️</span><span class="nav-label">Activity-Based Costing</span></button>@endif
                 @if(auth()->user()->canAccessPage('equipmentCost'))<button type="button" data-view="equipmentCost"><span class="nav-icon">🚜</span><span class="nav-label">Equipment Cost</span></button>@endif
                 @if(auth()->user()->canAccessPage('inventory'))<button type="button" data-view="inventory"><span class="nav-icon">📦</span><span class="nav-label">Inventory Valuation</span></button>@endif
+                @if(auth()->user()->canAccessPage('cost'))<button type="button" data-view="cost"><span class="nav-icon">📑</span><span class="nav-label">Report Cost (COGP)</span></button>@endif
+                @if(auth()->user()->canAccessPage('variance'))<button type="button" data-view="variance"><span class="nav-icon">📈</span><span class="nav-label">Cost Variance Analysis</span></button>@endif
                 @if(auth()->user()->canAccessPage('financial'))<button type="button" data-view="financial"><span class="nav-icon">📑</span><span class="nav-label">Financial Statements</span></button>@endif
                 @if(auth()->user()->canAccessPage('glReview'))<span class="nav-group-label">TRANSACTIONS</span><button type="button" data-view="glReview"><span class="nav-icon">🧾</span><span class="nav-label">GL Transaction Review</span></button>@endif
                 @if(collect(['integration','mapping','config'])->contains(fn($page) => auth()->user()->canAccessPage($page)))<span class="nav-group-label">DATA &amp; CONFIGURATION</span>@endif

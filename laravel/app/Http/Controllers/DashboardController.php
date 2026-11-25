@@ -395,6 +395,43 @@ class DashboardController extends Controller
                 if (!isset($volumeGroups[$key])) $volumeGroups[$key] = ['entity'=>$volume->entity,'activity'=>$volume->activity,'months'=>[]];
                 $volumeGroups[$key]['months'][$volume->period] = (float) $volume->qty;
             }
+            $putVolume = static function (string $month, string $activity, string $entity, mixed $qty) use (&$volumeGroups): void {
+                if ($qty === null || !is_numeric($qty)) return;
+                $key = json_encode([$entity, $activity], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                if (!isset($volumeGroups[$key])) $volumeGroups[$key] = ['entity'=>$entity,'activity'=>$activity,'months'=>[]];
+                $volumeGroups[$key]['months'][$month] ??= (float) $qty;
+            };
+            $loadingActivities = [
+                'Coal Hauling BUA to WP'=>'Coal Loading at ROM to WP',
+                'Coal Hauling BUA to Port'=>'Coal Loading at ROM to Port',
+                'Coal Hauling WP to Port'=>'Coal Loading at WP to Port',
+            ];
+            foreach (\Illuminate\Support\Facades\DB::table('db_accrual_items')->whereIn('period', $periods)->where('account_code', '5000411')->whereNotNull('qty')->get(['period','entity','category','qty']) as $item) {
+                $activity = $loadingActivities[$item->category] ?? null;
+                if ($activity) $putVolume($item->period, $activity, $item->entity, $item->qty);
+            }
+            $loadingDetailRows = \Illuminate\Support\Facades\DB::table('production_activity_details')
+                ->whereBetween('production_date', [$periods[0].'-01', \Carbon\Carbon::createFromFormat('Y-m', end($periods))->endOfMonth()->toDateString()])
+                ->where('source', 'google_sheets')->where('activity', 'Coal Loading WP to Port')
+                ->where('metric', 'quantity')->where('unit', 'MT')->whereNotNull('value')
+                ->get(['production_date','contractor','value']);
+            $loadingDetailVolumes = [];
+            foreach ($loadingDetailRows as $row) {
+                $entity = strtoupper((string) preg_replace('/^PT[.\s]*/i', '', trim((string) $row->contractor)));
+                if ($entity !== 'BP') continue;
+                $month = substr((string) $row->production_date, 0, 7);
+                $key = $month.'|'.$entity;
+                $loadingDetailVolumes[$key] = ($loadingDetailVolumes[$key] ?? 0.0) + (float) $row->value;
+            }
+            foreach ($loadingDetailVolumes as $key => $qty) {
+                [$month, $entity] = explode('|', $key, 2);
+                $putVolume($month, 'Coal Loading at WP to Port', $entity, $qty);
+            }
+            $washMetrics = \Illuminate\Support\Facades\DB::table('monthly_metrics')->whereIn('period', $periods)->where('metric_key', 'washCoal')->get(['period','value']);
+            foreach ($washMetrics as $metric) {
+                $bpWashCost = $groups[json_encode(['BP','Washplant'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)] ?? null;
+                if ($bpWashCost) $putVolume($metric->period, 'Washplant', 'BP', $metric->value);
+            }
             $glPeriods = GlEntry::query()->whereIn('period', $periods)->where('period', '>=', '2026-10')->distinct()->pluck('period')->all();
             foreach ($glPeriods as $glPeriod) {
                 $grand = $costs->build($glPeriod, 'mtd')['grandTotal'];
