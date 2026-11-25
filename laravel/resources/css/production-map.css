@@ -35,6 +35,10 @@
 .production-geography .production-period-delta.is-positive{color:#76e0a0}
 .production-geography .production-period-delta.is-negative{color:#ff8585}
 .production-geography .production-period-delta.is-neutral{color:#c5d2dc}
+.production-geography [data-overview-card="Washing Plant"],.production-geography [data-overview-card="BP Port"],.production-geography [data-overview-card="ISP"]{width:clamp(150px,13%,174px)}
+.production-geography [data-overview-card="Washing Plant"] summary,.production-geography [data-overview-card="BP Port"] summary,.production-geography [data-overview-card="ISP"] summary{min-height:102px;justify-content:center;gap:5px;padding:9px 11px}
+.production-geography [data-overview-card="Washing Plant"] .overview-card-values,.production-geography [data-overview-card="BP Port"] .overview-card-values,.production-geography [data-overview-card="ISP"] .overview-card-values{width:100%;align-items:center;gap:3px}
+.production-geography [data-overview-card="Washing Plant"] .production-period-delta,.production-geography [data-overview-card="BP Port"] .production-period-delta,.production-geography [data-overview-card="ISP"] .production-period-delta{max-width:100%;white-space:normal;overflow-wrap:normal;text-wrap:pretty}
 .production-geography .overview-detail-card summary small{display:none}
 .production-geography .overview-scene{display:none}
 .production-geography [data-overview-card="Pit Takalot"]{left:9%;top:13%}
