@@ -79,7 +79,7 @@ const postJson = async (path, body) => {
     const text = await response.text();
     let payload = null;
     try { payload = text ? JSON.parse(text) : null; } catch { payload = null; }
-    if (!response.ok) throw new Error(payload?.message || (response.status === 419 ? 'Session expired. Refresh the page and try again.' : `Request failed: ${response.status}`));
+    if (!response.ok) throw new Error(Object.values(payload?.errors || {}).flat().join(' ') || payload?.message || (response.status === 419 ? 'Session expired. Refresh the page and try again.' : `Request failed: ${response.status}`));
     return payload?.data ?? payload;
 };
 const badge = text => `<span class="source-badge">📂 ${esc(text)}</span>`;
@@ -1246,22 +1246,77 @@ async function financial(period, mode) {
 }
 
 async function integration() {
-    const [data, production, d365, autoSync] = await Promise.all([api('/api/integration-status'), api(`/api/production-summary?period=${$('#period').value}&mode=mtd`), api('/api/d365/entities'), api('/api/d365/auto-sync')]);
+    const period = $('#period').value;
+    const [data, production, d365, autoSync, accounts, manualAccruals] = await Promise.all([api('/api/integration-status'), api(`/api/production-summary?period=${period}&mode=mtd`), api('/api/d365/entities'), api('/api/d365/auto-sync'), api('/api/accounts'), api(`/api/accruals?period=${period}`)]);
     const autoSyncData = autoSync || {};
     const d365LastSyncedAt = (d365.entities || []).filter(item => item.last?.status === 'success' && item.last?.updated_at).map(item => item.last.updated_at).sort().at(-1) || null;
     const connector = (name, detail, status, source, lines, button, statusClass) => `<article class="connector-card"><div><div class="connector-heading"><h3>${name}</h3>${badge(source)}</div><p>${detail}</p><div class="connector-details">${lines.map(line => `<div>${line}</div>`).join('')}</div><div class="connector-actions">${button}</div></div><div><span class="status ${statusClass}">${esc(status)}</span></div></article>`;
     const display = value => value === undefined || value === null || value === '' ? '—' : esc(value);
     const entityRows = (d365.entities || []).map(item => { const last = item.last; return `<tr><td><strong>${esc(item.label)}</strong><br><small>${esc(item.key)}</small></td><td>${esc(last?.status || 'pending')}</td><td class="num">${qty(item.staging_count)}</td><td class="num">${qty(last?.fetched || 0)}</td><td>${display(last?.message)}</td><td><button class="btn btn-outline d365-staging-view" data-entity="${esc(item.key)}" data-label="${esc(item.label)}" type="button">View Staging</button></td></tr>`; }).join('');
     const recentRows = (production.recentTickets || []).map(ticket => `<tr><td>${display(ticket['Tgl Keluar'])} ${display(ticket['Jam Keluar'])}</td><td><strong>${display(ticket.Product)}</strong></td><td>${display(ticket['No Pol'])}</td><td>${display(ticket.Sopir)}</td><td>${display(ticket.WEIGHBRIDGE || ticket.source)}</td><td class="num">${ticket.BRUTO == null ? '—' : signedNumber(ticket.BRUTO, 0)}</td><td class="num">${ticket.TARA == null ? '—' : signedNumber(ticket.TARA, 0)}</td><td class="num">${ticket.source === 'Google Sheets' ? '—' : signedNumber(ticket.NETTO || 0, 0)}</td><td class="num val-text">${qty((Number(ticket.NETTO) || 0) / 1000)} MT</td><td>${display(ticket.Operator)}</td></tr>`).join('');
+    const canEditAccruals = canEditCurrentPage();
+    const accrualAccountOptions = (accounts || []).filter(account => /^[5-9]/.test(String(account.account_code)) && !account.is_parent).map(account => `<option value="${esc(account.account_code)}">${esc(account.account_code)} · ${esc(account.account_name)}</option>`).join('');
+    const accrualCategories = ['Mining', 'Coal Hauling BUA to WP', 'Coal Hauling BUA to Port', 'Coal Hauling WP to Port', 'Washing Plant', 'BP PORT', 'GA', 'Selling Expense'];
+    const accrualCategoryOptions = accrualCategories.map(category => `<option value="${esc(category)}">${esc(category)}</option>`).join('');
+    const renderManualAccrualRows = rows => {
+        const entries = Array.isArray(rows) ? rows : [];
+        const body = $('#manualAccrualRows');
+        if (!body) return;
+        body.innerHTML = entries.map(entry => `<tr><td>${esc(formatPeriod(entry.period))}</td><td><strong>${esc(entry.account_code)}</strong> · ${esc(entry.description || '—')}</td><td>${esc(entry.category || '—')}</td><td class="num">${signedNumber(entry.qty, 3)}</td><td class="num">${signedNumber(entry.rate_usd, 3)}</td><td class="num">${money(entry.amount_usd)}</td><td>${canEditAccruals ? `<button type="button" class="btn btn-outline manual-accrual-delete" data-id="${esc(entry.id)}" data-period="${esc(entry.period)}">Delete</button>` : '—'}</td></tr>`).join('') || '<tr><td colspan="7" class="center">No manual accruals for this period.</td></tr>';
+        const total = entries.reduce((sum, entry) => sum + Number(entry.amount_usd || 0), 0);
+        $('#manualAccrualSummary').textContent = `${entries.length} manual entries · ${money(total)} · ${formatPeriod(period)}`;
+    };
     const autoSyncForm = `<section class="d365-auto-sync" aria-labelledby="d365AutoSyncTitle"><div class="d365-auto-sync-heading"><h4 id="d365AutoSyncTitle">Automatic D365 sync</h4><span>WIB · UTC+7</span></div><label class="d365-auto-sync-toggle"><input id="d365AutoSyncEnabled" type="checkbox" ${autoSyncData.enabled ? 'checked' : ''}><span>Enable daily automatic sync</span></label><div class="d365-auto-sync-fields"><label>Run time<input id="d365AutoSyncTime" type="time" value="${esc(autoSyncData.run_time || '01:00')}"></label><fieldset><legend>Transaction date filter</legend><label><input type="radio" name="d365AutoSyncScope" value="today" ${autoSyncData.date_scope === 'today' ? 'checked' : ''}>Today</label><label><input type="radio" name="d365AutoSyncScope" value="yesterday" ${(!autoSyncData.date_scope || autoSyncData.date_scope === 'yesterday') ? 'checked' : ''}>H-1 · previous day</label></fieldset></div><p id="d365AutoSyncHint" class="d365-auto-sync-hint">${autoSyncData.date_scope === 'today' ? 'Today pulls records carrying today’s date.' : 'H-1 pulls the full previous calendar day.'} The schedule uses Asia/Jakarta (UTC+7).</p><div class="d365-auto-sync-save"><button id="d365AutoSyncSave" class="btn btn-primary" type="button">Save auto-sync</button><span id="d365AutoSyncStatus" role="status" aria-live="polite"></span></div><small class="d365-auto-sync-last">Last scheduled start: <b>${esc(formatSyncTimestamp(autoSyncData.last_run_at))}</b></small><small class="d365-auto-sync-last">Requires Laravel Scheduler to run every minute and a database queue worker to be active.</small></section>`;
     $('#pageContent').innerHTML = `
         ${sectionHeader('Integration & Real-Time Data Sources', 'Microsoft Dynamics 365 and Google Sheets production sources.')}
         <div class="connector-grid">${connector('Microsoft Dynamics 365 OData Connector', 'Reads D365 connection settings from the Laravel environment configuration.', data.d365.status === 'configured' ? 'Configured' : 'Not configured', 'environment', [`<b>Environment URL:</b> <code>${esc(data.d365.environmentUrl || 'Not configured')}</code>`, `<b>Sync Period:</b> <code>${esc($('#period').value)}</code>`, `<b>Auto Sync:</b> <code>${autoSyncData.enabled ? 'Enabled' : 'Disabled'}</code>`, `<b>Last Sync:</b> ${esc(formatSyncTimestamp(d365LastSyncedAt))}`, `<b>Local Records:</b> ${qty(data.database.glEntries)} GL records`], `<button id="d365SyncAll" class="btn btn-primary" type="button">${Number(data.database.glEntries || 0) === 0 ? 'Initial D365 Sync' : 'Sync Selected Month'}</button><button id="viewGlData" class="btn btn-outline" type="button">View GL Data</button>`, data.d365.status === 'configured' ? 'online' : 'manual')}${connector('Google Sheets Production Connector', 'Preview and sync activity data from the Produksi tab.', data.googleSheets.status === 'configured' ? 'Configured' : 'Not configured', 'Google Sheets API', [`<b>Spreadsheet ID:</b> <code>${esc(data.googleSheets.spreadsheetId || '—')}</code>`, `<b>Sheet:</b> <code>${esc(data.googleSheets.sheetName || 'Produksi')}</code>`, `<b>Service account:</b> <code>${esc(data.googleSheets.serviceAccountEmail || '—')}</code>`, `<b>Credential:</b> ${esc(data.googleSheets.credentialStatus || 'Unavailable')}`, `<b>Last Sync:</b> ${esc(formatSyncTimestamp(data.googleSheets.lastSyncedAt))}`], `<button id="googleSheetsSync" class="btn btn-primary" type="button">Sync Production Now</button><button id="googleSheetsPreview" class="btn btn-outline" type="button">Preview Sheet</button><div id="googleSheetsSyncStatus" class="integration-note" role="status"></div>`, data.googleSheets.status === 'configured' ? 'online' : 'manual')}</div>
         ${card('D365 Auto Sync Settings', autoSyncForm)}
         ${card('D365 Staging Status', `<p class="integration-note d365-flow-note"><strong>Alur sync:</strong> Semua entity OData ditarik ke staging. Setelah <em>GL Account Entries</em> berhasil, sistem otomatis menerapkan allocation mapping dan melakukan upsert ke <code>gl_entries</code>; GL tidak berhenti di staging dan tidak perlu klik Import to GL lagi. Main Account dan Findim mapping juga memperbarui hierarchy/rule terkait. Entity lain tetap tersedia di staging. <strong>View Staging</strong> untuk payload OData; <strong>View GL Data</strong> untuk transaksi GL yang dipakai dashboard.</p>${table(['Entity', 'Status', 'Staging Rows', 'Last Fetched', 'Message', ''], entityRows)}`)}
-        ${card('Accrual Input — Add to Report Cost <span class="status manual">Manual</span>', `<p class="integration-note">Accrual menambah amount ke <strong>Report Cost</strong> dan <strong>Cost/MT</strong> pada periode terpilih. Amount = Qty × Rate dalam USD penuh.</p><div class="accrual-form-grid"><label>Periode<input type="month" value="${esc($('#period').value)}" disabled></label><label>Akun COA (5–9)<select disabled><option>Select account</option></select></label><label>Qty (MT)<input type="number" value="1" disabled></label><label>Rate (USD/MT)<input type="number" disabled></label><label>Amount (USD)<input type="text" value="0" disabled></label><label>Kategori<select disabled><option>Select category</option></select></label><button class="btn btn-primary" type="button" disabled>Add Accrual</button></div><p class="integration-note">Entry form remains available only after authentication is enabled.</p><div class="table-responsive"><table class="table-accounting"><thead><tr><th>Periode</th><th>Akun / Item Description</th><th>Kategori</th><th>Qty (MT)</th><th>Rate (USD/MT)</th><th>Amount (USD)</th><th></th></tr></thead><tbody><tr><td colspan="7" class="center">Belum ada accrual.</td></tr></tbody></table></div>`)}
+        ${card('Accrual Input — Add to Report Cost <span class="status manual">Manual</span>', `<p class="integration-note">Manual accruals use <strong>Qty × Rate</strong> and flow into Report Cost and Activity-Based Costing for the selected period. Automatic accruals from Google Sheets DB are handled separately and cannot be edited here.</p><form id="manualAccrualForm" class="accrual-form-grid"><label>Period<input type="month" value="${esc(period)}" disabled></label><label>COA account (leaf 5–9)<select id="manualAccrualAccount" required ${canEditAccruals ? '' : 'disabled'}><option value="">Select account</option>${accrualAccountOptions}</select></label><label>Description<input id="manualAccrualDescription" type="text" maxlength="255" placeholder="Accrual description" ${canEditAccruals ? '' : 'disabled'}></label><label>Qty (MT)<input id="manualAccrualQty" type="number" step="any" value="1" required ${canEditAccruals ? '' : 'disabled'}></label><label>Rate (USD/MT)<input id="manualAccrualRate" type="number" step="any" required ${canEditAccruals ? '' : 'disabled'}></label><label>Amount (USD)<output id="manualAccrualAmount">USD 0</output></label><label>Costing To<select id="manualAccrualCategory" required ${canEditAccruals ? '' : 'disabled'}><option value="">Select category</option>${accrualCategoryOptions}</select></label><button id="manualAccrualSubmit" class="btn btn-primary" type="submit" ${canEditAccruals ? '' : 'disabled'}>Add Accrual</button></form><p id="manualAccrualStatus" class="integration-note" role="status" aria-live="polite"></p><p class="integration-note">Google Sheets DB accruals remain read-only. Closing Report Cost blocks adding or deleting manual entries for the selected period.</p><div class="table-responsive"><table class="table-accounting"><thead><tr><th>Period</th><th>Account / Description</th><th>Costing To</th><th>Qty (MT)</th><th>Rate (USD/MT)</th><th>Amount (USD)</th><th></th></tr></thead><tbody id="manualAccrualRows"></tbody></table></div><p id="manualAccrualSummary" class="integration-note"></p>`)}
         ${card('Latest 15 Production Records', table(['Date & Time', 'Product', 'Vehicle Plate', 'Driver', 'Weighbridge', 'BRUTO (Kg)', 'TARA (Kg)', 'NETTO (Kg)', 'NETTO (MT)', 'Operator'], recentRows))}`;
     $('#viewGlData').addEventListener('click', () => viewGlData($('#period').value));
+    renderManualAccrualRows(manualAccruals);
+    const accrualAmountPreview = () => {
+        const qtyValue = Number($('#manualAccrualQty').value);
+        const rateValue = Number($('#manualAccrualRate').value);
+        $('#manualAccrualAmount').textContent = Number.isFinite(qtyValue * rateValue) ? money(qtyValue * rateValue) : money(0);
+    };
+    $('#manualAccrualForm').querySelectorAll('#manualAccrualQty, #manualAccrualRate').forEach(input => input.addEventListener('input', accrualAmountPreview));
+    $('#manualAccrualForm').addEventListener('submit', async event => {
+        event.preventDefault();
+        const button = $('#manualAccrualSubmit');
+        const status = $('#manualAccrualStatus');
+        button.disabled = true;
+        status.textContent = 'Saving manual accrual…';
+        try {
+            await postJson('/api/accruals', { period, account_code: $('#manualAccrualAccount').value, description: $('#manualAccrualDescription').value, qty: Number($('#manualAccrualQty').value), rate_usd: Number($('#manualAccrualRate').value), category: $('#manualAccrualCategory').value });
+            renderManualAccrualRows(await api(`/api/accruals?period=${period}`));
+            $('#manualAccrualForm').reset();
+            $('#manualAccrualQty').value = '1';
+            accrualAmountPreview();
+            status.textContent = `Saved. Accrual is included in Report Cost for ${formatPeriod(period)}.`;
+        } catch (error) {
+            status.textContent = `Could not save accrual: ${error.message}`;
+        } finally { button.disabled = !canEditAccruals; }
+    });
+    $('#manualAccrualRows').addEventListener('click', async event => {
+        const button = event.target.closest('.manual-accrual-delete');
+        if (!button) return;
+        if (!window.confirm(`Delete this manual accrual for ${formatPeriod(button.dataset.period)}?`)) return;
+        button.disabled = true;
+        const status = $('#manualAccrualStatus');
+        status.textContent = 'Deleting manual accrual…';
+        try {
+            const response = await fetch(`/api/accruals/${encodeURIComponent(button.dataset.id)}?period=${encodeURIComponent(button.dataset.period)}`, { method: 'DELETE', credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' } });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(payload.message || `Delete failed: ${response.status}`);
+            renderManualAccrualRows(await api(`/api/accruals?period=${period}`));
+            status.textContent = `Accrual deleted from ${formatPeriod(period)}.`;
+        } catch (error) {
+            status.textContent = `Could not delete accrual: ${error.message}`;
+            button.disabled = false;
+        }
+    });
     const syncScopeHint = $('#d365AutoSyncHint');
     document.querySelectorAll('input[name="d365AutoSyncScope"]').forEach(input => input.addEventListener('change', event => {
         syncScopeHint.textContent = event.target.value === 'today'

@@ -9,8 +9,8 @@ use Symfony\Component\HttpFoundation\Response;
 class EnsureDashboardAccess
 {
     private const API_PAGES = [
-        'accounts' => ['cost', 'variance', 'financial', 'glReview'],
-        'accruals' => ['cost'],
+        'accounts' => ['cost', 'variance', 'financial', 'glReview', 'integration'],
+        'accruals' => ['cost', 'integration'],
         'config' => ['config'],
         'gl-data' => ['glReview', 'cost'],
         'gl-transaction-review' => ['glReview'],

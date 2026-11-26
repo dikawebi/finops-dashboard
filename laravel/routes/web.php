@@ -33,6 +33,7 @@ Route::middleware(['auth', 'administrator'])->prefix('admin')->name('admin.')->g
 
 Route::middleware(['auth', \App\Http\Middleware\EnsureDashboardAccess::class])->prefix('api')->group(function () {
     Route::post('/accruals', [AccrualController::class, 'store'])->middleware(['auth', EnsurePeriodOpen::class]);
+    Route::delete('/accruals/{accrual}', [AccrualController::class, 'destroy'])->middleware(['auth', EnsurePeriodOpen::class]);
     Route::get('/accounts', [OperationsController::class, 'accounts']);
     Route::get('/accruals', [OperationsController::class, 'accruals']);
     Route::get('/config', [OperationsController::class, 'config']);
