@@ -71,12 +71,16 @@ class D365Controller extends Controller
         try {
             $hasRunningLog = DB::table('d365_sync_logs')->where('status', 'running')->exists();
             $hasQueuedJob = DB::table('jobs')->where('queue', 'default')->where('payload', 'like', '%RunD365Sync%')->exists();
-            if ($hasRunningLog || $hasQueuedJob) return ['queued' => false, 'already_running' => true, 'message' => 'A D365 sync is already running or queued.'];
+            if ($hasRunningLog) return ['queued' => false, 'already_running' => true, 'message' => 'A D365 sync is already running.'];
+            if ($hasQueuedJob) {
+                $this->sync->ensureQueueWorker();
+                return ['queued' => false, 'already_running' => true, 'message' => 'A D365 sync is already queued; the queue worker was started.'];
+            }
             $forceFull = (bool) ($data['force_full'] ?? false);
             if ($forceFull) $this->sync->resetTransactionData();
             $this->sync->clearStop();
-            $this->sync->ensureQueueWorker();
             RunD365Sync::dispatch($entity, $data['date_from'] ?? null, $data['date_to'] ?? null, $forceFull);
+            $this->sync->ensureQueueWorker();
         } finally {
             $lock->release();
         }

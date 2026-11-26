@@ -44,10 +44,26 @@ class D365SyncService
     public function ensureQueueWorker(): void
     {
         if (PHP_OS_FAMILY !== 'Windows' || ! app()->environment('local')) return;
-        $php = escapeshellarg(PHP_BINARY);
-        $artisan = escapeshellarg(base_path('artisan'));
-        $command = 'start "" /B '.$php.' -d memory_limit=512M '.$artisan.' queue:work database --queue=default --tries=1 --timeout=1800 --stop-when-empty';
-        pclose(popen($command, 'r'));
+        $quote = static fn (string $value): string => "'".str_replace("'", "''", $value)."'";
+        $arguments = '-d memory_limit=512M "'.base_path('artisan').'" queue:work database --queue=default --tries=1 --timeout=1800 --stop-when-empty';
+        $script = 'Start-Process -FilePath '.$quote(PHP_BINARY)
+            .' -ArgumentList '.$quote($arguments)
+            .' -WorkingDirectory '.$quote(base_path())
+            .' -WindowStyle Hidden';
+        $process = proc_open(
+            ['powershell.exe', '-NoProfile', '-NonInteractive', '-Command', $script],
+            [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+            $pipes,
+            base_path(),
+        );
+        if (! is_resource($process)) throw new \RuntimeException('Could not start the D365 queue worker.');
+        fclose($pipes[0]);
+        $output = stream_get_contents($pipes[1]);
+        $error = stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        $exitCode = proc_close($process);
+        if ($exitCode !== 0) throw new \RuntimeException(trim($error ?: $output) ?: 'Could not start the D365 queue worker.');
     }
 
     public function syncEntity(array $entity, ?int $limit = null, ?string $dateFrom = null, ?string $dateTo = null, bool $forceFull = false): array
