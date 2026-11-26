@@ -5,6 +5,7 @@ use App\Models\Accrual;
 use App\Models\CostAccount;
 use App\Models\GlEntry;
 use App\Models\SystemConfig;
+use App\Services\CostMatrixService;
 use App\Services\GlImportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -12,7 +13,21 @@ use Illuminate\Support\Facades\Schema;
 class OperationsController extends Controller
 {
     public function accounts() { return response()->json(['success'=>true,'data'=>CostAccount::orderBy('account_code')->get()]); }
-    public function accruals(Request $request) { $period=$request->query('period'); $q=Accrual::query(); if($period)$q->where('period',$period); return response()->json(['success'=>true,'data'=>$q->orderBy('period')->get()]); }
+    public function accruals(Request $request, CostMatrixService $costMatrix)
+    {
+        $period = $request->query('period');
+        $manual = Accrual::query()->when($period, fn ($query) => $query->where('period', $period))
+            ->orderBy('period')->get()->map(fn (Accrual $entry): array => [
+                'id' => $entry->id, 'period' => $entry->period, 'account_code' => $entry->account_code,
+                'description' => $entry->description, 'category' => $entry->category,
+                'qty' => (float) $entry->qty, 'rate_usd' => (float) $entry->rate_usd,
+                'amount_usd' => (float) $entry->amount_usd, 'source' => 'manual',
+                'source_label' => 'Manual', 'automatic' => false,
+            ])->all();
+        $automatic = $period ? $costMatrix->automaticAccrualsForPeriod((string) $period) : [];
+
+        return response()->json(['success' => true, 'data' => [...$manual, ...$automatic]]);
+    }
     public function config()
     {
         $configs = SystemConfig::query()->pluck('value', 'key')->except(['d365Config']);

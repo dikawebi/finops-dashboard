@@ -389,34 +389,8 @@ class CostMatrixService
         $liveAccruals = $activePeriod !== null && in_array($activePeriod, $periods, true)
             ? \Illuminate\Support\Facades\DB::table('db_accrual_items')->where('period', $activePeriod)->get()
             : collect();
-        foreach ($liveAccruals as $row) $entries[] = [
-            'period'=>$row->period,'account_code'=>$row->account_code,'name'=>$row->name,
-            'category'=>$row->category,'amount_usd'=>$row->amount_usd,'entity'=>$row->entity,'source'=>'live_sheet',
-        ];
         $hasLiveAccruals = $liveAccruals->isNotEmpty();
-        if ($hasLiveAccruals) {
-            $metrics = \Illuminate\Support\Facades\DB::table('monthly_metrics')->where('period', $activePeriod)->pluck('value', 'metric_key');
-            $portQty = $metrics->get('portLoading');
-            if ($portQty !== null && (float) $portQty >= 0) $entries[] = [
-                'period'=>$activePeriod,'account_code'=>'5000104','name'=>'Barge Loading Conveyor Rent',
-                'category'=>'BP PORT','amount_usd'=>max((float) $portQty * 1.332, 15000),'source'=>'live_metric',
-            ];
-            $feedQty = $metrics->get('washFeed');
-            if ($feedQty !== null && (float) $feedQty > 0) $entries[] = [
-                'period'=>$activePeriod,'account_code'=>'5000105','name'=>'Wash Plant Rent',
-                'category'=>'Washing Plant','amount_usd'=>(float) $feedQty * 13.487,'source'=>'live_metric',
-            ];
-            foreach ([
-                ['haulingBuaPort','Coal Hauling BUA to Port'],
-                ['haulingWpPort','Coal Hauling WP to Port'],
-            ] as [$metricKey, $category]) {
-                $qty = $metrics->get($metricKey);
-                if ($qty !== null && (float) $qty > 0) $entries[] = [
-                    'period'=>$activePeriod,'account_code'=>'5000109','name'=>'Land And Road Rent',
-                    'category'=>$category,'amount_usd'=>(float) $qty * 0.7,'source'=>'live_metric',
-                ];
-            }
-        }
+        if ($hasLiveAccruals) $entries = array_merge($entries, $this->liveAutomaticAccrualEntries($activePeriod, $liveAccruals));
         if ($hasLiveAccruals && count(array_filter($periods, static fn (string $month): bool => $month !== $activePeriod)) === 0) {
             return $this->excludeAccrualsAlreadyPostedToD365($entries);
         }
@@ -433,6 +407,73 @@ class CostMatrixService
             ];
         }
         return $this->excludeAccrualsAlreadyPostedToD365($entries);
+    }
+
+    public function automaticAccrualsForPeriod(string $period): array
+    {
+        $liveAccruals = DB::table('db_accrual_items')->where('period', $period)->get();
+        if ($liveAccruals->isEmpty()) return [];
+        $entries = $this->liveAutomaticAccrualEntries($period, $liveAccruals);
+        $accountCodes = array_values(array_unique(array_column($entries, 'account_code')));
+        $posted = DB::table('gl_entries')->where('period', $period)->where('source_type', 'd365')
+            ->where('voucher', 'like', 'ACCR%')->whereIn('main_account', $accountCodes)
+            ->get(['main_account', 'amount_reporting']);
+        $candidates = [];
+        foreach ($posted as $row) $candidates[trim((string) $row->main_account)][] = ['amount' => (float) $row->amount_reporting, 'used' => false];
+
+        foreach ($entries as &$entry) {
+            $entry['automatic'] = true;
+            $entry['id'] = 'auto-'.md5(implode('|', [$entry['period'], $entry['account_code'], $entry['category'], $entry['entity'] ?? '']));
+            $entry['source_label'] = $entry['source'] === 'live_sheet' ? 'Google Sheets DB' : 'Production metric formula';
+            $entry['report_status'] = 'Included by accrual calculation';
+            $code = trim((string) $entry['account_code']);
+            foreach ($candidates[$code] ?? [] as $index => $candidate) {
+                if ($candidate['used'] || abs($candidate['amount'] - (float) $entry['amount_usd']) > 0.02) continue;
+                $candidates[$code][$index]['used'] = true;
+                $entry['report_status'] = 'Matched to D365 GL; excluded from accrual layer';
+                break;
+            }
+        }
+        unset($entry);
+
+        return $entries;
+    }
+
+    private function liveAutomaticAccrualEntries(string $period, iterable $liveAccruals): array
+    {
+        $entries = [];
+        foreach ($liveAccruals as $row) $entries[] = [
+            'period' => $row->period, 'account_code' => $row->account_code, 'name' => $row->name,
+            'category' => $row->category, 'amount_usd' => (float) $row->amount_usd,
+            'entity' => $row->entity, 'qty' => $row->qty === null ? null : (float) $row->qty,
+            'rate_usd' => $row->rate_usd === null ? null : (float) $row->rate_usd,
+            'unit' => $row->unit ?: 'MT', 'source' => 'live_sheet',
+        ];
+
+        $metrics = DB::table('monthly_metrics')->where('period', $period)->pluck('value', 'metric_key');
+        $portQty = $metrics->get('portLoading');
+        if ($portQty !== null && (float) $portQty >= 0) $entries[] = [
+            'period' => $period, 'account_code' => '5000104', 'name' => 'Barge Loading Conveyor Rent',
+            'category' => 'BP PORT', 'qty' => (float) $portQty, 'rate_usd' => 1.332,
+            'amount_usd' => max((float) $portQty * 1.332, 15000), 'unit' => 'MT', 'source' => 'live_metric',
+            'minimum_charge' => 15000,
+        ];
+        $feedQty = $metrics->get('washFeed');
+        if ($feedQty !== null && (float) $feedQty > 0) $entries[] = [
+            'period' => $period, 'account_code' => '5000105', 'name' => 'Wash Plant Rent',
+            'category' => 'Washing Plant', 'qty' => (float) $feedQty, 'rate_usd' => 13.487,
+            'amount_usd' => (float) $feedQty * 13.487, 'unit' => 'MT', 'source' => 'live_metric',
+        ];
+        foreach ([['haulingBuaPort', 'Coal Hauling BUA to Port'], ['haulingWpPort', 'Coal Hauling WP to Port']] as [$metricKey, $category]) {
+            $qty = $metrics->get($metricKey);
+            if ($qty !== null && (float) $qty > 0) $entries[] = [
+                'period' => $period, 'account_code' => '5000109', 'name' => 'Land And Road Rent',
+                'category' => $category, 'qty' => (float) $qty, 'rate_usd' => 0.7,
+                'amount_usd' => (float) $qty * 0.7, 'unit' => 'MT', 'source' => 'live_metric',
+            ];
+        }
+
+        return $entries;
     }
 
     private function excludeAccrualsAlreadyPostedToD365(array $entries): array
