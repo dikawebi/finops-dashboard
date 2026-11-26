@@ -35,9 +35,13 @@ class AuthController extends Controller
 
         RateLimiter::clear($throttleKey);
         $request->session()->regenerate();
+        $dashboardUrl = route('dashboard', [
+            'period' => now('Asia/Jakarta')->format('Y-m'),
+            'mode' => 'mtd',
+        ]);
         return $request->expectsJson()
-            ? response()->json(['success' => true, 'user' => $request->user()])
-            : redirect()->intended(route('dashboard'));
+            ? response()->json(['success' => true, 'user' => $request->user(), 'redirect' => $dashboardUrl])
+            : redirect()->to($dashboardUrl);
     }
 
     public function logout(Request $request)
