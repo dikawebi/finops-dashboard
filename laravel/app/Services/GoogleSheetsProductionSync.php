@@ -10,30 +10,39 @@ class GoogleSheetsProductionSync
 {
     public function sync(string $period): array
     {
-        $parsed = $this->forPeriod($this->readAndParse(), $period);
+        $parsed = $this->forPeriod($this->readAndParse($period), $period);
+        $sourceStatuses = $parsed['sourceStatuses'];
+        if (!collect($sourceStatuses)->contains(fn (array $source): bool => $source['status'] === 'success')) {
+            return ['rows'=>0,'details'=>0,'inventory_movements'=>0,'metrics'=>0,'periods'=>[],'synced_at'=>now()->toIso8601String(),'source_statuses'=>$sourceStatuses,'partial'=>true];
+        }
         $rows = $parsed['rows']; $details = $parsed['details']; $monthlyMetrics = $parsed['monthlyMetrics']; $productionPeriods = $parsed['productionPeriods']; $inventoryMovements = $parsed['inventoryMovements']; $dbCostSummary = $parsed['dbCostSummary']; $dbAccrualItems = $parsed['dbAccrualItems']; $dbDailyCogpParameters = $parsed['dbDailyCogpParameters']; $dbMiningBreakdown = $parsed['dbMiningBreakdown']; $dbEntityVolumes = $parsed['dbEntityVolumes']; $overheadAllocations = $parsed['overheadAllocations']; $washCostCategories = $parsed['washCostCategories']; $internalWaPeriods = $parsed['internalWaPeriods'];
-        DB::transaction(function () use ($period, $rows, $details, $monthlyMetrics, $productionPeriods, $inventoryMovements, $dbCostSummary, $dbAccrualItems, $dbDailyCogpParameters, $dbMiningBreakdown, $dbEntityVolumes, $overheadAllocations, $washCostCategories, $internalWaPeriods): void {
+        DB::transaction(function () use ($period, $rows, $details, $monthlyMetrics, $productionPeriods, $inventoryMovements, $dbCostSummary, $dbAccrualItems, $dbDailyCogpParameters, $dbMiningBreakdown, $dbEntityVolumes, $overheadAllocations, $washCostCategories, $internalWaPeriods, $sourceStatuses): void {
             $periodStart = $period.'-01';
             $periodEnd = \Carbon\Carbon::createFromFormat('Y-m', $period)->endOfMonth()->toDateString();
-            DB::table('daily_production')->where('source', 'google_sheets')->where('period', $period)->delete();
-            DB::table('production_activity_details')->where('source', 'google_sheets')->whereBetween('production_date', [$periodStart, $periodEnd])->delete();
-            DB::table('inventory_movements')->where('source', 'google_sheets')->where('period', $period)->delete();
-            DB::table('daily_production')->upsert($rows, ['production_date'], ['period','coal_getting_mt','routes','source','updated_at']);
-            DB::table('production_activity_details')->insert($details);
-            if ($inventoryMovements) DB::table('inventory_movements')->insert($inventoryMovements);
+            if ($sourceStatuses['Produksi']['status'] === 'success') {
+                DB::table('daily_production')->where('source', 'google_sheets')->where('period', $period)->delete();
+                DB::table('production_activity_details')->where('source', 'google_sheets')->whereBetween('production_date', [$periodStart, $periodEnd])->delete();
+                DB::table('daily_production')->upsert($rows, ['production_date'], ['period','coal_getting_mt','routes','source','updated_at']);
+                DB::table('production_activity_details')->insert($details);
+            }
+            if ($sourceStatuses['DB']['status'] === 'success' && $sourceStatuses['Produksi']['status'] === 'success') {
+                DB::table('inventory_movements')->where('source', 'google_sheets')->where('period', $period)->delete();
+                if ($inventoryMovements) DB::table('inventory_movements')->insert($inventoryMovements);
+            }
+            $summaryPeriods = array_keys($monthlyMetrics);
+            $accrualPeriods = array_values(array_unique(array_column($dbAccrualItems, 'period')));
+            if ($sourceStatuses['DB']['status'] === 'success') {
             $metricLabels = ['coalGetting'=>'Coal Getting','haulingBuaWp'=>'Hauling BUA to Washing Plant','haulingBuaPort'=>'Hauling BUA to Port','haulingWpPort'=>'Hauling Washing Plant to Port','loadingBuaWp'=>'Loading BUA to Washing Plant','loadingBuaPort'=>'Loading BUA to Port','loadingWpPort'=>'Loading Washing Plant to Port','washFeed'=>'Washing Plant Feed','washReject'=>'Washing Plant Reject','washCoal'=>'Washed Coal','strippingRatio'=>'Stripping Ratio','portLoading'=>'Barging / Port Loading','portToIsp'=>'Port to ISP','ispToTaboneo'=>'ISP to Taboneo','portToTaboneo'=>'Port to Taboneo','wasteRemoval'=>'Waste Removal','topsoil'=>'Topsoil','mud'=>'Mud','blasting'=>'Blasting','freedig'=>'Freedig','miningOperationCost'=>'Mining Operation Cost'];
             $metricUnits = ['wasteRemoval'=>'Bcm','topsoil'=>'Bcm','mud'=>'Bcm','blasting'=>'Bcm','freedig'=>'Bcm','miningOperationCost'=>'USD'];
             foreach ($monthlyMetrics as $period => $metrics) foreach ($metricLabels as $key => $label) {
                 DB::table('monthly_metrics')->updateOrInsert(['metric_key'=>$key,'period'=>$period], ['label'=>$label,'unit'=>$metricUnits[$key] ?? 'MT','value'=>$metrics[$key] ?? null,'updated_at'=>now(),'created_at'=>now()]);
             }
-            $summaryPeriods = array_keys($monthlyMetrics);
             DB::table('db_cost_summary')->whereIn('period', $summaryPeriods)->delete();
             $summaryRows = [];
             foreach ($dbCostSummary as $period => $items) foreach ($items as $item) {
                 $summaryRows[] = ['period'=>$period,'entity'=>$item['entity'],'activity'=>$item['activity'],'amount'=>$item['amount'],'currency'=>'USD','created_at'=>now(),'updated_at'=>now()];
             }
             foreach (array_chunk($summaryRows, 500) as $chunk) DB::table('db_cost_summary')->insert($chunk);
-            $accrualPeriods = array_values(array_unique(array_column($dbAccrualItems, 'period')));
             DB::table('db_accrual_items')->whereIn('period', $summaryPeriods)->delete();
             foreach (array_chunk($dbAccrualItems, 500) as $chunk) DB::table('db_accrual_items')->insert($chunk);
             DB::table('db_daily_cogp_parameters')->whereIn('period', $summaryPeriods)->delete();
@@ -42,18 +51,6 @@ class GoogleSheetsProductionSync
             foreach (array_chunk($dbMiningBreakdown, 500) as $chunk) DB::table('db_mining_breakdown')->insert($chunk);
             DB::table('db_entity_volumes')->whereIn('period', $summaryPeriods)->delete();
             foreach (array_chunk($dbEntityVolumes, 500) as $chunk) DB::table('db_entity_volumes')->insert($chunk);
-            foreach ($overheadAllocations as &$allocation) {
-                $allocation['source_synced_at'] = now();
-                $allocation['updated_at'] = now();
-                $allocation['created_at'] = now();
-            }
-            unset($allocation);
-            DB::table('google_sheets_inventory_cost_allocations')->upsert(
-                $overheadAllocations,
-                ['period'],
-                ['overhead_pool_usd','isp_rent_usd','allocated_bua_usd','allocated_wash_usd','allocated_port_usd','allocated_isp_usd','source_sheet','source_synced_at','updated_at']
-            );
-            $this->persistInternalWaPeriods($internalWaPeriods, null, $period);
             $washPeriods = array_values(array_unique(array_column($washCostCategories, 'period')));
             if ($washPeriods) {
                 foreach ($washCostCategories as &$category) $category['source_synced_at'] = now();
@@ -61,15 +58,34 @@ class GoogleSheetsProductionSync
                 DB::table('google_sheets_wash_cost_categories')->whereIn('period', $washPeriods)->delete();
                 foreach (array_chunk($washCostCategories, 500) as $chunk) DB::table('google_sheets_wash_cost_categories')->insert($chunk);
             }
-            DB::table('system_configs')->updateOrInsert(['key'=>'sheetsSync'], ['value'=>json_encode(['last_synced_at'=>now()->toIso8601String(),'rows'=>count($rows),'details'=>count($details),'db_cost_periods'=>$summaryPeriods,'db_accrual_periods'=>$accrualPeriods,'db_accrual_rows'=>count($dbAccrualItems),'db_mining_breakdown_rows'=>count($dbMiningBreakdown),'db_entity_volume_rows'=>count($dbEntityVolumes),'db_wash_cost_category_rows'=>count($washCostCategories)]),'updated_at'=>now(),'created_at'=>now()]);
+            }
+            if ($sourceStatuses['WA COGP-COGS']['status'] === 'success') {
+            foreach ($overheadAllocations as &$allocation) {
+                $allocation['source_synced_at'] = now();
+                $allocation['updated_at'] = now();
+                $allocation['created_at'] = now();
+            }
+            unset($allocation);
+            if ($overheadAllocations) {
+                DB::table('google_sheets_inventory_cost_allocations')->upsert(
+                    $overheadAllocations,
+                    ['period'],
+                    ['overhead_pool_usd','isp_rent_usd','allocated_bua_usd','allocated_wash_usd','allocated_port_usd','allocated_isp_usd','source_sheet','source_synced_at','updated_at']
+                );
+            }
+            $this->persistInternalWaPeriods($internalWaPeriods, null, $period);
+            }
+            DB::table('system_configs')->updateOrInsert(['key'=>'sheetsSync'], ['value'=>json_encode(['last_synced_at'=>now()->toIso8601String(),'rows'=>count($rows),'details'=>count($details),'db_cost_periods'=>$summaryPeriods,'db_accrual_periods'=>$accrualPeriods,'db_accrual_rows'=>count($dbAccrualItems),'db_mining_breakdown_rows'=>count($dbMiningBreakdown),'db_entity_volume_rows'=>count($dbEntityVolumes),'db_wash_cost_category_rows'=>count($washCostCategories),'source_statuses'=>$sourceStatuses]),'updated_at'=>now(),'created_at'=>now()]);
         });
-        return ['rows'=>count($rows),'details'=>count($details),'inventory_movements'=>count($inventoryMovements),'metrics'=>count($monthlyMetrics, COUNT_RECURSIVE) - count($monthlyMetrics),'db_cost_rows'=>array_sum(array_map('count', $dbCostSummary)),'db_accrual_rows'=>count($dbAccrualItems),'daily_cogp_parameters'=>count($dbDailyCogpParameters),'db_mining_breakdown_rows'=>count($dbMiningBreakdown),'db_entity_volume_rows'=>count($dbEntityVolumes),'overhead_allocation_periods'=>count($overheadAllocations),'internal_wa_periods'=>count($internalWaPeriods),'internal_wa_source'=>'Google Sheets · WA COGP-COGS','wash_cost_category_rows'=>count($washCostCategories),'wash_cost_periods'=>array_values(array_unique(array_column($washCostCategories,'period'))),'periods'=>array_keys($productionPeriods),'synced_at'=>now()->toIso8601String()];
+        return ['rows'=>count($rows),'details'=>count($details),'inventory_movements'=>count($inventoryMovements),'metrics'=>count($monthlyMetrics, COUNT_RECURSIVE) - count($monthlyMetrics),'db_cost_rows'=>array_sum(array_map('count', $dbCostSummary)),'db_accrual_rows'=>count($dbAccrualItems),'daily_cogp_parameters'=>count($dbDailyCogpParameters),'db_mining_breakdown_rows'=>count($dbMiningBreakdown),'db_entity_volume_rows'=>count($dbEntityVolumes),'overhead_allocation_periods'=>count($overheadAllocations),'internal_wa_periods'=>count($internalWaPeriods),'internal_wa_source'=>'Google Sheets · WA COGP-COGS','wash_cost_category_rows'=>count($washCostCategories),'wash_cost_periods'=>array_values(array_unique(array_column($washCostCategories,'period'))),'periods'=>array_keys($productionPeriods),'synced_at'=>now()->toIso8601String(),'source_statuses'=>$sourceStatuses,'partial'=>collect($sourceStatuses)->contains(fn (array $source): bool => $source['status'] === 'failed')];
     }
 
     /** Synchronize only the WA COGP-COGS inputs used by Internal Cost/MT. */
     public function syncInternalWaCostPerMt(): array
     {
-        $periods = $this->readAndParse()['internalWaPeriods'];
+        $parsed = $this->readAndParse();
+        if ($parsed['sourceStatuses']['WA COGP-COGS']['status'] !== 'success') throw new RuntimeException($parsed['sourceStatuses']['WA COGP-COGS']['message']);
+        $periods = $parsed['internalWaPeriods'];
         $syncedAt = now();
         $this->persistInternalWaPeriods($periods, $syncedAt);
         return ['periods'=>array_column($periods, 'period'),'rows'=>count($periods),'source'=>'Google Sheets · WA COGP-COGS','synced_at'=>$syncedAt->toIso8601String()];
@@ -99,7 +115,9 @@ class GoogleSheetsProductionSync
     /** Refresh only the Google Sheets allocation snapshot without rewriting production or DB summary data. */
     public function syncInventoryOverheadAllocations(): array
     {
-        $allocations = $this->readAndParse()['overheadAllocations'];
+        $parsed = $this->readAndParse();
+        if ($parsed['sourceStatuses']['WA COGP-COGS']['status'] !== 'success') throw new RuntimeException($parsed['sourceStatuses']['WA COGP-COGS']['message']);
+        $allocations = $parsed['overheadAllocations'];
         $syncedAt = now();
         foreach ($allocations as &$allocation) {
             $allocation['source_synced_at'] = $syncedAt;
@@ -118,7 +136,9 @@ class GoogleSheetsProductionSync
     /** Refresh only WA-style wash cost categories sourced from the DB sheet block. */
     public function syncWashCostCategories(): array
     {
-        $categories = $this->readAndParse()['washCostCategories'];
+        $parsed = $this->readAndParse();
+        if ($parsed['sourceStatuses']['DB']['status'] !== 'success') throw new RuntimeException($parsed['sourceStatuses']['DB']['message']);
+        $categories = $parsed['washCostCategories'];
         $periods = array_values(array_unique(array_column($categories, 'period')));
         if (!$periods) throw new RuntimeException('Google Sheets DB tab has no BP Wash Plant Cost categories to sync.');
         $syncedAt = now();
@@ -137,16 +157,12 @@ class GoogleSheetsProductionSync
 
     public function preview(string $period): array
     {
-        $data = $this->forPeriod($this->readAndParse(), $period);
-        return ['rows'=>count($data['rows']),'details'=>count($data['details']),'metric_periods'=>array_keys($data['monthlyMetrics']),'periods'=>array_keys($data['productionPeriods']),'monthly_metrics'=>$data['monthlyMetrics'],'db_cost_rows'=>array_sum(array_map('count', $data['dbCostSummary'])),'overhead_allocation_periods'=>count($data['overheadAllocations']),'sample_overhead_allocation'=>array_slice($data['overheadAllocations'],0,5),'internal_wa_periods'=>count($data['internalWaPeriods']),'sample_internal_wa'=>array_slice($data['internalWaPeriods'],0,5),'wash_cost_category_rows'=>count($data['washCostCategories']),'sample_wash_cost_categories'=>array_slice($data['washCostCategories'],0,5),'db_accrual_rows'=>count($data['dbAccrualItems']),'daily_cogp_parameters'=>count($data['dbDailyCogpParameters']),'db_mining_breakdown_rows'=>count($data['dbMiningBreakdown']),'db_entity_volume_rows'=>count($data['dbEntityVolumes']),'sample_mining_breakdown'=>array_slice($data['dbMiningBreakdown'],0,5),'sample_entity_volumes'=>array_slice($data['dbEntityVolumes'],0,5),'sample_accruals'=>array_slice($data['dbAccrualItems'],0,8),'samples'=>array_slice($data['rows'],0,5),'sample_details'=>array_slice($data['details'],0,12)];
+        $data = $this->forPeriod($this->readAndParse($period), $period);
+        return ['rows'=>count($data['rows']),'details'=>count($data['details']),'metric_periods'=>array_keys($data['monthlyMetrics']),'periods'=>array_keys($data['productionPeriods']),'monthly_metrics'=>$data['monthlyMetrics'],'db_cost_rows'=>array_sum(array_map('count', $data['dbCostSummary'])),'overhead_allocation_periods'=>count($data['overheadAllocations']),'sample_overhead_allocation'=>array_slice($data['overheadAllocations'],0,5),'internal_wa_periods'=>count($data['internalWaPeriods']),'sample_internal_wa'=>array_slice($data['internalWaPeriods'],0,5),'wash_cost_category_rows'=>count($data['washCostCategories']),'sample_wash_cost_categories'=>array_slice($data['washCostCategories'],0,5),'db_accrual_rows'=>count($data['dbAccrualItems']),'daily_cogp_parameters'=>count($data['dbDailyCogpParameters']),'db_mining_breakdown_rows'=>count($data['dbMiningBreakdown']),'db_entity_volume_rows'=>count($data['dbEntityVolumes']),'sample_mining_breakdown'=>array_slice($data['dbMiningBreakdown'],0,5),'sample_entity_volumes'=>array_slice($data['dbEntityVolumes'],0,5),'sample_accruals'=>array_slice($data['dbAccrualItems'],0,8),'samples'=>array_slice($data['rows'],0,5),'sample_details'=>array_slice($data['details'],0,12),'source_statuses'=>$data['sourceStatuses']];
     }
 
     private function forPeriod(array $data, string $period): array
     {
-        if (!isset($data['productionPeriods'][$period])) {
-            throw new RuntimeException("Google Sheets tidak memiliki baris produksi untuk {$period}; tidak ada data yang diubah.");
-        }
-
         $filterRows = static fn (array $rows): array => array_values(array_filter($rows, static fn (array $row): bool => ($row['period'] ?? substr((string) ($row['production_date'] ?? ''), 0, 7)) === $period));
         foreach (['rows','details','inventoryMovements','dbAccrualItems','dbDailyCogpParameters','dbMiningBreakdown','dbEntityVolumes','overheadAllocations','internalWaPeriods','washCostCategories'] as $key) {
             $data[$key] = $filterRows($data[$key]);
@@ -154,19 +170,36 @@ class GoogleSheetsProductionSync
         foreach (['monthlyMetrics','dbCostSummary','productionPeriods'] as $key) {
             $data[$key] = array_intersect_key($data[$key], [$period => true]);
         }
+        if (!isset($data['productionPeriods'][$period]) && $data['sourceStatuses']['Produksi']['status'] === 'success') {
+            $data['sourceStatuses']['Produksi'] = ['status'=>'no_data','message'=>"Tidak ada baris Produksi untuk {$period}; data Produksi yang tersimpan tetap dipertahankan.",'rows'=>0];
+        }
+        if ($data['sourceStatuses']['Produksi']['status'] === 'success') $data['sourceStatuses']['Produksi']['rows'] = count($data['rows']);
 
         return $data;
     }
 
-    private function readAndParse(): array
+    private function readAndParse(?string $selectedPeriod = null): array
     {
-        $config = config('services.google_sheets');
-        $path = $config['credentials_path'] ?? null;
-        if (!($config['enabled'] ?? false) || !$path || !is_file($path)) throw new RuntimeException('Google Sheets belum dikonfigurasi. Periksa GOOGLE_SHEETS_ENABLED dan GOOGLE_SHEETS_CREDENTIALS_PATH.');
-        $credentials = json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
-        $token = $this->token($credentials);
-        $spreadsheet = $config['spreadsheet_id'];
+        $sourceStatuses = [
+            'Produksi'=>['status'=>'failed','message'=>'Belum diproses.','rows'=>0],
+            'DB'=>['status'=>'failed','message'=>'Belum diproses.','rows'=>0],
+            'WA COGP-COGS'=>['status'=>'failed','message'=>'Belum diproses.','rows'=>0],
+        ];
+        $rows = $details = $productionPeriods = $inventoryMovements = $monthlyMetrics = $dbCostSummary = $dbAccrualItems = $dbDailyCogpParameters = $dbMiningBreakdown = $dbEntityVolumes = $overheadAllocations = $internalWaPeriods = $washCostCategories = $sheetMovements = [];
+        try {
+            $config = config('services.google_sheets');
+            $path = $config['credentials_path'] ?? null;
+            if (!($config['enabled'] ?? false) || !$path || !is_file($path)) throw new RuntimeException('Google Sheets belum dikonfigurasi. Periksa GOOGLE_SHEETS_ENABLED dan GOOGLE_SHEETS_CREDENTIALS_PATH.');
+            $credentials = json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
+            $token = $this->token($credentials);
+            $spreadsheet = $config['spreadsheet_id'];
+        } catch (\Throwable $error) {
+            foreach ($sourceStatuses as &$status) $status = ['status'=>'failed','message'=>$error->getMessage(),'rows'=>0];
+            unset($status);
+            return compact('rows','details','monthlyMetrics','dbCostSummary','dbAccrualItems','dbDailyCogpParameters','dbMiningBreakdown','dbEntityVolumes','productionPeriods','inventoryMovements','overheadAllocations','internalWaPeriods','washCostCategories','sourceStatuses');
+        }
         $sheet = str_replace("'", "''", $config['sheet_name'] ?? 'Produksi');
+        try {
         $values = [];
         for ($start = 1; $start <= 50000; $start += 500) {
             $range = "'{$sheet}'!A{$start}:AX".($start + 499);
@@ -222,26 +255,53 @@ class GoogleSheetsProductionSync
             foreach ($washMetricColumns as $metric => $column) if ($column) $details[] = $this->detail($date, ['activity'=>'Coal Wash','metric'=>$metric,'unit'=>'MT'], $this->number($get($column - $columnOffset)));
             if ($coal !== null) $inventoryMovements[] = ['period'=>$period,'location'=>'bua','movement_type'=>'coalMined','source'=>'google_sheets','qty_mt'=>$coal,'amount_usd'=>0,'metadata'=>json_encode(['source_column'=>$this->columnLabel(19 + $columnOffset)]),'created_at'=>now(),'updated_at'=>now()];
         }
-        if (!$rows) throw new RuntimeException('Tidak ditemukan baris bertanggal yang dapat disinkronkan.');
-        $dbRange = "'DB'!A:T";
-        $dbUrl = 'https://sheets.googleapis.com/v4/spreadsheets/'.rawurlencode($spreadsheet).'/values/'.rawurlencode($dbRange);
-        $dbResponse = Http::withToken($token)->timeout(60)->get($dbUrl, ['valueRenderOption'=>'UNFORMATTED_VALUE']);
-        if ($dbResponse->failed()) throw new RuntimeException('Google Sheets DB tab gagal dibaca: HTTP '.$dbResponse->status().' '.$dbResponse->json('error.message', ''));
-        $dbRows = $dbResponse->json('values', []);
-        $waRange = "'WA COGP-COGS'!A:N";
-        $waUrl = 'https://sheets.googleapis.com/v4/spreadsheets/'.rawurlencode($spreadsheet).'/values/'.rawurlencode($waRange);
-        $waResponse = Http::withToken($token)->timeout(60)->get($waUrl, ['valueRenderOption'=>'UNFORMATTED_VALUE']);
-        if ($waResponse->failed()) throw new RuntimeException('Google Sheets WA COGP-COGS tab gagal dibaca: HTTP '.$waResponse->status().' '.$waResponse->json('error.message', ''));
-        $waRows = $waResponse->json('values', []);
-        $monthlyMetrics = $this->parseDbMetrics($dbRows, $productionPeriods);
-        $dbCostSummary = $this->parseDbCostSummary($dbRows, array_keys($monthlyMetrics));
-        $overheadAllocations = $this->parseWaOverheadAllocations($waRows, array_keys($monthlyMetrics));
-        $internalWaPeriods = $this->parseInternalWaPeriods($waRows, array_keys($monthlyMetrics));
-        $washCostCategories = $this->parseDbWashCostCategories($dbRows, array_keys($monthlyMetrics), $dbCostSummary);
-        $dbAccrualItems = $this->parseDbAccrualItems($dbRows, array_keys($monthlyMetrics), $monthlyMetrics);
-        $dbDailyCogpParameters = $this->parseDbDailyCogpParameters($dbRows, array_keys($monthlyMetrics));
-        $dbMiningBreakdown = $this->parseDbMiningBreakdown($dbRows, array_keys($monthlyMetrics));
-        $dbEntityVolumes = $this->parseDbEntityVolumes($dbRows, array_keys($monthlyMetrics));
+        $sourceStatuses['Produksi'] = ['status'=>'success','message'=>'Sheet berhasil dibaca.','rows'=>count($rows)];
+        } catch (\Throwable $error) {
+            $rows = $details = $productionPeriods = $inventoryMovements = $sheetMovements = [];
+            $sourceStatuses['Produksi'] = ['status'=>'failed','message'=>$error->getMessage(),'rows'=>0];
+        }
+        try {
+            $dbRange = "'DB'!A:T";
+            $dbUrl = 'https://sheets.googleapis.com/v4/spreadsheets/'.rawurlencode($spreadsheet).'/values/'.rawurlencode($dbRange);
+            $dbResponse = Http::withToken($token)->timeout(60)->get($dbUrl, ['valueRenderOption'=>'UNFORMATTED_VALUE']);
+            if ($dbResponse->failed()) throw new RuntimeException('Google Sheets DB tab gagal dibaca: HTTP '.$dbResponse->status().' '.$dbResponse->json('error.message', ''));
+            $dbRows = $dbResponse->json('values', []);
+            $periodBasis = $selectedPeriod ? [$selectedPeriod=>true] : $productionPeriods;
+            $monthlyMetrics = $this->parseDbMetrics($dbRows, $periodBasis);
+            $dbCostSummary = $this->parseDbCostSummary($dbRows, array_keys($monthlyMetrics));
+            $washCostCategories = $this->parseDbWashCostCategories($dbRows, array_keys($monthlyMetrics), $dbCostSummary);
+            $dbAccrualItems = $this->parseDbAccrualItems($dbRows, array_keys($monthlyMetrics), $monthlyMetrics);
+            $dbDailyCogpParameters = $this->parseDbDailyCogpParameters($dbRows, array_keys($monthlyMetrics));
+            $dbMiningBreakdown = $this->parseDbMiningBreakdown($dbRows, array_keys($monthlyMetrics));
+            $dbEntityVolumes = $this->parseDbEntityVolumes($dbRows, array_keys($monthlyMetrics));
+            $sourceStatuses['DB'] = ['status'=>'success','message'=>'Sheet berhasil dibaca dan diproses.','rows'=>count($dbRows)];
+        } catch (\Throwable $error) {
+            $monthlyMetrics = $dbCostSummary = $washCostCategories = $dbAccrualItems = $dbDailyCogpParameters = $dbMiningBreakdown = $dbEntityVolumes = [];
+            $sourceStatuses['DB'] = ['status'=>'failed','message'=>$error->getMessage(),'rows'=>0];
+        }
+        try {
+            $waRange = "'WA COGP-COGS'!A:N";
+            $waUrl = 'https://sheets.googleapis.com/v4/spreadsheets/'.rawurlencode($spreadsheet).'/values/'.rawurlencode($waRange);
+            $waResponse = Http::withToken($token)->timeout(60)->get($waUrl, ['valueRenderOption'=>'UNFORMATTED_VALUE']);
+            if ($waResponse->failed()) throw new RuntimeException('Google Sheets WA COGP-COGS tab gagal dibaca: HTTP '.$waResponse->status().' '.$waResponse->json('error.message', ''));
+            $waRows = $waResponse->json('values', []);
+            $waPeriods = $selectedPeriod ? [$selectedPeriod] : array_keys($monthlyMetrics);
+            $overheadAllocations = $this->parseWaOverheadAllocations($waRows, $waPeriods);
+            $internalWaPeriods = $this->parseInternalWaPeriods($waRows, $waPeriods);
+            $sourceStatuses['WA COGP-COGS'] = ['status'=>'success','message'=>'Sheet berhasil dibaca dan diproses.','rows'=>count($waRows)];
+        } catch (\Throwable $error) {
+            $overheadAllocations = $internalWaPeriods = [];
+            $sourceStatuses['WA COGP-COGS'] = ['status'=>'failed','message'=>$error->getMessage(),'rows'=>0];
+        }
+        if ($sourceStatuses['Produksi']['status'] === 'success' && $selectedPeriod && !isset($productionPeriods[$selectedPeriod])) {
+            $sourceStatuses['Produksi'] = ['status'=>'no_data','message'=>"Tidak ada baris produksi untuk {$selectedPeriod}; data tersimpan tidak diubah.",'rows'=>0];
+        }
+        if ($sourceStatuses['DB']['status'] === 'success' && $selectedPeriod && !array_filter($monthlyMetrics[$selectedPeriod] ?? [], static fn ($value): bool => $value !== null)) {
+            $sourceStatuses['DB'] = ['status'=>'no_data','message'=>"Tidak ada data DB untuk {$selectedPeriod}; data tersimpan tidak diubah.",'rows'=>0];
+        }
+        if ($sourceStatuses['WA COGP-COGS']['status'] === 'success' && $selectedPeriod && !$overheadAllocations && !$internalWaPeriods) {
+            $sourceStatuses['WA COGP-COGS'] = ['status'=>'no_data','message'=>"Tidak ada data WA untuk {$selectedPeriod}; data tersimpan tidak diubah.",'rows'=>0];
+        }
         $appendMovement = function (string $period, string $location, string $type, float $qty, array $meta = []) use (&$inventoryMovements): void {
             if (abs($qty) < 0.000001) return;
             $inventoryMovements[] = ['period'=>$period,'location'=>$location,'movement_type'=>$type,'source'=>'google_sheets','qty_mt'=>$qty,'amount_usd'=>0,'metadata'=>json_encode($meta),'created_at'=>now(),'updated_at'=>now()];
@@ -282,7 +342,7 @@ class GoogleSheetsProductionSync
             $barging = $sheet['bargingMT'] ?? null;
             if ($barging !== null && $barging > 0) $appendMovement($period, 'port', 'barging', -$barging, ['source'=>'Google Sheets Coal Wash / Barging']);
         }
-        return compact('rows','details','monthlyMetrics','dbCostSummary','dbAccrualItems','dbDailyCogpParameters','dbMiningBreakdown','dbEntityVolumes','productionPeriods','inventoryMovements','overheadAllocations','internalWaPeriods','washCostCategories');
+        return compact('rows','details','monthlyMetrics','dbCostSummary','dbAccrualItems','dbDailyCogpParameters','dbMiningBreakdown','dbEntityVolumes','productionPeriods','inventoryMovements','overheadAllocations','internalWaPeriods','washCostCategories','sourceStatuses');
     }
 
     private function parseDbMiningBreakdown(array $rows, array $periods): array
