@@ -1,0 +1,43 @@
+{
+  "resources/css/account.css": {
+    "file": "assets/account-BPFJA8ii.css",
+    "src": "resources/css/account.css",
+    "isEntry": true
+  },
+  "resources/css/admin-shell.css": {
+    "file": "assets/admin-shell-Bh5mC2RB.css",
+    "src": "resources/css/admin-shell.css",
+    "isEntry": true
+  },
+  "resources/css/app.css": {
+    "file": "assets/app-C9CyfBmR.css",
+    "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/css/portal.css": {
+    "file": "assets/portal-hjwWAlD0.css",
+    "src": "resources/css/portal.css",
+    "isEntry": true
+  },
+  "resources/js/account-menu.js": {
+    "file": "assets/account-menu-CO-Js9CK.js",
+    "name": "account-menu",
+    "src": "resources/js/account-menu.js",
+    "isEntry": true
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-ByhoWkq2.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true,
+    "css": [
+      "assets/app-DUqgJ0gE.css"
+    ]
+  },
+  "resources/js/language.js": {
+    "file": "assets/language-Cm6sQ8ZR.js",
+    "name": "language",
+    "src": "resources/js/language.js",
+    "isEntry": true
+  }
+}
