@@ -122,7 +122,7 @@ class CostPerMtService
             'missingVolumePeriods'=>[],'stageMissingVolumePeriods'=>[],
             'stages'=>$stages,'costByAccountGroup'=>[],
             'sourceSyncedAt'=>$inventory['sourceSyncedAt'] ?? null,
-            'internalDataBasis'=>'Matches localhost:3000: available weighted-average inventory value ÷ available stock quantity. Opening balances, monthly movements, and added costs come from the server-synced Google Sheets WA COGP-COGS tab; no baseline JSON or D365 GL cost is used for Internal Cost/MT.',
+            'internalDataBasis'=>'Internal COGP uses WA available inventory value ÷ available quantity at the selected month; amounts include upstream inventory and allocated overhead.',
             'internalWarnings'=>array_values(array_unique($internalWarnings)),
         ];
     }

@@ -78,6 +78,7 @@
                 <div class="language-switch" role="group" aria-label="Language"><button type="button" data-locale-switch="id">ID</button><button type="button" data-locale-switch="en">EN</button></div>
                 @include('components.account-menu')
             </div>
+            <p id="report-type-description" class="inventory-notice report-basis-notice" role="status"></p>
             <main id="pageContent" class="content" aria-live="polite"></main>
             <footer>{{ $companyName }} • Coal Production Accounting &amp; Cost Dashboard · Data freeze 2026-10-30</footer>
         </div>
