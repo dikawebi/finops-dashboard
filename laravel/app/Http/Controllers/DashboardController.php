@@ -336,14 +336,16 @@ class DashboardController extends Controller
         return response()->json(['success' => true, 'data' => ['d365' => ['status' => $d365Configured ? 'configured' : 'not-configured', 'mode' => $d365Configured ? 'environment config' : 'local snapshot', 'environmentUrl' => $d365['environment_url'] ?? null, 'entityName' => $d365['entity_name'] ?? null, 'autoSync' => (bool) ($autoSync['enabled'] ?? false)], 'googleSheets' => ['status' => $sheetsConfigured ? 'configured' : 'not-configured', 'mode' => 'Google Sheets API', 'spreadsheetId' => $sheets['spreadsheet_id'] ?? null, 'sheetName' => $sheets['sheet_name'] ?? 'Produksi', 'serviceAccountEmail' => $serviceAccountEmail, 'credentialStatus' => $sheetsConfigured ? 'Private key loaded on server' : 'Credential unavailable', 'lastSyncedAt' => $sync['last_synced_at'] ?? null, 'lastRows' => $sync['rows'] ?? null], 'dataFreeze' => '2026-10-30', 'database' => ['glEntries' => \App\Models\GlEntry::count(), 'monthlyMetrics' => \App\Models\MonthlyMetric::count()]]]);
     }
 
-    public function syncGoogleSheets(GoogleSheetsProductionSync $sync): JsonResponse
+    public function syncGoogleSheets(Request $request, GoogleSheetsProductionSync $sync): JsonResponse
     {
-        return response()->json(['success' => true, 'data' => $sync->sync()]);
+        $data = $request->validate(['period' => ['required', 'date_format:Y-m']]);
+        return response()->json(['success' => true, 'data' => $sync->sync($data['period'])]);
     }
 
-    public function previewGoogleSheets(GoogleSheetsProductionSync $sync): JsonResponse
+    public function previewGoogleSheets(Request $request, GoogleSheetsProductionSync $sync): JsonResponse
     {
-        return response()->json(['success' => true, 'data' => $sync->preview()]);
+        $data = $request->validate(['period' => ['required', 'date_format:Y-m']]);
+        return response()->json(['success' => true, 'data' => $sync->preview($data['period'])]);
     }
 
     public function costPerMt(Request $request, CostPerMtService $service): JsonResponse

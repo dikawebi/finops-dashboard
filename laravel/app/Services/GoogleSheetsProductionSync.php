@@ -8,14 +8,16 @@ use RuntimeException;
 
 class GoogleSheetsProductionSync
 {
-    public function sync(): array
+    public function sync(string $period): array
     {
-        $parsed = $this->readAndParse();
+        $parsed = $this->forPeriod($this->readAndParse(), $period);
         $rows = $parsed['rows']; $details = $parsed['details']; $monthlyMetrics = $parsed['monthlyMetrics']; $productionPeriods = $parsed['productionPeriods']; $inventoryMovements = $parsed['inventoryMovements']; $dbCostSummary = $parsed['dbCostSummary']; $dbAccrualItems = $parsed['dbAccrualItems']; $dbDailyCogpParameters = $parsed['dbDailyCogpParameters']; $dbMiningBreakdown = $parsed['dbMiningBreakdown']; $dbEntityVolumes = $parsed['dbEntityVolumes']; $overheadAllocations = $parsed['overheadAllocations']; $washCostCategories = $parsed['washCostCategories']; $internalWaPeriods = $parsed['internalWaPeriods'];
         DB::transaction(function () use ($rows, $details, $monthlyMetrics, $productionPeriods, $inventoryMovements, $dbCostSummary, $dbAccrualItems, $dbDailyCogpParameters, $dbMiningBreakdown, $dbEntityVolumes, $overheadAllocations, $washCostCategories, $internalWaPeriods): void {
-            $dates = array_column($rows, 'production_date');
-            DB::table('production_activity_details')->where('source', 'google_sheets')->whereIn('production_date', $dates)->delete();
-            DB::table('inventory_movements')->where('source', 'google_sheets')->whereIn('period', array_keys($productionPeriods))->delete();
+            $periodStart = $period.'-01';
+            $periodEnd = \Carbon\Carbon::createFromFormat('Y-m', $period)->endOfMonth()->toDateString();
+            DB::table('daily_production')->where('source', 'google_sheets')->where('period', $period)->delete();
+            DB::table('production_activity_details')->where('source', 'google_sheets')->whereBetween('production_date', [$periodStart, $periodEnd])->delete();
+            DB::table('inventory_movements')->where('source', 'google_sheets')->where('period', $period)->delete();
             DB::table('daily_production')->upsert($rows, ['production_date'], ['period','coal_getting_mt','routes','source','updated_at']);
             DB::table('production_activity_details')->insert($details);
             if ($inventoryMovements) DB::table('inventory_movements')->insert($inventoryMovements);
@@ -51,7 +53,7 @@ class GoogleSheetsProductionSync
                 ['period'],
                 ['overhead_pool_usd','isp_rent_usd','allocated_bua_usd','allocated_wash_usd','allocated_port_usd','allocated_isp_usd','source_sheet','source_synced_at','updated_at']
             );
-            $this->persistInternalWaPeriods($internalWaPeriods);
+            $this->persistInternalWaPeriods($internalWaPeriods, null, $period);
             $washPeriods = array_values(array_unique(array_column($washCostCategories, 'period')));
             if ($washPeriods) {
                 foreach ($washCostCategories as &$category) $category['source_synced_at'] = now();
@@ -73,18 +75,23 @@ class GoogleSheetsProductionSync
         return ['periods'=>array_column($periods, 'period'),'rows'=>count($periods),'source'=>'Google Sheets · WA COGP-COGS','synced_at'=>$syncedAt->toIso8601String()];
     }
 
-    private function persistInternalWaPeriods(array $periods, $syncedAt = null): void
+    private function persistInternalWaPeriods(array $periods, $syncedAt = null, ?string $periodToReplace = null): void
     {
         $syncedAt ??= now();
         $rows = array_map(static fn (array $item): array => [
             'period'=>$item['period'],'payload'=>json_encode($item['payload'], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             'source_sheet'=>'WA COGP-COGS','source_synced_at'=>$syncedAt,'created_at'=>$syncedAt,'updated_at'=>$syncedAt,
         ], $periods);
-        $years = array_values(array_unique(array_map(static fn (array $row): string => substr($row['period'], 0, 4), $rows)));
-        $yearPeriods = [];
-        foreach ($years as $year) for ($month=1; $month<=12; $month++) $yearPeriods[] = sprintf('%04d-%02d', (int) $year, $month);
-        DB::transaction(function () use ($rows, $yearPeriods): void {
-            DB::table('google_sheets_internal_wa_periods')->whereIn('period', $yearPeriods)->delete();
+        $periodsToReplace = array_values(array_unique(array_column($rows, 'period')));
+        if ($periodToReplace !== null) {
+            $periodsToReplace = [$periodToReplace];
+        } else {
+            $years = array_values(array_unique(array_map(static fn (array $row): string => substr($row['period'], 0, 4), $rows)));
+            $periodsToReplace = [];
+            foreach ($years as $year) for ($month=1; $month<=12; $month++) $periodsToReplace[] = sprintf('%04d-%02d', (int) $year, $month);
+        }
+        DB::transaction(function () use ($rows, $periodsToReplace): void {
+            DB::table('google_sheets_internal_wa_periods')->whereIn('period', $periodsToReplace)->delete();
             DB::table('google_sheets_internal_wa_periods')->insert($rows);
         });
     }
@@ -128,10 +135,27 @@ class GoogleSheetsProductionSync
         return ['periods'=>$periods,'rows'=>count($categories),'source'=>'Google Sheets · DB / BP Wash Plant Cost','synced_at'=>$syncedAt->toIso8601String()];
     }
 
-    public function preview(): array
+    public function preview(string $period): array
     {
-        $data = $this->readAndParse();
-        return ['rows'=>count($data['rows']),'details'=>count($data['details']),'metric_periods'=>array_keys($data['monthlyMetrics']),'periods'=>array_keys($data['productionPeriods']),'monthly_metrics'=>$data['monthlyMetrics'],'db_cost_rows'=>array_sum(array_map('count', $data['dbCostSummary'])),'overhead_allocation_periods'=>count($data['overheadAllocations']),'sample_overhead_allocation'=>array_values(array_filter($data['overheadAllocations'], static fn (array $row): bool => $row['period'] === '2026-10')),'internal_wa_periods'=>count($data['internalWaPeriods']),'sample_internal_wa'=>array_values(array_filter($data['internalWaPeriods'], static fn (array $row): bool => $row['period'] === '2026-10')),'wash_cost_category_rows'=>count($data['washCostCategories']),'sample_wash_cost_categories'=>array_values(array_filter($data['washCostCategories'], static fn (array $row): bool => in_array($row['period'], ['2026-09','2026-10'], true))),'db_accrual_rows'=>count($data['dbAccrualItems']),'daily_cogp_parameters'=>count($data['dbDailyCogpParameters']),'db_mining_breakdown_rows'=>count($data['dbMiningBreakdown']),'db_entity_volume_rows'=>count($data['dbEntityVolumes']),'sample_mining_breakdown'=>array_values(array_filter($data['dbMiningBreakdown'], static fn (array $row): bool => $row['period'] === '2026-10')),'sample_entity_volumes'=>array_values(array_filter($data['dbEntityVolumes'], static fn (array $row): bool => $row['period'] === '2026-10')),'sample_accruals'=>array_slice($data['dbAccrualItems'],0,8),'samples'=>array_slice($data['rows'],0,5),'sample_details'=>array_slice($data['details'],0,12)];
+        $data = $this->forPeriod($this->readAndParse(), $period);
+        return ['rows'=>count($data['rows']),'details'=>count($data['details']),'metric_periods'=>array_keys($data['monthlyMetrics']),'periods'=>array_keys($data['productionPeriods']),'monthly_metrics'=>$data['monthlyMetrics'],'db_cost_rows'=>array_sum(array_map('count', $data['dbCostSummary'])),'overhead_allocation_periods'=>count($data['overheadAllocations']),'sample_overhead_allocation'=>array_slice($data['overheadAllocations'],0,5),'internal_wa_periods'=>count($data['internalWaPeriods']),'sample_internal_wa'=>array_slice($data['internalWaPeriods'],0,5),'wash_cost_category_rows'=>count($data['washCostCategories']),'sample_wash_cost_categories'=>array_slice($data['washCostCategories'],0,5),'db_accrual_rows'=>count($data['dbAccrualItems']),'daily_cogp_parameters'=>count($data['dbDailyCogpParameters']),'db_mining_breakdown_rows'=>count($data['dbMiningBreakdown']),'db_entity_volume_rows'=>count($data['dbEntityVolumes']),'sample_mining_breakdown'=>array_slice($data['dbMiningBreakdown'],0,5),'sample_entity_volumes'=>array_slice($data['dbEntityVolumes'],0,5),'sample_accruals'=>array_slice($data['dbAccrualItems'],0,8),'samples'=>array_slice($data['rows'],0,5),'sample_details'=>array_slice($data['details'],0,12)];
+    }
+
+    private function forPeriod(array $data, string $period): array
+    {
+        if (!isset($data['productionPeriods'][$period])) {
+            throw new RuntimeException("Google Sheets tidak memiliki baris produksi untuk {$period}; tidak ada data yang diubah.");
+        }
+
+        $filterRows = static fn (array $rows): array => array_values(array_filter($rows, static fn (array $row): bool => ($row['period'] ?? substr((string) ($row['production_date'] ?? ''), 0, 7)) === $period));
+        foreach (['rows','details','inventoryMovements','dbAccrualItems','dbDailyCogpParameters','dbMiningBreakdown','dbEntityVolumes','overheadAllocations','internalWaPeriods','washCostCategories'] as $key) {
+            $data[$key] = $filterRows($data[$key]);
+        }
+        foreach (['monthlyMetrics','dbCostSummary','productionPeriods'] as $key) {
+            $data[$key] = array_intersect_key($data[$key], [$period => true]);
+        }
+
+        return $data;
     }
 
     private function readAndParse(): array
