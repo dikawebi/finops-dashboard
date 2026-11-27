@@ -89,12 +89,13 @@ const sectionHeader = (title, description, actions = '') => `<div class="section
 const unavailable = label => `<button class="btn btn-outline" type="button" disabled title="Deferred by project scope">${label}</button>`;
 const downloadCsv = (filename, headers, rows) => {
     const quote = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
-    const content = [headers, ...rows].map(row => row.map(quote).join(',')).join('\r\n');
+    const content = '\uFEFF' + [headers, ...rows].map(row => row.map(quote).join(',')).join('\r\n');
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8' }));
+    const url = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8' }));
+    link.href = url;
     link.download = filename;
     link.click();
-    URL.revokeObjectURL(link.href);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 const downloadExcel = (filename, headers, rows) => {
     const cell = value => `<td>${esc(value)}</td>`;
@@ -1281,32 +1282,44 @@ async function integration() {
         <div class="connector-grid">${connector('Microsoft Dynamics 365 OData Connector', 'Reads D365 connection settings from the Laravel environment configuration.', data.d365.status === 'configured' ? 'Configured' : 'Not configured', 'environment', [`<b>Environment URL:</b> <code>${esc(data.d365.environmentUrl || 'Not configured')}</code>`, `<b>Sync Period:</b> <code>${esc($('#period').value)}</code>`, `<b>Auto Sync:</b> <code>${autoSyncData.enabled ? 'Enabled' : 'Disabled'}</code>`, `<b>Last Sync:</b> ${esc(formatSyncTimestamp(d365LastSyncedAt))}`, `<b>Local Records:</b> ${qty(data.database.glEntries)} GL records`], `<button id="d365SyncAll" class="btn btn-primary" type="button">${Number(data.database.glEntries || 0) === 0 ? 'Initial D365 Sync' : 'Sync Selected Month'}</button><button id="viewGlData" class="btn btn-outline" type="button">View GL Data</button>`, data.d365.status === 'configured' ? 'online' : 'manual')}${connector('Google Sheets Production Connector', 'Reads the configured Sheets tabs and applies data for the selected period.', data.googleSheets.status === 'configured' ? 'Configured' : 'Not configured', 'Google Sheets API', [`<b>Spreadsheet ID:</b> <code>${esc(data.googleSheets.spreadsheetId || '—')}</code>`, `<b>Sheet:</b> <code>${esc(data.googleSheets.sheetName || 'Produksi')}</code>`, `<b>Service account:</b> <code>${esc(data.googleSheets.serviceAccountEmail || '—')}</code>`, `<b>Credential:</b> ${esc(data.googleSheets.credentialStatus || 'Unavailable')}`, `<b>Sync period:</b> ${esc(formatPeriod(period))}`, `<b>Last Sync:</b> ${esc(formatSyncTimestamp(data.googleSheets.lastSyncedAt))}`], `<button id="googleSheetsSync" class="btn btn-primary" type="button">Sync Selected Month</button><button id="googleSheetsPreview" class="btn btn-outline" type="button">Preview Selected Month</button><div id="googleSheetsSyncStatus" class="integration-note" role="status"></div>`, data.googleSheets.status === 'configured' ? 'online' : 'manual')}</div>
         ${card('D365 Auto Sync Settings', autoSyncForm)}
         ${card('D365 Staging Status', `<p class="integration-note d365-flow-note"><strong>Alur sync:</strong> Semua entity OData ditarik ke staging. Setelah <em>GL Account Entries</em> berhasil, sistem otomatis menerapkan allocation mapping dan melakukan upsert ke <code>gl_entries</code>; GL tidak berhenti di staging dan tidak perlu klik Import to GL lagi. Main Account dan Findim mapping juga memperbarui hierarchy/rule terkait. Entity lain tetap tersedia di staging. <strong>View Staging</strong> untuk payload OData; <strong>View GL Data</strong> untuk transaksi GL yang dipakai dashboard.</p>${table(['Entity', 'Status', 'Staging Rows', 'Last Fetched', 'Message', ''], entityRows)}`)}
-        ${card('Accrual Input — Add to Report Cost <span class="status manual">Manual</span>', `<p class="integration-note">Manual accruals use <strong>Qty × Rate</strong>. Automatic accruals from Google Sheets DB and production metrics are listed below as read-only rows. Rows matched to posted D365 accrual vouchers are shown for traceability and excluded from the accrual layer to prevent double counting.</p><div class="accrual-export-tools"><button id="manualAccrualExport" class="btn btn-outline" type="button">📥 Export Accrual Journal (CSV)</button><span class="integration-note">Exports manual entries for ${esc(formatPeriod(period))}; automatic entries are excluded.</span></div><form id="manualAccrualForm" class="accrual-form-grid"><label>Period<input type="month" value="${esc(period)}" disabled></label><label>COA account (leaf 5–9)<select id="manualAccrualAccount" required ${canEditAccruals ? '' : 'disabled'}><option value="">Select account</option>${accrualAccountOptions}</select></label><label>Description<input id="manualAccrualDescription" type="text" maxlength="255" placeholder="Accrual description" ${canEditAccruals ? '' : 'disabled'}></label><label>Qty (MT)<input id="manualAccrualQty" type="number" step="any" value="1" required ${canEditAccruals ? '' : 'disabled'}></label><label>Rate (USD/MT)<input id="manualAccrualRate" type="number" step="any" required ${canEditAccruals ? '' : 'disabled'}></label><label>Amount (USD)<output id="manualAccrualAmount">USD 0</output></label><label>Costing To<select id="manualAccrualCategory" required ${canEditAccruals ? '' : 'disabled'}><option value="">Select category</option>${accrualCategoryOptions}</select></label><button id="manualAccrualSubmit" class="btn btn-primary" type="submit" ${canEditAccruals ? '' : 'disabled'}>Add Accrual</button></form><p id="manualAccrualStatus" class="integration-note" role="status" aria-live="polite"></p><p class="integration-note">Closing Report Cost blocks adding or deleting manual entries for the selected period. Reports are recalculated from the database when opened.</p><div class="table-responsive"><table class="table-accounting"><thead><tr><th>Period</th><th>Account / Description</th><th>Costing To</th><th>Qty / Unit</th><th>Rate (USD/Unit)</th><th>Amount (USD)</th><th>Source / Report Status</th><th>Action</th></tr></thead><tbody id="manualAccrualRows"></tbody></table></div><p id="manualAccrualSummary" class="integration-note"></p>`)}
+        ${card('Accrual Input — Add to Report Cost <span class="status manual">Manual</span>', `<p class="integration-note">Manual accruals use <strong>Qty × Rate</strong>. Automatic accruals from Google Sheets DB and production metrics are listed below as read-only rows. Rows matched to posted D365 accrual vouchers are shown for traceability and excluded from the accrual layer to prevent double counting.</p><div class="accrual-export-tools"><button id="manualAccrualExport" class="btn btn-outline" type="button">📥 Export Accrual Journal (CSV)</button><span class="integration-note">Exports manual and automatic accrual entries for ${esc(formatPeriod(period))}; matched D365 accruals remain excluded from the report calculation.</span></div><form id="manualAccrualForm" class="accrual-form-grid"><label>Period<input type="month" value="${esc(period)}" disabled></label><label>COA account (leaf 5–9)<select id="manualAccrualAccount" required ${canEditAccruals ? '' : 'disabled'}><option value="">Select account</option>${accrualAccountOptions}</select></label><label>Description<input id="manualAccrualDescription" type="text" maxlength="255" placeholder="Accrual description" ${canEditAccruals ? '' : 'disabled'}></label><label>Qty (MT)<input id="manualAccrualQty" type="number" step="any" value="1" required ${canEditAccruals ? '' : 'disabled'}></label><label>Rate (USD/MT)<input id="manualAccrualRate" type="number" step="any" required ${canEditAccruals ? '' : 'disabled'}></label><label>Amount (USD)<output id="manualAccrualAmount">USD 0</output></label><label>Costing To<select id="manualAccrualCategory" required ${canEditAccruals ? '' : 'disabled'}><option value="">Select category</option>${accrualCategoryOptions}</select></label><button id="manualAccrualSubmit" class="btn btn-primary" type="submit" ${canEditAccruals ? '' : 'disabled'}>Add Accrual</button></form><p id="manualAccrualStatus" class="integration-note" role="status" aria-live="polite"></p><p class="integration-note">Closing Report Cost blocks adding or deleting manual entries for the selected period. Reports are recalculated from the database when opened.</p><div class="table-responsive"><table class="table-accounting"><thead><tr><th>Period</th><th>Account / Description</th><th>Costing To</th><th>Qty / Unit</th><th>Rate (USD/Unit)</th><th>Amount (USD)</th><th>Source / Report Status</th><th>Action</th></tr></thead><tbody id="manualAccrualRows"></tbody></table></div><p id="manualAccrualSummary" class="integration-note"></p>`)}
         ${card('Latest 15 Production Records', `${production.loadError ? `<p class="integration-note">Production data for ${esc(formatPeriod(period))} is not available yet: ${esc(production.loadError)}</p>` : ''}${table(['Date & Time', 'Product', 'Vehicle Plate', 'Driver', 'Weighbridge', 'BRUTO (Kg)', 'TARA (Kg)', 'NETTO (Kg)', 'NETTO (MT)', 'Operator'], recentRows)}`)}`;
     $('#viewGlData').addEventListener('click', () => viewGlData($('#period').value));
     renderManualAccrualRows(manualAccruals);
-    $('#manualAccrualExport').addEventListener('click', () => {
-        const entries = (manualAccruals || []).filter(entry => entry.automatic !== true && entry.period === period && Number(entry.amount_usd) !== 0);
+    $('#manualAccrualExport').addEventListener('click', async event => {
+        const button = event.currentTarget;
         const status = $('#manualAccrualStatus');
-        if (!entries.length) {
-            status.textContent = `No manual accruals to export for ${formatPeriod(period)}.`;
-            return;
+        const selectedPeriod = $('#period').value || period;
+        button.disabled = true;
+        status.textContent = `Preparing accrual journal for ${formatPeriod(selectedPeriod)}…`;
+        try {
+            const result = await api(`/api/accruals?period=${encodeURIComponent(selectedPeriod)}`);
+            const entries = (Array.isArray(result) ? result : []).filter(entry => entry.period === selectedPeriod && Number.isFinite(Number(entry.amount_usd)) && Number(entry.amount_usd) !== 0);
+            if (!entries.length) {
+                status.textContent = `No accrual entries to export for ${formatPeriod(selectedPeriod)}.`;
+                return;
+            }
+            const [year, month] = selectedPeriod.split('-').map(Number);
+            const date = `${selectedPeriod}-${String(new Date(Date.UTC(year, month, 0)).getUTCDate()).padStart(2, '0')}`;
+            const accountNames = new Map((accounts || []).map(account => [String(account.account_code), account.account_name]));
+            const headers = ['Journal number', 'Voucher', 'Date', 'Year closed', 'AccountName', 'Description', 'Currency', 'Fuel quantity', 'Amount in transaction currency', 'Amount IDR', 'Amount', 'Amount in reporting currency', 'Posting type', 'Posting layer', 'Vendor account', 'Customer account', 'Invoice no', 'MainAccount', 'Activity', 'Cash_Flow', 'Departmen', 'Group_Activity', 'Location', 'Project', 'Project name', 'Cost center', 'Valuation to', 'Costing to', 'PO DT Number', 'GJAE ID', 'Created date and time'];
+            const rows = entries.flatMap(entry => {
+                const amount = Number(entry.amount_usd);
+                const accountCode = entry.account_code || '';
+                const description = `Accrual ${selectedPeriod} - ${entry.description || accountCode}${entry.entity ? ` - ${entry.entity}` : ''}`;
+                const common = { Date: date, Description: description, Currency: 'USD' };
+                return [
+                    { ...common, MainAccount: accountCode, AccountName: accountNames.get(String(accountCode)) || entry.name || entry.description || '', 'Amount in transaction currency': amount, Amount: amount, 'Amount in reporting currency': amount, 'Costing to': entry.category || '' },
+                    { ...common, MainAccount: '1530003', AccountName: 'Accrued Expense', 'Amount in transaction currency': -amount, Amount: -amount, 'Amount in reporting currency': -amount }
+                ];
+            });
+            downloadCsv(`Accrual_Journal_${selectedPeriod}.csv`, headers, rows.map(row => headers.map(header => row[header] ?? '')));
+            status.textContent = `Exported ${entries.length} manual and automatic accrual entries as a balanced journal for ${formatPeriod(selectedPeriod)}.`;
+        } catch (error) {
+            status.textContent = `Could not export accrual journal: ${error.message}`;
+        } finally {
+            button.disabled = false;
         }
-        const [year, month] = period.split('-').map(Number);
-        const date = `${period}-${String(new Date(Date.UTC(year, month, 0)).getUTCDate()).padStart(2, '0')}`;
-        const accountNames = new Map((accounts || []).map(account => [String(account.account_code), account.account_name]));
-        const headers = ['Journal number', 'Voucher', 'Date', 'Year closed', 'AccountName', 'Description', 'Currency', 'Fuel quantity', 'Amount in transaction currency', 'Amount IDR', 'Amount', 'Amount in reporting currency', 'Posting type', 'Posting layer', 'Vendor account', 'Customer account', 'Invoice no', 'MainAccount', 'Activity', 'Cash_Flow', 'Departmen', 'Group_Activity', 'Location', 'Project', 'Project name', 'Cost center', 'Valuation to', 'Costing to', 'PO DT Number', 'GJAE ID', 'Created date and time'];
-        const rows = entries.flatMap(entry => {
-            const amount = Number(entry.amount_usd);
-            const description = `Accrual ${period} - ${entry.description || entry.account_code}`;
-            const common = { Date: date, Description: description, Currency: 'USD' };
-            return [
-                { ...common, MainAccount: entry.account_code, AccountName: accountNames.get(String(entry.account_code)) || entry.description || '', 'Amount in transaction currency': amount, Amount: amount, 'Amount in reporting currency': amount, 'Costing to': entry.category || '' },
-                { ...common, MainAccount: '1530003', AccountName: 'Accrued Expense', 'Amount in transaction currency': -amount, Amount: -amount, 'Amount in reporting currency': -amount }
-            ];
-        });
-        downloadCsv(`Accrual_Journal_${period}.csv`, headers, rows.map(row => headers.map(header => row[header] ?? '')));
-        status.textContent = `Exported ${entries.length} manual accruals as a balanced journal for ${formatPeriod(period)}.`;
     });
     const accrualAmountPreview = () => {
         const qtyValue = Number($('#manualAccrualQty').value);
