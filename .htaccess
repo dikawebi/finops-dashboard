@@ -1,0 +1,4 @@
+RewriteEngine On
+
+RewriteCond %{REQUEST_URI} !^/laravel/public/
+RewriteRule ^(.*)$ laravel/public/$1 [L]
