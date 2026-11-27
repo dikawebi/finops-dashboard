@@ -12,7 +12,7 @@ class GoogleSheetsProductionSync
     {
         $parsed = $this->forPeriod($this->readAndParse(), $period);
         $rows = $parsed['rows']; $details = $parsed['details']; $monthlyMetrics = $parsed['monthlyMetrics']; $productionPeriods = $parsed['productionPeriods']; $inventoryMovements = $parsed['inventoryMovements']; $dbCostSummary = $parsed['dbCostSummary']; $dbAccrualItems = $parsed['dbAccrualItems']; $dbDailyCogpParameters = $parsed['dbDailyCogpParameters']; $dbMiningBreakdown = $parsed['dbMiningBreakdown']; $dbEntityVolumes = $parsed['dbEntityVolumes']; $overheadAllocations = $parsed['overheadAllocations']; $washCostCategories = $parsed['washCostCategories']; $internalWaPeriods = $parsed['internalWaPeriods'];
-        DB::transaction(function () use ($rows, $details, $monthlyMetrics, $productionPeriods, $inventoryMovements, $dbCostSummary, $dbAccrualItems, $dbDailyCogpParameters, $dbMiningBreakdown, $dbEntityVolumes, $overheadAllocations, $washCostCategories, $internalWaPeriods): void {
+        DB::transaction(function () use ($period, $rows, $details, $monthlyMetrics, $productionPeriods, $inventoryMovements, $dbCostSummary, $dbAccrualItems, $dbDailyCogpParameters, $dbMiningBreakdown, $dbEntityVolumes, $overheadAllocations, $washCostCategories, $internalWaPeriods): void {
             $periodStart = $period.'-01';
             $periodEnd = \Carbon\Carbon::createFromFormat('Y-m', $period)->endOfMonth()->toDateString();
             DB::table('daily_production')->where('source', 'google_sheets')->where('period', $period)->delete();
