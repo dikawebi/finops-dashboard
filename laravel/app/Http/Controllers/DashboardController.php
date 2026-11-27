@@ -102,6 +102,15 @@ class DashboardController extends Controller
             $baselinePath = base_path("../baseline/reference_dump/production-summary_{$period}_{$mode}.json");
             if ($period < '2026-10' && is_file($baselinePath)) {
                 $data = json_decode(file_get_contents($baselinePath), true, 512, JSON_THROW_ON_ERROR)['data'] ?? [];
+                $strippingRatio = MonthlyMetric::period($period)->where('metric_key', 'strippingRatio')->value('value');
+                if ($strippingRatio !== null) {
+                    $data['dbMetrics']['strippingRatio'] = [
+                        'label'=>'Stripping Ratio',
+                        'unit'=>'ratio',
+                        'value'=>(float) $strippingRatio,
+                        'missingPeriods'=>[],
+                    ];
+                }
                 return response()->json(['success' => true, 'data' => $data]);
             }
         }
